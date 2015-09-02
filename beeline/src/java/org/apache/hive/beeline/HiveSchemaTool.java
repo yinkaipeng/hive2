@@ -17,6 +17,19 @@
  */
 package org.apache.hive.beeline;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.IllegalFormatException;
+import java.util.List;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -293,6 +306,12 @@ public class HiveSchemaTool {
     }
   }
 
+  // Flatten the nested upgrade script into a buffer
+  public static String buildCommand(NestedScriptParser dbCommandParser,
+        String scriptDir, String scriptFile) throws IllegalFormatException, IOException {
+      return dbCommandParser.buildCommand(scriptDir, scriptFile);
+  }
+
   /**
    *  Run pre-upgrade scripts corresponding to a given upgrade script,
    *  if any exist. The errors from pre-upgrade are ignored.
@@ -339,7 +358,8 @@ public class HiveSchemaTool {
 
     // write out the buffer into a file. Add beeline commands for autocommit and close
     FileWriter fstream = new FileWriter(tmpFile.getPath());
-    BufferedWriter out = new BufferedWriter(fstream);
+    //default is 8192, not big enough to hold hive-schema-0.14.0.azuredb.sql, e.g. HIVE-535
+    BufferedWriter out = new BufferedWriter(fstream, 8192*32);
     out.write("!autocommit on" + System.getProperty("line.separator"));
     out.write(sqlCommands);
     out.write("!closeall" + System.getProperty("line.separator"));
@@ -465,8 +485,9 @@ public class HiveSchemaTool {
       if ((!dbType.equalsIgnoreCase(HiveSchemaHelper.DB_DERBY) &&
           !dbType.equalsIgnoreCase(HiveSchemaHelper.DB_MSSQL) &&
           !dbType.equalsIgnoreCase(HiveSchemaHelper.DB_MYSQL) &&
-          !dbType.equalsIgnoreCase(HiveSchemaHelper.DB_POSTGRACE) && !dbType
-          .equalsIgnoreCase(HiveSchemaHelper.DB_ORACLE))) {
+          !dbType.equalsIgnoreCase(HiveSchemaHelper.DB_POSTGRACE) &&
+          !dbType.equalsIgnoreCase(HiveSchemaHelper.DB_ORACLE) &&
+          !dbType.equalsIgnoreCase(HiveSchemaHelper.DB_AZURE))) {
         System.err.println("Unsupported dbType " + dbType);
         printAndExit(cmdLineOptions);
       }

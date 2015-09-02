@@ -25,6 +25,7 @@ import org.apache.hadoop.hive.metastore.HiveMetaException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -38,6 +39,7 @@ public class HiveSchemaHelper {
   public static final String DB_MYSQL = "mysql";
   public static final String DB_POSTGRACE = "postgres";
   public static final String DB_ORACLE = "oracle";
+  public static final String DB_AZURE = "azuredb";
 
   /***
    * Get JDBC connection to metastore db
@@ -99,7 +101,15 @@ public class HiveSchemaHelper {
 
     static final String DEFAUTL_DELIMITER = ";";
 
-    /**
+    /***
+     * Build sql command from sql script
+     * @param scriptDir the directory that contains sql script
+     * @param scriptFile sql script from which to build sql command
+     */
+    public String buildCommand(String scriptDir, String scriptFile)
+        throws IllegalArgumentException, IOException;
+
+    /***
      * Find the type of given command
      *
      * @param dbCommand
@@ -152,16 +162,6 @@ public class HiveSchemaHelper {
      * @return
      */
     public boolean needsQuotedIdentifier();
-
-    /**
-     * Flatten the nested upgrade script into a buffer
-     *
-     * @param scriptDir  upgrade script directory
-     * @param scriptFile upgrade script file
-     * @return string of sql commands
-     */
-    public String buildCommand(String scriptDir, String scriptFile)
-        throws IllegalFormatException, IOException;
   }
 
   /***
@@ -248,6 +248,7 @@ public class HiveSchemaHelper {
         // if this is a valid executable command then add it to the buffer
         if (!isNonExecCommand(currentCommand)) {
           currentCommand = cleanseCommand(currentCommand);
+
           if (isNestedScript(currentCommand)) {
             // if this is a nested sql script then flatten it
             String currScript = getScriptName(currentCommand);
@@ -473,6 +474,38 @@ public class HiveSchemaHelper {
     }
   }
 
+  public static class AzureDBCommandParser extends MSSQLCommandParser {
+
+    public AzureDBCommandParser(String dbOpts, String msUsername, String msPassword,
+        HiveConf hiveConf) {
+      super(dbOpts, msUsername, msPassword, hiveConf);
+    }
+
+    @Override
+    public String buildCommand(String scriptDir, String scriptFile)
+        throws IllegalArgumentException, IOException {
+      BufferedReader bfReader =
+          new BufferedReader(new FileReader(scriptDir + File.separatorChar + scriptFile));
+      String currLine;
+      StringBuilder sb = new StringBuilder();
+
+      while ((currLine = bfReader.readLine()) != null) {
+        currLine = currLine.trim();
+        if (currLine.isEmpty())
+          continue; //skip empty lines
+
+        if (isNonExecCommand(currLine))
+          currLine = "/*" + currLine + "*/"; //enclose comments within '/*' and '*/'
+
+        sb.append(currLine);
+        sb.append(" ");
+      }
+      sb.append(System.getProperty("line.separator"));
+      bfReader.close();
+      return sb.toString();
+    }
+  }
+
   public static NestedScriptParser getDbCommandParser(String dbName) {
     return getDbCommandParser(dbName, null, null, null, null);
   }
@@ -490,6 +523,8 @@ public class HiveSchemaHelper {
       return new PostgresCommandParser(dbOpts, msUsername, msPassword, hiveConf);
     } else if (dbName.equalsIgnoreCase(DB_ORACLE)) {
       return new OracleCommandParser(dbOpts, msUsername, msPassword, hiveConf);
+    } else if (dbName.equalsIgnoreCase(DB_AZURE)) {
+      return new AzureDBCommandParser(dbOpts, msUsername, msPassword, hiveConf);
     } else {
       throw new IllegalArgumentException("Unknown dbType " + dbName);
     }
