@@ -1649,7 +1649,6 @@ END
 /*==================End: Upgrade from 0.12 to 0.13========================*/
 
 /*==================Begin: Upgrade from 0.13 to 0.14========================*/
-SELECT @version = [SCHEMA_VERSION] from [dbo].[VERSION] WHERE VER_ID = 1
 
 /******** HIVE-7784 ************/
 IF NOT EXISTS(SELECT * FROM sys.indexes WHERE name = 'PCS_STATS_IDX' AND object_id = OBJECT_ID('PART_COL_STATS'))
