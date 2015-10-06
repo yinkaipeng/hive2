@@ -15,7 +15,7 @@ CREATE TABLE [dbo].[CDS](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
 )
 END
-
+/*** _STATEMENT_BREAK_ ***/
 /****** Object:  Table [dbo].[SERDES]    Script Date: 11/26/2013 5:26:49 PM ******/
 SET ANSI_NULLS ON
 
@@ -35,7 +35,7 @@ CREATE TABLE [dbo].[SERDES](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)
 )
 END
-
+/*** _STATEMENT_BREAK_ ***/
 /****** Object:  Table [dbo].[SDS]    Script Date: 11/26/2013 5:26:48 PM ******/
 SET ANSI_NULLS ON
 
@@ -69,7 +69,7 @@ REFERENCES [dbo].[CDS] ([CD_ID])
 ALTER TABLE [dbo].[SDS] CHECK CONSTRAINT [SDS_FK2]
 END
 
-
+/*** _STATEMENT_BREAK_ ***/
 /****** Object:  Table [dbo].[BUCKETING_COLS]    Script Date: 11/26/2013 5:26:45 PM ******/
 SET ANSI_NULLS ON
 
@@ -371,7 +371,7 @@ REFERENCES [dbo].[IDXS] ([INDEX_ID])
 ALTER TABLE [dbo].[INDEX_PARAMS] CHECK CONSTRAINT [INDEX_PARAMS_FK1]
 END
 
-
+/*** _STATEMENT_BREAK_ ***/
 /****** Object:  Table [dbo].[MASTER_KEYS]    Script Date: 11/26/2013 5:26:46 PM ******/
 SET ANSI_NULLS ON
 
@@ -555,7 +555,7 @@ REFERENCES [dbo].[PARTITIONS] ([PART_ID])
 ALTER TABLE [dbo].[PART_PRIVS] CHECK CONSTRAINT [PART_PRIVS_FK1]
 END
 
-
+/*** _STATEMENT_BREAK_ ***/
 /****** Object:  Table [dbo].[PARTITION_EVENTS]    Script Date: 11/26/2013 5:26:47 PM ******/
 SET ANSI_NULLS ON
 
@@ -793,6 +793,7 @@ REFERENCES [dbo].[SERDES] ([SERDE_ID])
 ALTER TABLE [dbo].[SERDE_PARAMS] CHECK CONSTRAINT [SERDE_PARAMS_FK1]
 END
 
+/*** _STATEMENT_BREAK_ ***/
 /****** Object:  Table [dbo].[SKEWED_COL_NAMES]    Script Date: 11/26/2013 5:26:49 PM ******/
 SET ANSI_NULLS ON
 
@@ -818,6 +819,7 @@ REFERENCES [dbo].[SDS] ([SD_ID])
 ALTER TABLE [dbo].[SKEWED_COL_NAMES] CHECK CONSTRAINT [SKEWED_COL_NAMES_FK1]
 END
 
+/*** _STATEMENT_BREAK_ ***/
 /****** Object:  Table [dbo].[SKEWED_STRING_LIST]    Script Date: 11/26/2013 5:26:49 PM ******/
 SET ANSI_NULLS ON
 
@@ -1006,7 +1008,7 @@ REFERENCES [dbo].[TBLS] ([TBL_ID])
 ALTER TABLE [dbo].[TABLE_PARAMS] CHECK CONSTRAINT [TABLE_PARAMS_FK1]
 END
 
-
+/*** _STATEMENT_BREAK_ ***/
 /****** Object:  Table [dbo].[NOTIFICATION_LOG] ******/
 SET ANSI_NULLS ON
 
@@ -1321,7 +1323,7 @@ CREATE NONCLUSTERED INDEX BUCKETING_COLS_N49
 ON [dbo].[BUCKETING_COLS] ([SD_ID])
 END
 
-
+/*** _STATEMENT_BREAK_ ***/
 /****** Adding indexes for TYPE_FIELDS******/
 IF NOT EXISTS(SELECT * FROM sys.indexes WHERE name = 'TYPE_FIELDS_N49' AND object_id = OBJECT_ID('TYPE_FIELDS'))
 BEGIN
@@ -1397,7 +1399,7 @@ CREATE NONCLUSTERED INDEX ROLE_MAP_N49
 ON [dbo].[ROLE_MAP] ([ROLE_ID])
 END
 
-
+/*** _STATEMENT_BREAK_ ***/
 /****** Adding indexes for SERDE_PARAMS******/
 IF NOT EXISTS(SELECT * FROM sys.indexes WHERE name = 'SERDE_PARAMS_N49' AND object_id = OBJECT_ID('SERDE_PARAMS'))
 BEGIN
@@ -1450,7 +1452,7 @@ ON [dbo].[PARTITION_EVENTS] ([PARTITION_NAME])
 END
 
 /*==================Begin: Upgrade from 0.12 to 0.13========================*/
-
+/*** _STATEMENT_BREAK_ ***/
 /******** HIVE-6386 ************/
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE Name = N'OWNER_NAME' and Object_ID = Object_ID(N'DBS'))
 BEGIN
@@ -1522,6 +1524,7 @@ REFERENCES [dbo].[FUNCS] ([FUNC_ID])
 ALTER TABLE [dbo].[FUNC_RU] CHECK CONSTRAINT [FUNC_RU_FK1]
 END
 
+/*** _STATEMENT_BREAK_ ***/
 /************** hive-txn-schema-0.13.0 ******************/
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[TXNS]') AND type in (N'U'))
 BEGIN
@@ -1648,7 +1651,7 @@ END
 /*==================End: Upgrade from 0.12 to 0.13========================*/
 
 /*==================Begin: Upgrade from 0.13 to 0.14========================*/
-
+/*** _STATEMENT_BREAK_ ***/
 /******** HIVE-7784 ************/
 IF NOT EXISTS(SELECT * FROM sys.indexes WHERE name = 'PCS_STATS_IDX' AND object_id = OBJECT_ID('PART_COL_STATS'))
 BEGIN
