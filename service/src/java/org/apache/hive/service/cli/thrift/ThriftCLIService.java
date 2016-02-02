@@ -105,6 +105,7 @@ import org.apache.hive.service.server.HiveServer2;
 import org.apache.thrift.TException;
 import org.apache.thrift.server.ServerContext;
 import org.apache.thrift.server.TServer;
+import org.apache.thrift.server.TServerEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,6 +137,7 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
   protected int maxWorkerThreads;
   protected long workerKeepAliveTime;
 
+  protected TServerEventHandler serverEventHandler;
   protected ThreadLocal<ServerContext> currentServerContext;
 
   static class ThriftCLIServerContext implements ServerContext {
@@ -154,6 +156,55 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
     super(serviceName);
     this.cliService = service;
     currentServerContext = new ThreadLocal<ServerContext>();
+    serverEventHandler = new TServerEventHandler() {
+      @Override
+      public ServerContext createContext(
+          TProtocol input, TProtocol output) {
+        Metrics metrics = MetricsFactory.getInstance();
+        if (metrics != null) {
+          try {
+            metrics.incrementCounter(MetricsConstant.OPEN_CONNECTIONS);
+            metrics.incrementCounter(MetricsConstant.CUMULATIVE_CONNECTION_COUNT);
+          } catch (Exception e) {
+            LOG.warn("Error Reporting JDO operation to Metrics system", e);
+          }
+        }
+        return new ThriftCLIServerContext();
+      }
+
+      @Override
+      public void deleteContext(ServerContext serverContext,
+          TProtocol input, TProtocol output) {
+        Metrics metrics = MetricsFactory.getInstance();
+        if (metrics != null) {
+          try {
+            metrics.decrementCounter(MetricsConstant.OPEN_CONNECTIONS);
+          } catch (Exception e) {
+            LOG.warn("Error Reporting JDO operation to Metrics system", e);
+          }
+        }
+        ThriftCLIServerContext context = (ThriftCLIServerContext) serverContext;
+        SessionHandle sessionHandle = context.getSessionHandle();
+        if (sessionHandle != null) {
+          LOG.info("Session disconnected without closing properly, close it now");
+          try {
+            cliService.closeSession(sessionHandle);
+          } catch (HiveSQLException e) {
+            LOG.warn("Failed to close session: " + e, e);
+          }
+        }
+      }
+
+      @Override
+      public void preServe() {
+      }
+
+      @Override
+      public void processContext(ServerContext serverContext,
+          TTransport input, TTransport output) {
+        currentServerContext.set(serverContext);
+      }
+    };
   }
 
   @Override
