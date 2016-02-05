@@ -53,7 +53,7 @@ CREATE TABLE [dbo].[COMPLETED_COMPACTIONS] (
 	[CC_ID] [bigint] NOT NULL,
 	[CC_DATABASE] [nvarchar](128) NOT NULL,
 	[CC_TABLE] [nvarchar](128) NOT NULL,
-	[CC_PARTITION] [nvarchar(767)] NULL,
+	[CC_PARTITION] [nvarchar](767) NULL,
 	[CC_STATE] [char](1) NOT NULL,
 	[CC_TYPE] [char](1) NOT NULL,
 	[CC_WORKER_ID] [nvarchar](128) NULL,
