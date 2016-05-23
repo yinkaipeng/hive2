@@ -1,5 +1,5 @@
--- Upgrade MetaStore schema from 1.2.0 to 2.0.0
-RUN '021-HIVE-11970.derby.sql';
+-- Upgrade MetaStore schema from 1.2.0 to 1.2.1000
+
 RUN '023-HIVE-12807.derby.sql';
 RUN '024-HIVE-12814.derby.sql';
 RUN '025-HIVE-12816.derby.sql';
@@ -11,4 +11,4 @@ RUN '030-HIVE-12823.derby.sql';
 RUN '031-HIVE-12831.derby.sql';
 RUN '032-HIVE-12832.derby.sql';
 
-UPDATE "APP".VERSION SET SCHEMA_VERSION='2.0.0', VERSION_COMMENT='Hive release version 2.0.0' where VER_ID=1;
+UPDATE "APP".VERSION SET SCHEMA_VERSION='1.2.1000', VERSION_COMMENT='Hive release version 1.2.1000' where VER_ID=1;

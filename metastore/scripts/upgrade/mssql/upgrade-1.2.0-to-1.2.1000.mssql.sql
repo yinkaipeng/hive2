@@ -1,6 +1,6 @@
-SELECT 'Upgrading MetaStore schema from 1.2.0 to 2.0.0' AS MESSAGE;
+SELECT 'Upgrading MetaStore schema from 1.2.0 to 1.2.1000' AS MESSAGE;
 
-:r 007-HIVE-11970.mssql.sql
+
 :r 008-HIVE-12807.mssql.sql
 :r 009-HIVE-12814.mssql.sql
 :r 010-HIVE-12816.mssql.sql
@@ -12,5 +12,5 @@ SELECT 'Upgrading MetaStore schema from 1.2.0 to 2.0.0' AS MESSAGE;
 :r 016-HIVE-12831.mssql.sql
 :r 017-HIVE-12832.mssql.sql
 
-UPDATE VERSION SET SCHEMA_VERSION='2.0.0', VERSION_COMMENT='Hive release version 2.0.0' where VER_ID=1;
-SELECT 'Finished upgrading MetaStore schema from 1.2.0 to 2.0.0' AS MESSAGE;
+UPDATE VERSION SET SCHEMA_VERSION='1.2.1000', VERSION_COMMENT='Hive release version 1.2.1000' where VER_ID=1;
+SELECT 'Finished upgrading MetaStore schema from 1.2.0 to 1.2.1000' AS MESSAGE;
