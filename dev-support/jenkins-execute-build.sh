@@ -51,7 +51,7 @@ fi
 test -d hive/build/ || mkdir -p hive/build/
 cd hive/build/
 rm -rf hive
-git clone --depth 1 https://github.com/apache/hive.git
+git clone --depth 1 https://github.com/apache/hive2.git
 cd hive/testutils/ptest2
 
 mvn clean package -DskipTests -Drat.numUnapprovedLicenses=1000 -Dmaven.repo.local=$WORKSPACE/.m2
