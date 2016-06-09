@@ -84,7 +84,7 @@ cd $workingDir/
   fi
   if [[ "${buildTool}" == "maven" ]]
   then
-    rm -rf $workingDir/maven/org/apache/hive
+    rm -rf $workingDir/maven/org/apache
     #if($additionalProfiles)
     echo "Compile check on additional Profiles: $additionalProfiles"
     export ADDITIONAL_PROFILES=$additionalProfiles
