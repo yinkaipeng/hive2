@@ -56,7 +56,7 @@ cd $workingDir/
       echo "Illegal argument for git: branch name is required."
       exit 1
     fi
-    if [[ -d ${repositoryName}-source ]] && [[ ! -d ${repositoryName}-source/.git ]]
+    if [[ -d ${repositoryName}-source ]]
     then
       rm -rf ${repositoryName}-source
     fi
@@ -90,9 +90,9 @@ cd $workingDir/
     export ADDITIONAL_PROFILES=$additionalProfiles
     for i in $(echo $ADDITIONAL_PROFILES | tr "," "\n")
       do
-        mvn clean install -DskipTests -P$i;
+        mvn -B clean install -DskipTests -P$i;
         cd itests
-        mvn clean install -DskipTests -P$i;
+        mvn -B clean install -DskipTests -P$i;
         cd ..
       done
     #end
