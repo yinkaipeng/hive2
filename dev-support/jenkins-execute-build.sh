@@ -54,7 +54,7 @@ rm -rf hive
 git clone --branch $BRANCH --depth 1 git@github.com:hortonworks/hive2.git hive
 cd hive/testutils/ptest2
 
-mvn clean package -DskipTests -Drat.numUnapprovedLicenses=1000 -Dmaven.repo.local=$WORKSPACE/.m2
+mvn -B clean package -DskipTests -Drat.numUnapprovedLicenses=1000 -Dmaven.repo.local=$WORKSPACE/.m2
 set +e
 optionalArgs=()
 if [[ -n "$JIRA_NAME" ]]

@@ -97,7 +97,7 @@ build_ptest2() {
 	rm -rf $path
 	git clone --branch $BRANCH --depth 1 git@github.com:hortonworks/hive2.git $path/ || return 1
 	cd $path/testutils/ptest2
-	mvn clean package -DskipTests -Drat.numUnapprovedLicenses=1000 -Dmaven.repo.local=$WORKSPACE/.m2 || return 1
+	mvn -B clean package -DskipTests -Drat.numUnapprovedLicenses=1000 -Dmaven.repo.local=$WORKSPACE/.m2 || return 1
 
 	cd $curpath
 }
