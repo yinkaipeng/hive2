@@ -178,6 +178,7 @@ public class SecretManager extends ZKDelegationTokenSecretManager<LlapTokenIdent
 
   public static SecretManager createSecretManager(
       final Configuration conf, String llapPrincipal, String llapKeytab, final String clusterId) {
+    assert UserGroupInformation.isSecurityEnabled();
     final LlapZkConf c = createLlapZkConf(conf, llapPrincipal, llapKeytab, clusterId);
     return c.zkUgi.doAs(new PrivilegedAction<SecretManager>() {
       @Override
@@ -219,6 +220,11 @@ public class SecretManager extends ZKDelegationTokenSecretManager<LlapTokenIdent
       LOG.info("Created LLAP token {}", token);
     }
     return token;
+  }
+
+  @Override
+  public void close() {
+    stopThreads();
   }
 
   private static void checkRootAcls(Configuration conf, String path, String user) {
