@@ -90,9 +90,9 @@ cd $workingDir/
     export ADDITIONAL_PROFILES=$additionalProfiles
     for i in $(echo $ADDITIONAL_PROFILES | tr "," "\n")
       do
-        mvn -B clean install -DskipTests -P$i;
+        mvn -B clean install -DskipTests -P$i -Dmaven.repo.local=$workingDir/maven $mavenArgs $mavenBuildArgs;
         cd itests
-        mvn -B clean install -DskipTests -P$i;
+        mvn -B clean install -DskipTests -P$i -Dmaven.repo.local=$workingDir/maven $mavenArgs $mavenBuildArgs;
         cd ..
       done
     #end
