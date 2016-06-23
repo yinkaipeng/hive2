@@ -63,7 +63,6 @@ public class SecretManager extends ZKDelegationTokenSecretManager<LlapTokenIdent
 
   @Override
   public void startThreads() throws IOException {
-    LOG.info("SecretManager starting under user " + UserGroupInformation.getCurrentUser())
     super.startThreads();
     if (!HiveConf.getBoolVar(conf, ConfVars.LLAP_VALIDATE_ACLS)
       || !UserGroupInformation.isSecurityEnabled()) return;
