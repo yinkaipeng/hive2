@@ -700,7 +700,7 @@ public class HiveConf extends Configuration {
         "Defaults to all permissions for the hiveserver2/metastore process user."),
     METASTORE_CACHE_PINOBJTYPES("hive.metastore.cache.pinobjtypes", "Table,StorageDescriptor,SerDeInfo,Partition,Database,Type,FieldSchema,Order",
         "List of comma separated metastore object types that should be pinned in the cache"),
-    METASTORE_CONNECTION_POOLING_TYPE("datanucleus.connectionPoolingType", "BONECP",
+    METASTORE_CONNECTION_POOLING_TYPE("datanucleus.connectionPoolingType", "HikariCP",
         "Specify connection pool library for datanucleus"),
     METASTORE_VALIDATE_TABLES("datanucleus.schema.validateTables", false,
         "validates existing schema against code. turn this on if you want to verify existing schema"),
