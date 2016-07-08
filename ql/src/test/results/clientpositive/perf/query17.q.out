@@ -53,10 +53,10 @@ Stage-0
                           SHUFFLE [RS_43]
                             PartitionCols:_col11
                             Merge Join Operator [MERGEJOIN_99] (rows=927646829 width=88)
-                              Conds:RS_40._col1, _col2=RS_41._col12, _col11(Inner),Output:["_col3","_col7","_col11","_col15","_col20"]
+                              Conds:RS_40._col2, _col1=RS_41._col11, _col12(Inner),Output:["_col3","_col7","_col11","_col15","_col20"]
                             <-Reducer 12 [SIMPLE_EDGE]
                               SHUFFLE [RS_41]
-                                PartitionCols:_col12, _col11
+                                PartitionCols:_col11, _col12
                                 Select Operator [SEL_33] (rows=843315281 width=88)
                                   Output:["_col1","_col11","_col12","_col14","_col5","_col9"]
                                   Merge Join Operator [MERGEJOIN_98] (rows=843315281 width=88)
@@ -123,7 +123,7 @@ Stage-0
                                                         default@store_sales,store_sales,Tbl:COMPLETE,Col:NONE,Output:["ss_sold_date_sk","ss_item_sk","ss_customer_sk","ss_store_sk","ss_ticket_number","ss_quantity"]
                             <-Reducer 2 [SIMPLE_EDGE]
                               SHUFFLE [RS_40]
-                                PartitionCols:_col1, _col2
+                                PartitionCols:_col2, _col1
                                 Merge Join Operator [MERGEJOIN_94] (rows=316788826 width=135)
                                   Conds:RS_37._col0=RS_38._col0(Inner),Output:["_col1","_col2","_col3"]
                                 <-Map 1 [SIMPLE_EDGE]
