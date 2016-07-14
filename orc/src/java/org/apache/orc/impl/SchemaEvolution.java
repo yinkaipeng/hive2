@@ -34,7 +34,7 @@ import org.apache.orc.TypeDescription;
  * has been schema evolution.
  */
 public class SchemaEvolution {
-  private final Map<TypeDescription, TypeDescription> readerToFile;
+  private final Map<Integer, TypeDescription> readerToFile;
   private final TypeDescription[] readerFileTypes;
   private final boolean[] included;
   private final TypeDescription readerSchema;
@@ -89,7 +89,7 @@ public class SchemaEvolution {
         result = null;
       }
     } else {
-      result = readerToFile.get(readerType);
+      result = readerToFile.get(readerType.getId());
     }
     return result;
   }
@@ -180,7 +180,7 @@ public class SchemaEvolution {
       hasConversion = true;
     }
     if (isOk) {
-      readerToFile.put(readerType, fileType);
+      readerToFile.put(readerType.getId(), fileType);
     } else {
       throw new IOException(
           String.format(
