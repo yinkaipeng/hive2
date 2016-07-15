@@ -122,7 +122,6 @@ public class TestLlapTaskCommunicator {
   }
 
 
-  @Test(timeout = 5000)
   public void testFinishableStateUpdateFailure() throws Exception {
 
     LlapTaskCommunicatorWrapperForTest wrapper = null;
