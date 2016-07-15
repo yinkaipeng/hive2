@@ -2,6 +2,7 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 ===================================================================
 
 BUG FIXES
+    HIVE-14230: Hadoop23Shims.cloneUgi() doesn't add credentials from original UGI
     HIVE-14180: Disable LlapZookeeperRegistry ZK auth setup for external clients
     HIVE-14219: LLAP external client on secure cluster: Protocol interface org.apache.hadoop.hive.llap.protocol.LlapTaskUmbilicalProtocol is not known
     HIVE-14182: Revert HIVE-13084/HIVE-13924/HIVE-14034
