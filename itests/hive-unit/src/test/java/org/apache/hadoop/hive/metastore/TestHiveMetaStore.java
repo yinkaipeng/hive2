@@ -2826,6 +2826,11 @@ public abstract class TestHiveMetaStore extends TestCase {
 
   @Test
   public void testTransactionalValidation() throws Throwable {
+    String dbName = "acidDb";
+    silentDropDatabase(dbName);
+    Database db = new Database();
+    db.setName(dbName);
+    client.createDatabase(db);
     String tblName = "acidTable";
     String owner = "acid";
     Map<String, String> fields = new HashMap<String, String>();
@@ -2847,7 +2852,7 @@ public abstract class TestHiveMetaStore extends TestCase {
 
     // Fail - No "transactional" property is specified
     try {
-      Table t = createTable(MetaStoreUtils.DEFAULT_DATABASE_NAME, tblName, owner, params, null, sd, 0);
+      Table t = createTable(dbName, tblName, owner, params, null, sd, 0);
       Assert.assertTrue("Expected exception", false);
     } catch (MetaException e) {
       Assert.assertEquals("'transactional' property of TBLPROPERTIES may only have value 'true'", e.getMessage());
@@ -2857,7 +2862,7 @@ public abstract class TestHiveMetaStore extends TestCase {
     try {
       params.clear();
       params.put("transactional", "foobar");
-      Table t = createTable(MetaStoreUtils.DEFAULT_DATABASE_NAME, tblName, owner, params, null, sd, 0);
+      Table t = createTable(dbName, tblName, owner, params, null, sd, 0);
       Assert.assertTrue("Expected exception", false);
     } catch (MetaException e) {
       Assert.assertEquals("'transactional' property of TBLPROPERTIES may only have value 'true'", e.getMessage());
@@ -2867,7 +2872,7 @@ public abstract class TestHiveMetaStore extends TestCase {
     try {
       params.clear();
       params.put("transactional", "true");
-      Table t = createTable(MetaStoreUtils.DEFAULT_DATABASE_NAME, tblName, owner, params, null, sd, 0);
+      Table t = createTable(dbName, tblName, owner, params, null, sd, 0);
       Assert.assertTrue("Expected exception", false);
     } catch (MetaException e) {
       Assert.assertEquals("The table must be bucketed and stored using an ACID compliant format (such as ORC)", e.getMessage());
@@ -2880,7 +2885,7 @@ public abstract class TestHiveMetaStore extends TestCase {
       List<String> bucketCols = new ArrayList<String>();
       bucketCols.add("income");
       sd.setBucketCols(bucketCols);
-      Table t = createTable(MetaStoreUtils.DEFAULT_DATABASE_NAME, tblName, owner, params, null, sd, 0);
+      Table t = createTable(dbName, tblName, owner, params, null, sd, 0);
       Assert.assertTrue("Expected exception", false);
     } catch (MetaException e) {
       Assert.assertEquals("The table must be bucketed and stored using an ACID compliant format (such as ORC)", e.getMessage());
@@ -2894,7 +2899,7 @@ public abstract class TestHiveMetaStore extends TestCase {
     sd.setBucketCols(bucketCols);
     sd.setInputFormat("org.apache.hadoop.hive.ql.io.orc.OrcInputFormat");
     sd.setOutputFormat("org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat");
-    Table t = createTable(MetaStoreUtils.DEFAULT_DATABASE_NAME, tblName, owner, params, null, sd, 0);
+    Table t = createTable(dbName, tblName, owner, params, null, sd, 0);
     Assert.assertTrue("CREATE TABLE should succeed", "true".equals(t.getParameters().get(hive_metastoreConstants.TABLE_IS_TRANSACTIONAL)));
 
     /// ALTER TABLE scenarios
@@ -2905,7 +2910,7 @@ public abstract class TestHiveMetaStore extends TestCase {
       params.put("transactional", "false");
       t = new Table();
       t.setParameters(params);
-      client.alter_table(MetaStoreUtils.DEFAULT_DATABASE_NAME, tblName, t);
+      client.alter_table(dbName, tblName, t);
       Assert.assertTrue("Expected exception", false);
     } catch (MetaException e) {
       Assert.assertEquals("TBLPROPERTIES with 'transactional'='true' cannot be unset", e.getMessage());
@@ -2916,10 +2921,10 @@ public abstract class TestHiveMetaStore extends TestCase {
       tblName += "1";
       params.clear();
       sd.unsetBucketCols();
-      t = createTable(MetaStoreUtils.DEFAULT_DATABASE_NAME, tblName, owner, params, null, sd, 0);
+      t = createTable(dbName, tblName, owner, params, null, sd, 0);
       params.put("transactional", "true");
       t.setParameters(params);
-      client.alter_table(MetaStoreUtils.DEFAULT_DATABASE_NAME, tblName, t);
+      client.alter_table(dbName, tblName, t);
       Assert.assertTrue("Expected exception", false);
     } catch (MetaException e) {
       Assert.assertEquals("The table must be bucketed and stored using an ACID compliant format (such as ORC)", e.getMessage());
@@ -2930,11 +2935,11 @@ public abstract class TestHiveMetaStore extends TestCase {
     params.clear();
     sd.setNumBuckets(1);
     sd.setBucketCols(bucketCols);
-    t = createTable(MetaStoreUtils.DEFAULT_DATABASE_NAME, tblName, owner, params, null, sd, 0);
+    t = createTable(dbName, tblName, owner, params, null, sd, 0);
     params.put("transactional", "true");
     t.setParameters(params);
     t.setPartitionKeys(Collections.EMPTY_LIST);
-    client.alter_table(MetaStoreUtils.DEFAULT_DATABASE_NAME, tblName, t);
+    client.alter_table(dbName, tblName, t);
     Assert.assertTrue("ALTER TABLE should succeed", "true".equals(t.getParameters().get(hive_metastoreConstants.TABLE_IS_TRANSACTIONAL)));
   }
 
