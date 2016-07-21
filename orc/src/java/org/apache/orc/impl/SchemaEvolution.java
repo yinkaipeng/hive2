@@ -20,6 +20,7 @@ package org.apache.orc.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,14 +35,20 @@ import org.apache.orc.TypeDescription;
  */
 public class SchemaEvolution {
   private final Map<TypeDescription, TypeDescription> readerToFile;
+  private final TypeDescription[] readerFileTypes;
   private final boolean[] included;
   private final TypeDescription readerSchema;
+  private boolean hasConversion;
   private static final Log LOG = LogFactory.getLog(SchemaEvolution.class);
 
   public SchemaEvolution(TypeDescription readerSchema, boolean[] included) {
     this.included = included;
     readerToFile = null;
     this.readerSchema = readerSchema;
+
+    hasConversion = false;
+
+    readerFileTypes = flattenReaderIncluded();
   }
 
   public SchemaEvolution(TypeDescription fileSchema,
@@ -54,11 +61,23 @@ public class SchemaEvolution {
     } else {
       this.readerSchema = readerSchema;
     }
+
+    hasConversion = false;
     buildMapping(fileSchema, this.readerSchema);
+
+    readerFileTypes = flattenReaderIncluded();
   }
 
   public TypeDescription getReaderSchema() {
     return readerSchema;
+  }
+
+  /**
+   * Is there Schema Evolution data type conversion?
+   * @return
+   */
+  public boolean hasConversion() {
+    return hasConversion;
   }
 
   public TypeDescription getFileType(TypeDescription readerType) {
@@ -73,6 +92,15 @@ public class SchemaEvolution {
       result = readerToFile.get(readerType);
     }
     return result;
+  }
+
+  /**
+   * Get the file type by reader type id.
+   * @param readerType
+   * @return
+   */
+  public TypeDescription getFileType(int id) {
+    return readerFileTypes[id];
   }
 
   void buildMapping(TypeDescription fileType,
@@ -101,9 +129,16 @@ public class SchemaEvolution {
         case CHAR:
         case VARCHAR:
           // We do conversion when same CHAR/VARCHAR type but different maxLength.
+          if (fileType.getMaxLength() != readerType.getMaxLength()) {
+            hasConversion = true;
+          }
           break;
         case DECIMAL:
           // We do conversion when same DECIMAL type but different precision/scale.
+          if (fileType.getPrecision() != readerType.getPrecision() ||
+              fileType.getScale() != readerType.getScale()) {
+            hasConversion = true;
+          }
           break;
         case UNION:
         case MAP:
@@ -124,6 +159,9 @@ public class SchemaEvolution {
           // allow either side to have fewer fields than the other
           List<TypeDescription> fileChildren = fileType.getChildren();
           List<TypeDescription> readerChildren = readerType.getChildren();
+          if (fileChildren.size() != readerChildren.size()) {
+            hasConversion = true;
+          }
           int jointSize = Math.min(fileChildren.size(), readerChildren.size());
           for(int i=0; i < jointSize; ++i) {
             buildMapping(fileChildren.get(i), readerChildren.get(i));
@@ -139,6 +177,7 @@ public class SchemaEvolution {
        */
 
       isOk = ConvertTreeReaderFactory.canConvert(fileType, readerType);
+      hasConversion = true;
     }
     if (isOk) {
       readerToFile.put(readerType, fileType);
@@ -148,6 +187,26 @@ public class SchemaEvolution {
               "ORC does not support type conversion from file type %s (%d) to reader type %s (%d)",
               fileType.toString(), fileType.getId(),
               readerType.toString(), readerType.getId()));
+    }
+  }
+
+  TypeDescription[] flattenReaderIncluded() {
+    TypeDescription[] result = new TypeDescription[readerSchema.getMaximumId() + 1];
+    flattenReaderIncludedRecurse(readerSchema, result);
+    return result;
+  }
+
+  void flattenReaderIncludedRecurse(TypeDescription readerType, TypeDescription[] readerFileTypes) {
+    TypeDescription fileSchema = getFileType(readerType);
+    if (fileSchema == null) {
+      return;
+    }
+    readerFileTypes[readerType.getId()] = fileSchema;
+    List<TypeDescription> children = readerType.getChildren();
+    if (children != null) {
+      for (TypeDescription child : children) {
+        flattenReaderIncludedRecurse(child, readerFileTypes);
+      }
     }
   }
 
