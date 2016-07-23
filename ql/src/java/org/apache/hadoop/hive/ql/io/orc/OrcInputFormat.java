@@ -21,7 +21,6 @@ package org.apache.hadoop.hive.ql.io.orc;
 import org.apache.orc.impl.InStream;
 import org.apache.orc.impl.SchemaEvolution;
 
-  
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.PrivilegedExceptionAction;
@@ -1409,8 +1408,11 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
         readerIncluded = genIncludedColumns(fileTypes, context.conf, isOriginal);
         evolution = new SchemaEvolution(fileSchema, readerIncluded);
       } else {
-        readerIncluded = genIncludedColumns(readerTypes, context.conf, true);
-        if (!isOriginal) {
+        // The readerSchema always comes in without ACID columns.
+        readerIncluded = genIncludedColumns(readerTypes, context.conf, /* isOriginal */ true);
+        if (readerIncluded != null && !isOriginal) {
+          // We shift the include columns here because the SchemaEvolution constructor will
+          // add the ACID event metadata the readerSchema...
           readerIncluded = shiftReaderIncludedForAcid(readerIncluded);
         }
         TypeDescription readerSchema = OrcUtils.convertTypeFromProtobuf(readerTypes, 0);

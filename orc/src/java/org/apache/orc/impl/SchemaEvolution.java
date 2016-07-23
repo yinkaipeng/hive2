@@ -21,9 +21,7 @@ package org.apache.orc.impl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,7 +32,6 @@ import org.apache.orc.TypeDescription;
  * has been schema evolution.
  */
 public class SchemaEvolution {
-  private final Map<Integer, TypeDescription> readerToFile;
   private final TypeDescription[] readerFileTypes;
   private final boolean[] included;
   private final TypeDescription readerSchema;
@@ -42,20 +39,19 @@ public class SchemaEvolution {
   private static final Log LOG = LogFactory.getLog(SchemaEvolution.class);
 
   public SchemaEvolution(TypeDescription readerSchema, boolean[] included) {
-    this.included = included;
-    readerToFile = null;
+    this.included = (included == null ? null : Arrays.copyOf(included, included.length));
     this.readerSchema = readerSchema;
 
     hasConversion = false;
 
-    readerFileTypes = flattenReaderIncluded();
+    readerFileTypes = new TypeDescription[this.readerSchema.getMaximumId() + 1];
+    buildSameSchemaFileTypesArray();
   }
 
   public SchemaEvolution(TypeDescription fileSchema,
                          TypeDescription readerSchema,
                          boolean[] included) throws IOException {
-    readerToFile = new HashMap<>(readerSchema.getMaximumId() + 1);
-    this.included = included;
+    this.included = (included == null ? null : Arrays.copyOf(included, included.length));
     if (checkAcidSchema(fileSchema)) {
       this.readerSchema = createEventSchema(readerSchema);
     } else {
@@ -63,9 +59,8 @@ public class SchemaEvolution {
     }
 
     hasConversion = false;
-    buildMapping(fileSchema, this.readerSchema);
-
-    readerFileTypes = flattenReaderIncluded();
+    readerFileTypes = new TypeDescription[this.readerSchema.getMaximumId() + 1];
+    buildConversionFileTypesArray(fileSchema, this.readerSchema);
   }
 
   public TypeDescription getReaderSchema() {
@@ -81,17 +76,7 @@ public class SchemaEvolution {
   }
 
   public TypeDescription getFileType(TypeDescription readerType) {
-    TypeDescription result;
-    if (readerToFile == null) {
-      if (included == null || included[readerType.getId()]) {
-        result = readerType;
-      } else {
-        result = null;
-      }
-    } else {
-      result = readerToFile.get(readerType.getId());
-    }
-    return result;
+    return getFileType(readerType.getId());
   }
 
   /**
@@ -103,8 +88,8 @@ public class SchemaEvolution {
     return readerFileTypes[id];
   }
 
-  void buildMapping(TypeDescription fileType,
-                    TypeDescription readerType) throws IOException {
+  void buildConversionFileTypesArray(TypeDescription fileType,
+                                     TypeDescription readerType) throws IOException {
     // if the column isn't included, don't map it
     if (included != null && !included[readerType.getId()]) {
       return;
@@ -148,7 +133,7 @@ public class SchemaEvolution {
           List<TypeDescription> readerChildren = readerType.getChildren();
           if (fileChildren.size() == readerChildren.size()) {
             for(int i=0; i < fileChildren.size(); ++i) {
-              buildMapping(fileChildren.get(i), readerChildren.get(i));
+              buildConversionFileTypesArray(fileChildren.get(i), readerChildren.get(i));
             }
           } else {
             isOk = false;
@@ -164,7 +149,7 @@ public class SchemaEvolution {
           }
           int jointSize = Math.min(fileChildren.size(), readerChildren.size());
           for(int i=0; i < jointSize; ++i) {
-            buildMapping(fileChildren.get(i), readerChildren.get(i));
+            buildConversionFileTypesArray(fileChildren.get(i), readerChildren.get(i));
           }
           break;
         }
@@ -180,7 +165,11 @@ public class SchemaEvolution {
       hasConversion = true;
     }
     if (isOk) {
-      readerToFile.put(readerType.getId(), fileType);
+      int id = readerType.getId();
+      if (readerFileTypes[id] != null) {
+        throw new RuntimeException("reader to file type entry already assigned");
+      }
+      readerFileTypes[id] = fileType;
     } else {
       throw new IOException(
           String.format(
@@ -190,22 +179,27 @@ public class SchemaEvolution {
     }
   }
 
-  TypeDescription[] flattenReaderIncluded() {
-    TypeDescription[] result = new TypeDescription[readerSchema.getMaximumId() + 1];
-    flattenReaderIncludedRecurse(readerSchema, result);
-    return result;
+  /**
+   * Use to make a reader to file type array when the schema is the same.
+   * @return
+   */
+  private void buildSameSchemaFileTypesArray() {
+    buildSameSchemaFileTypesArrayRecurse(readerSchema);
   }
 
-  void flattenReaderIncludedRecurse(TypeDescription readerType, TypeDescription[] readerFileTypes) {
-    TypeDescription fileSchema = getFileType(readerType);
-    if (fileSchema == null) {
+  void buildSameSchemaFileTypesArrayRecurse(TypeDescription readerType) {
+    if (included != null && !included[readerType.getId()]) {
       return;
     }
-    readerFileTypes[readerType.getId()] = fileSchema;
+    int id = readerType.getId();
+    if (readerFileTypes[id] != null) {
+      throw new RuntimeException("reader to file type entry already assigned");
+    }
+    readerFileTypes[id] = readerType;
     List<TypeDescription> children = readerType.getChildren();
     if (children != null) {
       for (TypeDescription child : children) {
-        flattenReaderIncludedRecurse(child, readerFileTypes);
+        buildSameSchemaFileTypesArrayRecurse(child);
       }
     }
   }

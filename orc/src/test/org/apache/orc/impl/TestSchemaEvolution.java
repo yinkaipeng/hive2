@@ -80,7 +80,7 @@ public class TestSchemaEvolution {
             .addField("f5", TypeDescription.createBoolean()))
         .addField("f6", TypeDescription.createChar().withMaxLength(100));
     SchemaEvolution both2 = new SchemaEvolution(fileStruct2, readerStruct2, null);
-    assertFalse(same2.hasConversion());
+    assertFalse(both2.hasConversion());
     TypeDescription readerStruct2diff = TypeDescription.createStruct()
         .addField("f1", TypeDescription.createUnion()
             .addUnionChild(TypeDescription.createByte())

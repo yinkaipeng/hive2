@@ -139,7 +139,7 @@ public class RecordReaderImpl implements RecordReader {
     included[0] = true;
     if (options.getSchema() == null) {
       if (LOG.isInfoEnabled()) {
-        LOG.info("Schema on read not provided -- using file schema " +
+        LOG.info("Reader schema not provided -- using file schema " +
             fileReader.getSchema());
       }
       evolution = new SchemaEvolution(fileReader.getSchema(), included);
