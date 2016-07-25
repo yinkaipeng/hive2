@@ -120,6 +120,10 @@ STAGE PLANS:
     Spark
       Edges:
         Reducer 2 <- Map 1 (GROUP, 2)
+<<<<<<< HEAD
+=======
+        Reducer 3 <- Reducer 2 (SORT, 1)
+>>>>>>> cdb872a... HIVE-13409: Fix JDK8 test failures related to COLUMN_STATS_ACCURATE (Mohit Sabharwal, reviewed by Sergio Pena)
 #### A masked pattern was here ####
       Vertices:
         Map 1 
