@@ -24,7 +24,11 @@ STAGE PLANS:
     Spark
       Edges:
         Reducer 2 <- Map 1 (PARTITION-LEVEL SORT, 1), Map 4 (PARTITION-LEVEL SORT, 1)
+<<<<<<< HEAD
         Reducer 3 <- Reducer 2 (SORT, 1)
+=======
+        Reducer 3 <- Reducer 2 (PARTITION-LEVEL SORT, 2)
+>>>>>>> f38a42e... HIVE-13860: Fix more json related JDK8 test failures (Mohit Sabharwal, reviewed by Sergio Pena)
 #### A masked pattern was here ####
       Vertices:
         Map 1 
