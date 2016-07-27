@@ -2791,25 +2791,25 @@ STAGE PLANS:
       Map Operator Tree:
           TableScan
             alias: table_change_lower_to_higher_numeric_group_float
-            Statistics: Num rows: 12 Data size: 2861 Basic stats: COMPLETE Column stats: NONE
+            Statistics: Num rows: 12 Data size: 2907 Basic stats: COMPLETE Column stats: NONE
             Select Operator
               expressions: insert_num (type: int), c1 (type: double), c2 (type: decimal(38,18)), b (type: string)
               outputColumnNames: _col0, _col1, _col2, _col3
-              Statistics: Num rows: 12 Data size: 2861 Basic stats: COMPLETE Column stats: NONE
+              Statistics: Num rows: 12 Data size: 2907 Basic stats: COMPLETE Column stats: NONE
               Reduce Output Operator
                 key expressions: _col0 (type: int)
                 sort order: +
-                Statistics: Num rows: 12 Data size: 2861 Basic stats: COMPLETE Column stats: NONE
+                Statistics: Num rows: 12 Data size: 2907 Basic stats: COMPLETE Column stats: NONE
                 value expressions: _col1 (type: double), _col2 (type: decimal(38,18)), _col3 (type: string)
       Execution mode: vectorized
       Reduce Operator Tree:
         Select Operator
           expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: double), VALUE._col1 (type: decimal(38,18)), VALUE._col2 (type: string)
           outputColumnNames: _col0, _col1, _col2, _col3
-          Statistics: Num rows: 12 Data size: 2861 Basic stats: COMPLETE Column stats: NONE
+          Statistics: Num rows: 12 Data size: 2907 Basic stats: COMPLETE Column stats: NONE
           File Output Operator
             compressed: false
-            Statistics: Num rows: 12 Data size: 2861 Basic stats: COMPLETE Column stats: NONE
+            Statistics: Num rows: 12 Data size: 2907 Basic stats: COMPLETE Column stats: NONE
             table:
                 input format: org.apache.hadoop.mapred.SequenceFileInputFormat
                 output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
@@ -2830,9 +2830,9 @@ POSTHOOK: type: QUERY
 POSTHOOK: Input: default@table_change_lower_to_higher_numeric_group_float
 #### A masked pattern was here ####
 insert_num	c1	c2	b
-1	-29.076400756835938	-29.076400000000000000	original
+1	-29.0764	-29.076400000000000000	original
 10	1.7	17.888800000000000000	new
-2	753.7028198242188	753.702800000000000000	original
+2	753.7028	753.702800000000000000	original
 3	-5000.0	-5000.000000000000000000	original
 4	5.2927712E7	52927712.000000000000000000	original
 5	7.74	22.300000000000000000	new
