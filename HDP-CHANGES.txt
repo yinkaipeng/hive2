@@ -31,6 +31,8 @@ BUG FIXES
     HIVE-13391 : add an option to LLAP to use keytab to authenticate to read data
     HIVE-13930: upgrade Hive to latest Hadoop version
     HIVE-13909 : upgrade ACLs in LLAP registry when the cluster is upgraded to secure
+    HIVE-14349 : Vectorization: LIKE should anchor the regexes 
+    
 
 INTERNAL FIXES (NO APACHE JIRA)
     MHIVE-830: dbType "azuredb" not supported in HDP 2.5 hive metastore initSchema
