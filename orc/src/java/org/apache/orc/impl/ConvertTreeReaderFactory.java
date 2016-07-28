@@ -2813,8 +2813,7 @@ public class ConvertTreeReaderFactory extends TreeReaderFactory {
     }
   }
 
-  public static boolean canConvert(TypeDescription fileType, TypeDescription readerType)
-    throws IOException {
+  public static boolean canConvert(TypeDescription fileType, TypeDescription readerType) {
 
     Category readerTypeCategory = readerType.getCategory();
 
