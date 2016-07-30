@@ -123,7 +123,7 @@ STAGE PLANS:
             partition values:
               d_date_sk 2416945
             properties:
-              COLUMN_STATS_ACCURATE {"COLUMN_STATS":{"d_date":"true"},"BASIC_STATS":"true"}
+              COLUMN_STATS_ACCURATE {"BASIC_STATS":"true","COLUMN_STATS":{"d_date":"true"}}
               bucket_count -1
               columns d_date
               columns.comments 
@@ -166,7 +166,7 @@ STAGE PLANS:
             partition values:
               d_date_sk 2416946
             properties:
-              COLUMN_STATS_ACCURATE {"COLUMN_STATS":{"d_date":"true"},"BASIC_STATS":"true"}
+              COLUMN_STATS_ACCURATE {"BASIC_STATS":"true","COLUMN_STATS":{"d_date":"true"}}
               bucket_count -1
               columns d_date
               columns.comments 
@@ -209,7 +209,7 @@ STAGE PLANS:
             partition values:
               d_date_sk 2416947
             properties:
-              COLUMN_STATS_ACCURATE {"COLUMN_STATS":{"d_date":"true"},"BASIC_STATS":"true"}
+              COLUMN_STATS_ACCURATE {"BASIC_STATS":"true","COLUMN_STATS":{"d_date":"true"}}
               bucket_count -1
               columns d_date
               columns.comments 
