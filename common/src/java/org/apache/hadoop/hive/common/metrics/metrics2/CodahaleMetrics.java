@@ -34,7 +34,7 @@ import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.hive.common.util.HadoopMetrics2Reporter;
+import com.github.joshelser.dropwizard.metrics.hadoop.HadoopMetrics2Reporter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.cache.CacheBuilder;
