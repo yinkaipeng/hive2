@@ -596,7 +596,8 @@ public class TestDbNotificationListener {
 
    }
 
-  @Test
+  //@Test
+  // Disable the tests, details in HIVE-14399
   public void cleanupNotifs() throws Exception {
     Database db = new Database("cleanup1","no description","file:/tmp", emptyParameters);
     msClient.createDatabase(db);
