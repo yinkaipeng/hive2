@@ -2,6 +2,7 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 ===================================================================
 
 BUG FIXES
+    HIVE-14392. llap daemons should try using YARN local dirs, if available
     HIVE-14364. Update timeouts for llap comparator tests.
     HIVE-14224: LLAP: Rename query specific log files when a query completes execution.
     HIVE-14230: Hadoop23Shims.cloneUgi() doesn't add credentials from original UGI
