@@ -36,6 +36,7 @@ import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.tez.runtime.api.InputInitializerContext;
 import org.apache.tez.runtime.api.events.InputInitializerEvent;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestDynamicPartitionPruner {
@@ -125,6 +126,7 @@ public class TestDynamicPartitionPruner {
     }
   }
 
+  @Ignore // BUG-63725
   @Test(timeout = 5000)
   public void testSingleSourceMultipleFiltersOrdering1() throws InterruptedException, SerDeException {
     InputInitializerContext mockInitContext = mock(InputInitializerContext.class);
