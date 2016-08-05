@@ -536,6 +536,7 @@
                   queryDirectory="${basedir}/${hive.path.to.root}/ql/src/test/queries/clientpositive/"
                   queryFile="${qfile}"
                   includeQueryFile="${minillap.query.files},${minillap.shared.query.files}"
+                  excludeQueryFile="orc_llap_counters.q"
                   queryFileRegex="${qfile_regex}"
                   clusterMode="llap"
                   runDisabled="${run_disabled}"
