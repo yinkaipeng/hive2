@@ -1,6 +1,10 @@
-PREHOOK: query: drop table float_text
+PREHOOK: query: -- SORT_QUERY_RESULTS
+
+drop table float_text
 PREHOOK: type: DROPTABLE
-POSTHOOK: query: drop table float_text
+POSTHOOK: query: -- SORT_QUERY_RESULTS
+
+drop table float_text
 POSTHOOK: type: DROPTABLE
 PREHOOK: query: create table float_text(f float)
 PREHOOK: type: CREATETABLE
@@ -36,8 +40,8 @@ POSTHOOK: query: select f from float_text
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@float_text
 #### A masked pattern was here ####
-74.72
 0.22
+74.72
 PREHOOK: query: alter table float_text change column f f double
 PREHOOK: type: ALTERTABLE_RENAMECOL
 PREHOOK: Input: default@float_text
@@ -54,8 +58,8 @@ POSTHOOK: query: select f from float_text
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@float_text
 #### A masked pattern was here ####
-74.72
 0.22
+74.72
 PREHOOK: query: select f from float_text where f=74.72
 PREHOOK: type: QUERY
 PREHOOK: Input: default@float_text
@@ -90,8 +94,8 @@ POSTHOOK: query: select f from float_text
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@float_text
 #### A masked pattern was here ####
-74.72000
 0.22000
+74.72000
 PREHOOK: query: select f from float_text where f=74.72
 PREHOOK: type: QUERY
 PREHOOK: Input: default@float_text
@@ -135,8 +139,8 @@ POSTHOOK: query: select f from float_orc
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@float_orc
 #### A masked pattern was here ####
-74.72
 0.22
+74.72
 PREHOOK: query: alter table float_orc change column f f double
 PREHOOK: type: ALTERTABLE_RENAMECOL
 PREHOOK: Input: default@float_orc
@@ -153,8 +157,8 @@ POSTHOOK: query: select f from float_orc
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@float_orc
 #### A masked pattern was here ####
-74.72
 0.22
+74.72
 PREHOOK: query: select f from float_orc where f=74.72
 PREHOOK: type: QUERY
 PREHOOK: Input: default@float_orc
@@ -207,8 +211,8 @@ POSTHOOK: query: select f from float_orc
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@float_orc
 #### A masked pattern was here ####
-74.72000
 0.22000
+74.72000
 PREHOOK: query: select f from float_orc where f=74.72
 PREHOOK: type: QUERY
 PREHOOK: Input: default@float_orc
