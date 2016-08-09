@@ -2,6 +2,7 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 ===================================================================
 
 BUG FIXES
+    HIVE-14439. LlapTaskScheduler should try scheduling tasks when a node is disabled.
     HIVE-14421. FS.deleteOnExit holds references to _tmp_space.db files.
     HIVE-14245. NoClassDefFoundError when starting LLAP daemon.
     HIVE-14403. LLAP node specific preemption will only preempt once on a node per AM.
