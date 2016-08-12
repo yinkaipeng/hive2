@@ -2,7 +2,8 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 ===================================================================
 
 BUG FIXES
-
+    
+    HIVE-14445: upgrade maven surefire to 2.19.1
     HIVE-15437: avro tables join fails when - tbl join tbl_postfix (Yongzhi Chen, reviewed by Chaoyu Tang)
     : HIVE-15589 : Flaky org.apache.hadoop.hive.ql.lockmgr.TestDbTxnManager.testHeartbeater (Wei Zheng)
     HIVE-15355: Concurrency issues during parallel moveFile due to HDFSUtils.setFullFileStatus (Vihang Karajgaonkar, reviewed by Sergio Pena and Sahil Takiar)
