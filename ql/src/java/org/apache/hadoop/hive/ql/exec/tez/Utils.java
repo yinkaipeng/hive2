@@ -39,7 +39,7 @@ public class Utils {
       serviceRegistry = LlapRegistryService.getClient(conf);
 
       Collection<ServiceInstance> serviceInstances =
-          serviceRegistry.getInstances().getAllInstancesOrdered();
+          serviceRegistry.getInstances().getAllInstancesOrdered(true);
       String[] locations = new String[serviceInstances.size()];
       int i = 0;
       for (ServiceInstance serviceInstance : serviceInstances) {
