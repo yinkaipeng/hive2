@@ -33,6 +33,7 @@ import org.apache.hadoop.hive.common.classification.RetrySemantics;
 import org.apache.hadoop.hive.metastore.DatabaseProduct;
 import org.apache.hadoop.hive.metastore.HouseKeeperService;
 import org.apache.hadoop.hive.metastore.Warehouse;
+import org.apache.hadoop.hive.metastore.DatabaseProduct;
 
 import org.apache.hadoop.hive.metastore.tools.SQLGenerator;
 import org.slf4j.Logger;
@@ -58,8 +59,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
-
-import static org.apache.hadoop.hive.metastore.DatabaseProduct.determineDatabaseProduct;
 
 /**
  * A handler to answer transaction related calls that come into the metastore
@@ -268,7 +267,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
             exceed (size of connPool + MUTEX_KEY.values().length - 1).*/
           connPoolMutex = setupJdbcConnectionPool(conf, maxPoolSize + MUTEX_KEY.values().length, getConnectionTimeoutMs);
           dbConn = getDbConn(Connection.TRANSACTION_READ_COMMITTED);
-          dbProduct = determineDatabaseProduct(dbConn.getMetaData().getDatabaseProductName());
+          dbProduct = DatabaseProduct.determineDatabaseProduct(dbConn.getMetaData().getDatabaseProductName());
           sqlGenerator = new SQLGenerator(dbProduct, conf);
         } catch (SQLException e) {
           String msg = "Unable to instantiate JDBC connection pooling, " + e.getMessage();
@@ -2023,12 +2022,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
       if(dbProduct == null) {
         throw new IllegalStateException("DB Type not determined yet.");
       }
-      if (e instanceof SQLTransactionRollbackException ||
-        ((dbProduct == DatabaseProduct.MYSQL || dbProduct == DatabaseProduct.POSTGRES ||
-          dbProduct == DatabaseProduct.SQLSERVER) && e.getSQLState().equals("40001")) ||
-        (dbProduct == DatabaseProduct.POSTGRES && e.getSQLState().equals("40P01")) ||
-        (dbProduct == DatabaseProduct.ORACLE && (e.getMessage().contains("deadlock detected")
-          || e.getMessage().contains("can't serialize access for this transaction")))) {
+      if (DatabaseProduct.isDeadlock(dbProduct, e)) {
         if (deadlockCnt++ < ALLOWED_REPEATED_DEADLOCKS) {
           long waitInterval = deadlockRetryInterval * deadlockCnt;
           LOG.warn("Deadlock detected in " + caller + ". Will wait " + waitInterval +
@@ -2131,6 +2125,23 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
       identifierQuoteString = conn.getMetaData().getIdentifierQuoteString();
     }
     return identifierQuoteString;
+  }
+
+  private void determineDatabaseProduct(Connection conn) {
+    if (dbProduct != null) return;
+    try {
+      String s = conn.getMetaData().getDatabaseProductName();
+      dbProduct = DatabaseProduct.determineDatabaseProduct(s);
+      if (dbProduct == DatabaseProduct.OTHER) {
+        String msg = "Unrecognized database product name <" + s + ">";
+        LOG.error(msg);
+        throw new IllegalStateException(msg);
+      }
+    } catch (SQLException e) {
+      String msg = "Unable to get database product name";
+      LOG.error(msg, e);
+      throw new IllegalStateException(msg, e);
+    }
   }
 
   private static class LockInfo {
