@@ -330,6 +330,12 @@
           <include>package.jdo</include>
         </includes>
       </resource>
+      <resource>
+        <directory>${basedir}/src/main/resources</directory>
+        <includes>
+          <include>plugin.xml</include>
+        </includes>
+      </resource>
     </resources>
     <plugins>
       <!-- plugins are always listed in sorted order by groupId, artifectId -->
@@ -345,6 +351,27 @@
         </executions>
         <configuration>
           <sourceDirectory>${basedir}/src/java</sourceDirectory>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>${maven.jar.plugin.version}</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+            <manifestEntries>
+              <Bundle-ManifestVersion>2</Bundle-ManifestVersion>
+              <Bundle-Name>Apache Hive MSSQLServer DataNucleus plug-in</Bundle-Name>
+              <Bundle-SymbolicName>org.apache.hadoop.hive.metastore;singleton:=true</Bundle-SymbolicName>
+              <Bundle-Vendor>Apache Hive</Bundle-Vendor>
+              <Bundle-Version>${project.version}</Bundle-Version>
+              <Bundle-Localization>plugin</Bundle-Localization>
+              <Require-Bundle>org.datanucleus.store.rdbms</Require-Bundle>
+            </manifestEntries>
+          </archive>
         </configuration>
       </plugin>
       <plugin>
