@@ -4478,7 +4478,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       dbName = dbName.toLowerCase();
       tableName = tableName.toLowerCase();
       colName = colName.toLowerCase();
-      startFunction("get_column_statistics_by_table: db=" + dbName + " table=" + tableName +
+      startFunction("get_column_statistics_by_table", ": db=" + dbName + " table=" + tableName +
                     " column=" + colName);
       ColumnStatistics statsObj = null;
       try {
@@ -4489,7 +4489,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         }
         return statsObj;
       } finally {
-        endFunction("get_column_statistics_by_table: ", statsObj != null, null, tableName);
+        endFunction("get_column_statistics_by_table", statsObj != null, null, tableName);
       }
     }
 
@@ -4498,7 +4498,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         throws MetaException, NoSuchObjectException, TException {
       String dbName = request.getDbName().toLowerCase();
       String tblName = request.getTblName().toLowerCase();
-      startFunction("get_table_statistics_req: db=" + dbName + " table=" + tblName);
+      startFunction("get_table_statistics_req", ": db=" + dbName + " table=" + tblName);
       TableStatsResult result = null;
       List<String> lowerCaseColNames = new ArrayList<String>(request.getColNames().size());
       for (String colName : request.getColNames()) {
@@ -4509,7 +4509,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         result = new TableStatsResult((cs == null || cs.getStatsObj() == null)
             ? Lists.<ColumnStatisticsObj>newArrayList() : cs.getStatsObj());
       } finally {
-        endFunction("get_table_statistics_req: ", result == null, null, tblName);
+        endFunction("get_table_statistics_req", result == null, null, tblName);
       }
       return result;
     }
@@ -4522,8 +4522,9 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       tableName = tableName.toLowerCase();
       colName = colName.toLowerCase();
       String convertedPartName = lowerCaseConvertPartName(partName);
-      startFunction("get_column_statistics_by_partition: db=" + dbName + " table=" + tableName +
-          " partition=" + convertedPartName + " column=" + colName);
+      startFunction("get_column_statistics_by_partition",
+              ": db=" + dbName + " table=" + tableName
+              + " partition=" + convertedPartName + " column=" + colName);
       ColumnStatistics statsObj = null;
 
       try {
@@ -4535,7 +4536,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         }
         statsObj = list.get(0);
       } finally {
-        endFunction("get_column_statistics_by_partition: ", statsObj != null, null, tableName);
+        endFunction("get_column_statistics_by_partition", statsObj != null, null, tableName);
       }
       return statsObj;
     }
@@ -4545,7 +4546,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         throws MetaException, NoSuchObjectException, TException {
       String dbName = request.getDbName().toLowerCase();
       String tblName = request.getTblName().toLowerCase();
-      startFunction("get_partitions_statistics_req: db=" + dbName + " table=" + tblName);
+      startFunction("get_partitions_statistics_req", ": db=" + dbName + " table=" + tblName);
 
       PartitionsStatsResult result = null;
       List<String> lowerCaseColNames = new ArrayList<String>(request.getColNames().size());
@@ -4566,7 +4567,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         }
         result = new PartitionsStatsResult(map);
       } finally {
-        endFunction("get_partitions_statistics_req: ", result == null, null, tblName);
+        endFunction("get_partitions_statistics_req", result == null, null, tblName);
       }
       return result;
     }
@@ -4590,11 +4591,11 @@ public class HiveMetaStore extends ThriftHiveMetastore {
 
       List<ColumnStatisticsObj> statsObjs =  colStats.getStatsObj();
 
+      startFunction("write_column_statistics", ":  db=" + dbName
+          + " table=" + tableName + " column=" + colName);
       for (ColumnStatisticsObj statsObj:statsObjs) {
         colName = statsObj.getColName().toLowerCase();
         statsObj.setColName(colName);
-        startFunction("write_column_statistics:  db=" + dbName + " table=" + tableName +
-          " column=" + colName);
       }
 
      colStats.setStatsDesc(statsDesc);
@@ -4606,7 +4607,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         ret = getMS().updateTableColumnStatistics(colStats);
         return ret;
       } finally {
-        endFunction("write_column_statistics: ", ret != false, null, tableName);
+        endFunction("write_column_statistics", ret != false, null, tableName);
       }
     }
 
@@ -4631,11 +4632,12 @@ public class HiveMetaStore extends ThriftHiveMetastore {
 
       List<ColumnStatisticsObj> statsObjs =  colStats.getStatsObj();
 
+      startFunction("write_partition_column_statistics",
+          ":  db=" + dbName + " table=" + tableName
+              + " part=" + partName + "column=" + colName);
       for (ColumnStatisticsObj statsObj:statsObjs) {
         colName = statsObj.getColName().toLowerCase();
         statsObj.setColName(colName);
-        startFunction("write_partition_column_statistics:  db=" + dbName + " table=" + tableName +
-            " part=" + partName + "column=" + colName);
       }
 
       colStats.setStatsDesc(statsDesc);
@@ -4651,7 +4653,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         ret = getMS().updatePartitionColumnStatistics(colStats, partVals);
         return ret;
       } finally {
-        endFunction("write_partition_column_statistics: ", ret != false, null, tableName);
+        endFunction("write_partition_column_statistics", ret != false, null, tableName);
       }
     }
 
@@ -4673,8 +4675,9 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         colName = colName.toLowerCase();
       }
       String convertedPartName = lowerCaseConvertPartName(partName);
-      startFunction("delete_column_statistics_by_partition: db=" + dbName + " table=" + tableName +
-                    " partition=" + convertedPartName + " column=" + colName);
+      startFunction("delete_column_statistics_by_partition",": db=" + dbName
+          + " table=" + tableName + " partition=" + convertedPartName
+          + " column=" + colName);
       boolean ret = false;
 
       try {
@@ -4682,7 +4685,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         ret = getMS().deletePartitionColumnStatistics(dbName, tableName,
                                                       convertedPartName, partVals, colName);
       } finally {
-        endFunction("delete_column_statistics_by_partition: ", ret != false, null, tableName);
+        endFunction("delete_column_statistics_by_partition", ret != false, null, tableName);
       }
       return ret;
     }
@@ -4697,14 +4700,14 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       if (colName != null) {
         colName = colName.toLowerCase();
       }
-      startFunction("delete_column_statistics_by_table: db=" + dbName + " table=" + tableName +
-                    " column=" + colName);
+      startFunction("delete_column_statistics_by_table", ": db=" + dbName
+          + " table=" + tableName + " column=" + colName);
 
       boolean ret = false;
       try {
         ret = getMS().deleteTableColumnStatistics(dbName, tableName, colName);
       } finally {
-        endFunction("delete_column_statistics_by_table: ", ret != false, null, tableName);
+        endFunction("delete_column_statistics_by_table", ret != false, null, tableName);
       }
       return ret;
     }
@@ -6055,7 +6058,8 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         throws NoSuchObjectException, MetaException, TException {
       String dbName = request.getDbName().toLowerCase();
       String tblName = request.getTblName().toLowerCase();
-      startFunction("get_aggr_stats_for: db=" + request.getDbName() + " table=" + request.getTblName());
+      startFunction("get_aggr_stats_for", ": db=" + request.getDbName()
+          + " table=" + request.getTblName());
 
       List<String> lowerCaseColNames = new ArrayList<String>(request.getColNames().size());
       for (String colName : request.getColNames()) {
@@ -6072,7 +6076,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
             lowerCaseColNames));
         return aggrStats;
       } finally {
-          endFunction("get_partitions_statistics_req: ", aggrStats == null, null, request.getTblName());
+          endFunction("get_aggr_stats_for", aggrStats == null, null, request.getTblName());
       }
 
     }
