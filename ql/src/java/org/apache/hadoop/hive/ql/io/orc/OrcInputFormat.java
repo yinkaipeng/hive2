@@ -1110,7 +1110,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
     }
 
     public boolean isBlocking() {
-      return ppdResult != null;
+      return true;
     }
 
     Path getPath() {
