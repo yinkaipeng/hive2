@@ -4,20 +4,23 @@ POSTHOOK: query: DROP TABLE IF EXISTS ctas_blobstore_table_src
 POSTHOOK: type: DROPTABLE
 #### A masked pattern was here ####
 PREHOOK: type: CREATETABLE
-PREHOOK: Input: ### test.blobstore.path ###/ctas_blobstore_table_src
+#### A masked pattern was here ####
 PREHOOK: Output: database:default
 PREHOOK: Output: default@ctas_blobstore_table_src
 #### A masked pattern was here ####
 POSTHOOK: type: CREATETABLE
-POSTHOOK: Input: ### test.blobstore.path ###/ctas_blobstore_table_src
+#### A masked pattern was here ####
 POSTHOOK: Output: database:default
 POSTHOOK: Output: default@ctas_blobstore_table_src
 PREHOOK: query: INSERT INTO TABLE ctas_blobstore_table_src VALUES (1), (2), (3)
 PREHOOK: type: QUERY
+PREHOOK: Input: default@values__tmp__table__1
 PREHOOK: Output: default@ctas_blobstore_table_src
 POSTHOOK: query: INSERT INTO TABLE ctas_blobstore_table_src VALUES (1), (2), (3)
 POSTHOOK: type: QUERY
+POSTHOOK: Input: default@values__tmp__table__1
 POSTHOOK: Output: default@ctas_blobstore_table_src
+POSTHOOK: Lineage: ctas_blobstore_table_src.col EXPRESSION [(values__tmp__table__1)values__tmp__table__1.FieldSchema(name:tmp_values_col1, type:string, comment:), ]
 PREHOOK: query: DROP TABLE IF EXISTS ctas_hdfs_table_src
 PREHOOK: type: DROPTABLE
 POSTHOOK: query: DROP TABLE IF EXISTS ctas_hdfs_table_src
@@ -32,16 +35,16 @@ POSTHOOK: Output: database:default
 POSTHOOK: Output: default@ctas_hdfs_table_src
 PREHOOK: query: INSERT INTO TABLE ctas_hdfs_table_src VALUES (1), (2), (3)
 PREHOOK: type: QUERY
+PREHOOK: Input: default@values__tmp__table__2
 PREHOOK: Output: default@ctas_hdfs_table_src
 POSTHOOK: query: INSERT INTO TABLE ctas_hdfs_table_src VALUES (1), (2), (3)
 POSTHOOK: type: QUERY
+POSTHOOK: Input: default@values__tmp__table__2
 POSTHOOK: Output: default@ctas_hdfs_table_src
 POSTHOOK: Lineage: ctas_hdfs_table_src.col EXPRESSION [(values__tmp__table__2)values__tmp__table__2.FieldSchema(name:tmp_values_col1, type:string, comment:), ]
-PREHOOK: query: -- Test select from a Blobstore and write to HDFS
-DROP TABLE IF EXISTS ctas_hdfs_table_dst
+PREHOOK: query: DROP TABLE IF EXISTS ctas_hdfs_table_dst
 PREHOOK: type: DROPTABLE
-POSTHOOK: query: -- Test select from a Blobstore and write to HDFS
-DROP TABLE IF EXISTS ctas_hdfs_table_dst
+POSTHOOK: query: DROP TABLE IF EXISTS ctas_hdfs_table_dst
 POSTHOOK: type: DROPTABLE
 PREHOOK: query: EXPLAIN EXTENDED CREATE TABLE ctas_hdfs_table_dst AS SELECT * FROM ctas_blobstore_table_src
 PREHOOK: type: CREATETABLE_AS_SELECT
@@ -92,9 +95,9 @@ STAGE PLANS:
                 GatherStats: true
                 MultiFileSpray: false
       Path -> Alias:
-        ### test.blobstore.path ###/ctas_blobstore_table_src [ctas_blobstore_table_src]
+#### A masked pattern was here ####
       Path -> Partition:
-        ### test.blobstore.path ###/ctas_blobstore_table_src 
+#### A masked pattern was here ####
           Partition
             base file name: ctas_blobstore_table_src
             input format: org.apache.hadoop.mapred.TextInputFormat
@@ -105,7 +108,6 @@ STAGE PLANS:
               columns.comments 
               columns.types int
 #### A masked pattern was here ####
-              location ### test.blobstore.path ###/ctas_blobstore_table_src
               name default.ctas_blobstore_table_src
               numFiles 1
               serialization.ddl struct ctas_blobstore_table_src { i32 col}
@@ -123,7 +125,6 @@ STAGE PLANS:
                 columns.comments 
                 columns.types int
 #### A masked pattern was here ####
-                location ### test.blobstore.path ###/ctas_blobstore_table_src
                 name default.ctas_blobstore_table_src
                 numFiles 1
                 serialization.ddl struct ctas_blobstore_table_src { i32 col}
@@ -135,7 +136,7 @@ STAGE PLANS:
               name: default.ctas_blobstore_table_src
             name: default.ctas_blobstore_table_src
       Truncated Path -> Alias:
-        ### test.blobstore.path ###/ctas_blobstore_table_src [ctas_blobstore_table_src]
+#### A masked pattern was here ####
 
   Stage: Stage-7
     Conditional Operator
@@ -301,11 +302,9 @@ POSTHOOK: Input: default@ctas_hdfs_table_dst
 1
 2
 3
-PREHOOK: query: -- Test select from HDFS and write to a Blobstore
-DROP TABLE IF EXISTS ctas_blobstore_table_dst
+PREHOOK: query: DROP TABLE IF EXISTS ctas_blobstore_table_dst
 PREHOOK: type: DROPTABLE
-POSTHOOK: query: -- Test select from HDFS and write to a Blobstore
-DROP TABLE IF EXISTS ctas_blobstore_table_dst
+POSTHOOK: query: DROP TABLE IF EXISTS ctas_blobstore_table_dst
 POSTHOOK: type: DROPTABLE
 #### A masked pattern was here ####
 PREHOOK: type: CREATETABLE_AS_SELECT
@@ -315,10 +314,10 @@ STAGE DEPENDENCIES:
   Stage-1 is a root stage
   Stage-7 depends on stages: Stage-1 , consists of Stage-4, Stage-3, Stage-5
   Stage-4
-  Stage-8 depends on stages: Stage-0, Stage-4
+  Stage-0 depends on stages: Stage-4, Stage-3, Stage-6
+  Stage-8 depends on stages: Stage-0
   Stage-2 depends on stages: Stage-8
   Stage-3
-  Stage-0 depends on stages: Stage-3, Stage-6
   Stage-5
   Stage-6 depends on stages: Stage-5
 
@@ -337,10 +336,10 @@ STAGE PLANS:
               File Output Operator
                 compressed: false
                 GlobalTableId: 1
-                directory: ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
                 NumFilesPerFileSink: 1
                 Statistics: Num rows: 3 Data size: 3 Basic stats: COMPLETE Column stats: NONE
-                Stats Publishing Key Prefix: ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
                 table:
                     input format: org.apache.hadoop.mapred.TextInputFormat
                     output format: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
@@ -412,22 +411,27 @@ STAGE PLANS:
     Move Operator
       files:
           hdfs directory: true
-          source: ### BLOBSTORE_STAGING_PATH ###
-          destination: ### test.blobstore.path ###/ctas_blobstore_table_dst
+#### A masked pattern was here ####
+
+  Stage: Stage-0
+    Move Operator
+      files:
+          hdfs directory: true
+#### A masked pattern was here ####
 
   Stage: Stage-8
       Create Table Operator:
         Create Table
           columns: col int
           input format: org.apache.hadoop.mapred.TextInputFormat
-          location: ### test.blobstore.path ###/ctas_blobstore_table_dst/
+#### A masked pattern was here ####
           output format: org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat
           serde name: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
           name: default.ctas_blobstore_table_dst
 
   Stage: Stage-2
     Stats-Aggr Operator
-      Stats Aggregation Key Prefix: ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
 
   Stage: Stage-3
     Map Reduce
@@ -437,7 +441,7 @@ STAGE PLANS:
             File Output Operator
               compressed: false
               GlobalTableId: 0
-              directory: ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
               NumFilesPerFileSink: 1
               table:
                   input format: org.apache.hadoop.mapred.TextInputFormat
@@ -454,9 +458,9 @@ STAGE PLANS:
               GatherStats: false
               MultiFileSpray: false
       Path -> Alias:
-        ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
       Path -> Partition:
-        ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
           Partition
             base file name: -ext-10004
             input format: org.apache.hadoop.mapred.TextInputFormat
@@ -481,14 +485,7 @@ STAGE PLANS:
               name: default.ctas_blobstore_table_dst
             name: default.ctas_blobstore_table_dst
       Truncated Path -> Alias:
-        ### BLOBSTORE_STAGING_PATH ###
-
-  Stage: Stage-0
-    Move Operator
-      files:
-          hdfs directory: true
-          source: ### BLOBSTORE_STAGING_PATH ###
-          destination: ### test.blobstore.path ###/ctas_blobstore_table_dst
+#### A masked pattern was here ####
 
   Stage: Stage-5
     Map Reduce
@@ -498,7 +495,7 @@ STAGE PLANS:
             File Output Operator
               compressed: false
               GlobalTableId: 0
-              directory: ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
               NumFilesPerFileSink: 1
               table:
                   input format: org.apache.hadoop.mapred.TextInputFormat
@@ -515,9 +512,9 @@ STAGE PLANS:
               GatherStats: false
               MultiFileSpray: false
       Path -> Alias:
-        ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
       Path -> Partition:
-        ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
           Partition
             base file name: -ext-10004
             input format: org.apache.hadoop.mapred.TextInputFormat
@@ -542,14 +539,13 @@ STAGE PLANS:
               name: default.ctas_blobstore_table_dst
             name: default.ctas_blobstore_table_dst
       Truncated Path -> Alias:
-        ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
 
   Stage: Stage-6
     Move Operator
       files:
           hdfs directory: true
-          source: ### BLOBSTORE_STAGING_PATH ###
-          destination: ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
 
 PREHOOK: query: CREATE TABLE ctas_blobstore_table_dst AS SELECT * FROM ctas_hdfs_table_src
 PREHOOK: type: CREATETABLE_AS_SELECT
@@ -573,13 +569,11 @@ POSTHOOK: Input: default@ctas_blobstore_table_dst
 1
 2
 3
-PREHOOK: query: -- Test select from a Blobstore and write to a Blobstore
-DROP TABLE IF EXISTS ctas_blobstore_table_dst
+PREHOOK: query: DROP TABLE IF EXISTS ctas_blobstore_table_dst
 PREHOOK: type: DROPTABLE
 PREHOOK: Input: default@ctas_blobstore_table_dst
 PREHOOK: Output: default@ctas_blobstore_table_dst
-POSTHOOK: query: -- Test select from a Blobstore and write to a Blobstore
-DROP TABLE IF EXISTS ctas_blobstore_table_dst
+POSTHOOK: query: DROP TABLE IF EXISTS ctas_blobstore_table_dst
 POSTHOOK: type: DROPTABLE
 POSTHOOK: Input: default@ctas_blobstore_table_dst
 POSTHOOK: Output: default@ctas_blobstore_table_dst
@@ -591,10 +585,10 @@ STAGE DEPENDENCIES:
   Stage-1 is a root stage
   Stage-7 depends on stages: Stage-1 , consists of Stage-4, Stage-3, Stage-5
   Stage-4
-  Stage-8 depends on stages: Stage-0, Stage-4
+  Stage-0 depends on stages: Stage-4, Stage-3, Stage-6
+  Stage-8 depends on stages: Stage-0
   Stage-2 depends on stages: Stage-8
   Stage-3
-  Stage-0 depends on stages: Stage-3, Stage-6
   Stage-5
   Stage-6 depends on stages: Stage-5
 
@@ -613,10 +607,10 @@ STAGE PLANS:
               File Output Operator
                 compressed: false
                 GlobalTableId: 1
-                directory: ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
                 NumFilesPerFileSink: 1
                 Statistics: Num rows: 1 Data size: 6 Basic stats: COMPLETE Column stats: NONE
-                Stats Publishing Key Prefix: ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
                 table:
                     input format: org.apache.hadoop.mapred.TextInputFormat
                     output format: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
@@ -632,9 +626,9 @@ STAGE PLANS:
                 GatherStats: true
                 MultiFileSpray: false
       Path -> Alias:
-        ### test.blobstore.path ###/ctas_blobstore_table_src [ctas_blobstore_table_src]
+#### A masked pattern was here ####
       Path -> Partition:
-        ### test.blobstore.path ###/ctas_blobstore_table_src 
+#### A masked pattern was here ####
           Partition
             base file name: ctas_blobstore_table_src
             input format: org.apache.hadoop.mapred.TextInputFormat
@@ -645,7 +639,6 @@ STAGE PLANS:
               columns.comments 
               columns.types int
 #### A masked pattern was here ####
-              location ### test.blobstore.path ###/ctas_blobstore_table_src
               name default.ctas_blobstore_table_src
               numFiles 1
               serialization.ddl struct ctas_blobstore_table_src { i32 col}
@@ -663,7 +656,6 @@ STAGE PLANS:
                 columns.comments 
                 columns.types int
 #### A masked pattern was here ####
-                location ### test.blobstore.path ###/ctas_blobstore_table_src
                 name default.ctas_blobstore_table_src
                 numFiles 1
                 serialization.ddl struct ctas_blobstore_table_src { i32 col}
@@ -675,7 +667,7 @@ STAGE PLANS:
               name: default.ctas_blobstore_table_src
             name: default.ctas_blobstore_table_src
       Truncated Path -> Alias:
-        ### test.blobstore.path ###/ctas_blobstore_table_src [ctas_blobstore_table_src]
+#### A masked pattern was here ####
 
   Stage: Stage-7
     Conditional Operator
@@ -684,22 +676,27 @@ STAGE PLANS:
     Move Operator
       files:
           hdfs directory: true
-          source: ### BLOBSTORE_STAGING_PATH ###
-          destination: ### test.blobstore.path ###/ctas_blobstore_table_dst
+#### A masked pattern was here ####
+
+  Stage: Stage-0
+    Move Operator
+      files:
+          hdfs directory: true
+#### A masked pattern was here ####
 
   Stage: Stage-8
       Create Table Operator:
         Create Table
           columns: col int
           input format: org.apache.hadoop.mapred.TextInputFormat
-          location: ### test.blobstore.path ###/ctas_blobstore_table_dst/
+#### A masked pattern was here ####
           output format: org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat
           serde name: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
           name: default.ctas_blobstore_table_dst
 
   Stage: Stage-2
     Stats-Aggr Operator
-      Stats Aggregation Key Prefix: ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
 
   Stage: Stage-3
     Map Reduce
@@ -709,7 +706,7 @@ STAGE PLANS:
             File Output Operator
               compressed: false
               GlobalTableId: 0
-              directory: ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
               NumFilesPerFileSink: 1
               table:
                   input format: org.apache.hadoop.mapred.TextInputFormat
@@ -726,9 +723,9 @@ STAGE PLANS:
               GatherStats: false
               MultiFileSpray: false
       Path -> Alias:
-        ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
       Path -> Partition:
-        ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
           Partition
             base file name: -ext-10004
             input format: org.apache.hadoop.mapred.TextInputFormat
@@ -753,14 +750,7 @@ STAGE PLANS:
               name: default.ctas_blobstore_table_dst
             name: default.ctas_blobstore_table_dst
       Truncated Path -> Alias:
-        ### BLOBSTORE_STAGING_PATH ###
-
-  Stage: Stage-0
-    Move Operator
-      files:
-          hdfs directory: true
-          source: ### BLOBSTORE_STAGING_PATH ###
-          destination: ### test.blobstore.path ###/ctas_blobstore_table_dst
+#### A masked pattern was here ####
 
   Stage: Stage-5
     Map Reduce
@@ -770,7 +760,7 @@ STAGE PLANS:
             File Output Operator
               compressed: false
               GlobalTableId: 0
-              directory: ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
               NumFilesPerFileSink: 1
               table:
                   input format: org.apache.hadoop.mapred.TextInputFormat
@@ -787,9 +777,9 @@ STAGE PLANS:
               GatherStats: false
               MultiFileSpray: false
       Path -> Alias:
-        ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
       Path -> Partition:
-        ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
           Partition
             base file name: -ext-10004
             input format: org.apache.hadoop.mapred.TextInputFormat
@@ -814,14 +804,13 @@ STAGE PLANS:
               name: default.ctas_blobstore_table_dst
             name: default.ctas_blobstore_table_dst
       Truncated Path -> Alias:
-        ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
 
   Stage: Stage-6
     Move Operator
       files:
           hdfs directory: true
-          source: ### BLOBSTORE_STAGING_PATH ###
-          destination: ### BLOBSTORE_STAGING_PATH ###
+#### A masked pattern was here ####
 
 PREHOOK: query: CREATE TABLE ctas_blobstore_table_dst AS SELECT * FROM ctas_blobstore_table_src
 PREHOOK: type: CREATETABLE_AS_SELECT
