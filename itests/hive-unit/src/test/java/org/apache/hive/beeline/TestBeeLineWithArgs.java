@@ -925,4 +925,19 @@ public class TestBeeLineWithArgs {
 
     testScriptFile( SCRIPT_TEXT, EXPECTED_PATTERN, true, argList);
   }
+
+  /**
+   * Attempt to execute Beeline with force option to continue running script even after errors.
+   * Test for presence of an expected pattern to match the output of a valid command at the end.
+   */
+  @Test
+  public void testBeelineWithForce() throws Throwable {
+    final String SCRIPT_TEXT = "drop table does_not_exist;\ncreate table incomplete_syntax(a, string, );\n "
+            + "drop table if exists new_table;\n create table new_table(foo int, bar string);\n "
+            + "desc new_table;\n";
+    final String EXPECTED_PATTERN = "col_name[ \\|]+data_type[ \\|]+comment";
+    List<String> argList = getBaseArgs(miniHS2.getBaseJdbcURL());
+    argList.add("--force");
+    testScriptFile(SCRIPT_TEXT, EXPECTED_PATTERN, true, argList);
+  }
 }
