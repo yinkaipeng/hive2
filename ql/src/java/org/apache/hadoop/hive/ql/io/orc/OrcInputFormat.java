@@ -1072,11 +1072,13 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
     private final long blockSize;
     private final TreeMap<Long, BlockLocation> locations;
     private OrcTail orcTail;
-    private final List<OrcProto.Type> readerTypes;
+    private List<OrcProto.Type> readerTypes;
     private List<StripeInformation> stripes;
     private List<StripeStatistics> stripeStats;
     private List<OrcProto.Type> fileTypes;
-    private boolean[] readerIncluded;
+    private boolean[] included;          // The included columns from the Hive configuration.
+    private boolean[] readerIncluded;    // The included columns of the reader / file schema that
+                                         // include ACID columns if present.
     private final boolean isOriginal;
     private final List<DeltaMetaData> deltas;
     private final boolean hasBase;
@@ -1271,7 +1273,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
         if ((deltas == null || deltas.isEmpty()) && context.sarg != null) {
           String[] colNames =
               extractNeededColNames((readerTypes == null ? fileTypes : readerTypes),
-                  context.conf, readerIncluded, isOriginal);
+                  context.conf, included, isOriginal);
           if (colNames == null) {
             LOG.warn("Skipping split elimination for {} as column names is null", file.getPath());
           } else {
@@ -1393,18 +1395,26 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
       fileTypes = orcTail.getTypes();
       TypeDescription fileSchema = OrcUtils.convertTypeFromProtobuf(fileTypes, 0);
       if (readerTypes == null) {
-        readerIncluded = genIncludedColumns(fileTypes, context.conf, isOriginal);
-        evolution = new SchemaEvolution(fileSchema, readerIncluded);
+        included = genIncludedColumns(fileTypes, context.conf, isOriginal);
+        evolution = new SchemaEvolution(fileSchema, included);
+        readerIncluded = included;
       } else {
-        // The readerSchema always comes in without ACID columns.
-        readerIncluded = genIncludedColumns(readerTypes, context.conf, /* isOriginal */ true);
-        if (readerIncluded != null && !isOriginal) {
+        // The reader schema always comes in without ACID columns.
+        included = genIncludedColumns(readerTypes, context.conf, /* isOriginal */ true);
+        if (included != null && !isOriginal) {
           // We shift the include columns here because the SchemaEvolution constructor will
           // add the ACID event metadata the readerSchema...
-          readerIncluded = shiftReaderIncludedForAcid(readerIncluded);
+          readerIncluded = shiftReaderIncludedForAcid(included);
+        } else {
+          readerIncluded = included;
         }
         TypeDescription readerSchema = OrcUtils.convertTypeFromProtobuf(readerTypes, 0);
         evolution = new SchemaEvolution(fileSchema, readerSchema, readerIncluded);
+        if (!isOriginal) {
+          // The SchemaEvolution class has added the ACID metadata columns.  Let's update our
+          // readerTypes so PPD code will work correctly.
+          readerTypes = OrcUtils.getOrcTypes(evolution.getReaderSchema());
+        }
       }
       writerVersion = orcTail.getWriterVersion();
       List<OrcProto.ColumnStatistics> fileColStats = orcTail.getFooter().getStatisticsList();
@@ -1421,21 +1431,24 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
           }
         }
       }
-      projColsUncompressedSize = computeProjectionSize(fileTypes, fileColStats, fileIncluded,
-          isOriginal);
+      projColsUncompressedSize = computeProjectionSize(fileTypes, fileColStats, fileIncluded);
       if (!context.footerInSplits) {
         orcTail = null;
       }
     }
 
     private long computeProjectionSize(List<OrcProto.Type> fileTypes,
-        List<OrcProto.ColumnStatistics> stats, boolean[] fileIncluded, boolean isOriginal) {
-      final int rootIdx = getRootColumn(isOriginal);
+        List<OrcProto.ColumnStatistics> stats, boolean[] fileIncluded) {
       List<Integer> internalColIds = Lists.newArrayList();
-      if (fileIncluded != null) {
+      if (fileIncluded == null) {
+        // Add all.
+        for (int i = 0; i < fileTypes.size(); i++) {
+          internalColIds.add(i);
+        }
+      } else {
         for (int i = 0; i < fileIncluded.length; i++) {
           if (fileIncluded[i]) {
-            internalColIds.add(rootIdx + i);
+            internalColIds.add(i);
           }
         }
       }

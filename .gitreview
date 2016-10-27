@@ -1,0 +1,6 @@
+[gerrit]
+host=gerrit.eng.hortonworks.com
+port=29418
+project=hive2.git
+defaultbranch=2.5-maint
+defaultremote=hw2

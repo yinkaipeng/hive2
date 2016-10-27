@@ -863,6 +863,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     // this file.
     Path tablePath = null;
     FileSystem fs = null;
+    FSDataOutputStream out = null;
     try {
       if(dataDir == null) {
         tablePath = Warehouse.getDnsPath(new Path(ss.getTempTableSpace(), tableName), conf);
@@ -875,7 +876,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       fs = tablePath.getFileSystem(conf);
       fs.mkdirs(tablePath);
       Path dataFile = new Path(tablePath, "data_file");
-      FSDataOutputStream out = fs.create(dataFile);
+      out = fs.create(dataFile);
       List<FieldSchema> fields = new ArrayList<FieldSchema>();
 
       boolean firstRow = true;
@@ -899,7 +900,6 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         writeAsText("\n", out);
         firstRow = false;
       }
-      out.close();
 
       // Step 2, create a temp table, using the created file as the data
       StorageFormat format = new StorageFormat(conf);
@@ -923,6 +923,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         } catch (IOException swallowIt) {}
       }
       throw new SemanticException(errMsg, e);
+    } finally {
+        IOUtils.closeStream(out);
     }
 
     // Step 3, return a new subtree with a from clause built around that temp table
@@ -994,7 +996,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     // Recursively do the first phase of semantic analysis for the subquery
     QBExpr qbexpr = new QBExpr(alias);
 
-    doPhase1QBExpr(subqref, qbexpr, qb.getId(), alias);
+    doPhase1QBExpr(subqref, qbexpr, qb.getId(), alias, qb.isInsideView());
 
     // If the alias is already there then we have a conflict
     if (qb.exists(alias)) {
@@ -5157,6 +5159,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         colExprMap);
 
     int keyLength = reduceKeys.size();
+    int numOfColsRmedFromkey = grpByExprs.size() - keyLength;
 
     // add a key for reduce sink
     if (groupingSetsPresent) {
@@ -5186,7 +5189,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
           reduceSinkOutputRowResolver, outputValueColumnNames, reduceValues, colExprMap);
     } else {
       // Put partial aggregation results in reduceValues
-      int inputField = reduceKeys.size();
+      int inputField = reduceKeys.size() + numOfColsRmedFromkey;
 
       for (Map.Entry<String, ASTNode> entry : aggregationTrees.entrySet()) {
 

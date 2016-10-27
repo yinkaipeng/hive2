@@ -52,7 +52,7 @@
       <id>spark-test</id>
       <activation>
 	<property>
-          <name>!skipSparkTests</name>
+          <name>runSparkTests</name>
 	</property>
       </activation>
       <modules>

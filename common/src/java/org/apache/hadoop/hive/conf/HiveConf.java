@@ -2712,10 +2712,10 @@ public class HiveConf extends Configuration {
         "Whether the LLAP IO layer is enabled for non-vectorized queries that read inputs\n" +
         "that can be vectorized"),
     LLAP_IO_MEMORY_MODE("hive.llap.io.memory.mode", "cache",
-        new StringSet("cache", "allocator", "none"),
+        new StringSet("cache", "none"),
         "LLAP IO memory usage; 'cache' (the default) uses data and metadata cache with a\n" +
-        "custom off-heap allocator, 'allocator' uses the custom allocator without the caches,\n" +
-        "'none' doesn't use either (this mode may result in significant performance degradation)"),
+        "custom off-heap allocator, 'none' doesn't use either (this mode may result in\n" +
+        "significant performance degradation)"),
     LLAP_ALLOCATOR_MIN_ALLOC("hive.llap.io.allocator.alloc.min", "16Kb", new SizeValidator(),
         "Minimum allocation possible from LLAP buddy allocator. Allocations below that are\n" +
         "padded to minimum allocation. For ORC, should generally be the same as the expected\n" +
@@ -3048,6 +3048,11 @@ public class HiveConf extends Configuration {
        "directories that are partition-like but contain unsupported characters. 'throw' (an " +
        "exception) is the default; 'skip' will skip the invalid directories and still repair the" +
        " others; 'ignore' will skip the validation (legacy behavior, causes bugs in many cases)"),
+    HIVE_MSCK_REPAIR_BATCH_SIZE(
+        "hive.msck.repair.batch.size", 0,
+        "Batch size for the msck repair command. If the value is greater than zero, "
+            + "it will execute batch wise with the configured batch size. "
+            + "The default value is zero. Zero means it will execute directly (Not batch wise)"),
     HIVE_SERVER2_LLAP_CONCURRENT_QUERIES("hive.server2.llap.concurrent.queries", -1,
         "The number of queries allowed in parallel via llap. Negative number implies 'infinite'."),
     HIVE_TEZ_ENABLE_MEMORY_MANAGER("hive.tez.enable.memory.manager", true,

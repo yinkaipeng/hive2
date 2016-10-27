@@ -82,7 +82,10 @@
 
     <!-- To add additional exclude patterns set this property -->
     <test.excludes.additional />
-    <skip.spark.files />
+    <skip.spark.file1></skip.spark.file1>
+    <skip.spark.file2></skip.spark.file2>
+    <skip.spark.file3></skip.spark.file3>
+    <skip.spark.file4></skip.spark.file4>
 
     <!-- Plugin and Plugin Dependency Versions -->
     <ant.contrib.version>1.0b3</ant.contrib.version>
@@ -991,7 +994,10 @@
             <exclude>**/ql/exec/vector/udf/generic/*.java</exclude>
             <exclude>**/TestHiveServer2Concurrency.java</exclude>
             <exclude>${test.excludes.additional}</exclude>
-            <exclude>${skip.spark.files}</exclude>
+            <exclude>${skip.spark.file1}</exclude>
+            <exclude>${skip.spark.file2}</exclude>
+            <exclude>${skip.spark.file3}</exclude>
+            <exclude>${skip.spark.file4}</exclude>
           </excludes>
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
           <reuseForks>false</reuseForks>
@@ -1274,16 +1280,17 @@
       </properties>
     </profile>
     <profile>
-      <id>spark-test</id>
+      <id>skip-spark-test</id>
       <activation>
 	<property>
-          <name>!skipSparkTests</name>
+          <name>!runSparkTests</name>
 	</property>
       </activation>
       <properties>
-        <skip.spark.files>
-          **/ql/exec/spark/session/TestSparkSessionManagerImpl.java,**/TestMultiSessionsHS2WithLocalClusterSpark.java,**/TestJdbcWithLocalClusterSpark.java
-        </skip.spark.files>
+        <skip.spark.file1>**/TestSparkSessionManagerImpl.java</skip.spark.file1>
+        <skip.spark.file2>**/TestMultiSessionsHS2WithLocalClusterSpark.java</skip.spark.file2>
+        <skip.spark.file3>**/TestJdbcWithLocalClusterSpark.java</skip.spark.file3>
+        <skip.spark.file4>**/TestSparkClient.java</skip.spark.file4>
       </properties>
     </profile>
   </profiles>
