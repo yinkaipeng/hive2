@@ -82,10 +82,10 @@
 
     <!-- To add additional exclude patterns set this property -->
     <test.excludes.additional />
-    <skip.spark.file1></skip.spark.file1>
-    <skip.spark.file2></skip.spark.file2>
-    <skip.spark.file3></skip.spark.file3>
-    <skip.spark.file4></skip.spark.file4>
+    <skip.spark.file1 />
+    <skip.spark.file2 />
+    <skip.spark.file3 />
+    <skip.spark.file4 />
 
     <!-- Plugin and Plugin Dependency Versions -->
     <ant.contrib.version>1.0b3</ant.contrib.version>
