@@ -15,6 +15,8 @@ BUG FIXES
     HIVE-14595: TimestampWritable::setTimestamp gives wrong result when 2nd VInt exists
     HIVE-14591: HS2 is shut down unexpectedly during the startup time
     HIVE-14600: LLAP zookeeper registry failures do not fail the daemon
+    HIVE-14624: LLAP: Use FQDN when submitting work to LLAP
+    HIVE-14656: Clean up driver instance in get_splits
 
   HDP-2.5.0:
     HIVE-14436: Hive 1.2.1/Hitting "ql.Driver: FAILED: IllegalArgumentException Error: , expected at the end of 'decimal(9'" after enabling hive.optimize.skewjoin and with MR engine
