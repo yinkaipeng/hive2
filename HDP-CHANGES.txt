@@ -2,6 +2,21 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 ===================================================================
 
 BUG FIXES
+
+  HDP-2.5.3:
+    HIVE-14933: include argparse with LLAP scripts to support antique Python versions
+    HIVE-14251: Union All of different types resolves to incorrect data
+    HIVE-14922 : Add perf logging for post job completion steps
+    HIVE-14762 : Add logging while removing scratch space
+    HIVE-14659: OutputStream won't close if caught exception in funtion unparseExprForValuesClause in SemanticAnalyzer.java
+    HIVE-7239: Fix bug in HiveIndexedInputFormat implementation that causes incorrect query result when input backed by Sequence/RC files
+    HIVE-14519: Multi insert query bug
+    HIVE-14607: ORC split generation failed with exception: java.lang.ArrayIndexOutOfBoundsException: 1
+    HIVE-14595: TimestampWritable::setTimestamp gives wrong result when 2nd VInt exists
+    HIVE-14591: HS2 is shut down unexpectedly during the startup time
+    HIVE-14600: LLAP zookeeper registry failures do not fail the daemon
+
+  HDP-2.5.0:
     HIVE-14436: Hive 1.2.1/Hitting "ql.Driver: FAILED: IllegalArgumentException Error: , expected at the end of 'decimal(9'" after enabling hive.optimize.skewjoin and with MR engine
     HIVE-14439. LlapTaskScheduler should try scheduling tasks when a node is disabled.
     HIVE-14421. FS.deleteOnExit holds references to _tmp_space.db files.
