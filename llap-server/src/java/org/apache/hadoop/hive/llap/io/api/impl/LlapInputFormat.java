@@ -233,8 +233,12 @@ public class LlapInputFormat implements InputFormat<NullWritable, VectorizedRowB
         partitionValues = null;
       }
 
+      boolean isAcidScan = HiveConf.getBoolVar(jobConf, ConfVars.HIVE_TRANSACTIONAL_TABLE_SCAN);
+      TypeDescription schema = OrcInputFormat.getDesiredRowTypeDescr(
+          job, isAcidScan, Integer.MAX_VALUE);
+
       // Create the consumer of encoded data; it will coordinate decoding to CVBs.
-      rp = cvp.createReadPipeline(this, split, columnIds, sarg, columnNames, counters);
+      rp = cvp.createReadPipeline(this, split, columnIds, sarg, columnNames, counters, schema);
       feedback = rp;
       fileSchema = rp.getFileSchema();
       includedColumns = rp.getIncludedColumns();
