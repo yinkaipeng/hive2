@@ -20,6 +20,7 @@ BUG FIXES
     HIVE-14697: Can not access kerberized HS2 Web UI
     HIVE-14655: LLAP input format should escape the query string being passed to getSplits()
     HIVE-14656: Clean up driver instance in get_splits
+    HIVE-14648: LLAP: Avoid private pages in the SSD cache
 
   HDP-2.5.0:
     HIVE-14436: Hive 1.2.1/Hitting "ql.Driver: FAILED: IllegalArgumentException Error: , expected at the end of 'decimal(9'" after enabling hive.optimize.skewjoin and with MR engine
