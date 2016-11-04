@@ -3,6 +3,7 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 
 BUG FIXES
 
+    HIVE-15123: LLAP UI: The UI should work even if the cache is disabled
     HIVE-15590: add separate spnego principal config for LLAP Web UI
     HIVE-15312: reduce logging in certain places
     HIVE-15693: LLAP: cached threadpool in AMReporter creates too many threads leading to OOM
