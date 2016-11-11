@@ -61,11 +61,10 @@ public class HookContext {
   // unique id set for operation when run from HS2, base64 encoded value of
   // TExecuteStatementResp.TOperationHandle.THandleIdentifier.guid
   private final String operationId;
-  private final String sessionId;
 
   public HookContext(QueryPlan queryPlan, QueryState queryState,
       Map<String, ContentSummary> inputPathToContentSummary, String userName, String ipAddress,
-      String operationId, String sessionId) throws Exception {
+      String operationId) throws Exception {
     this.queryPlan = queryPlan;
     this.queryState = queryState;
     this.conf = queryState.getConf();
@@ -83,7 +82,6 @@ public class HookContext {
     this.userName = userName;
     this.ipAddress = ipAddress;
     this.operationId = operationId;
-    this.sessionId = sessionId;
   }
 
   public QueryPlan getQueryPlan() {
@@ -200,9 +198,5 @@ public class HookContext {
 
   public QueryState getQueryState() {
     return queryState;
-  }
-
-  public String getSessionId() {
-    return sessionId;
   }
 }
