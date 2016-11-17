@@ -77,12 +77,6 @@ public class TestStorageBasedMetastoreAuthorizationProvider extends
   }
 
   @Override
-  protected void disallowDropOnTable(String tblName, String userName, String location)
-      throws Exception {
-    setPermissions(location,"-r--r--r--");
-  }
-
-  @Override
   protected void allowDropOnDb(String dbName, String userName, String location)
       throws Exception {
     setPermissions(location,"-rwxr--r-t");

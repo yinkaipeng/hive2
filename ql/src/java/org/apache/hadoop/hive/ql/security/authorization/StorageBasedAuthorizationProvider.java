@@ -35,7 +35,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.hive.common.FileUtils;
-import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStore.HMSHandler;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.Warehouse;
@@ -178,12 +177,8 @@ public class StorageBasedAuthorizationProvider extends HiveAuthorizationProvider
 
     Path path = table.getDataLocation();
     // authorize drops if there was a drop privilege requirement, and
-    // table is not external (external table data is not dropped) or
-    // "hive.metastore.authorization.storage.check.externaltable.drop"
-    // set to true
-    if (privExtractor.hasDropPrivilege() && (table.getTableType() != TableType.EXTERNAL_TABLE ||
-        getConf().getBoolean(HiveConf.ConfVars.METASTORE_AUTHORIZATION_EXTERNALTABLE_DROP_CHECK.varname,
-        HiveConf.ConfVars.METASTORE_AUTHORIZATION_EXTERNALTABLE_DROP_CHECK.defaultBoolVal))) {
+    // table is not external (external table data is not dropped)
+    if (privExtractor.hasDropPrivilege() && table.getTableType() != TableType.EXTERNAL_TABLE) {
       checkDeletePermission(path, getConf(), authenticator.getUserName());
     }
 

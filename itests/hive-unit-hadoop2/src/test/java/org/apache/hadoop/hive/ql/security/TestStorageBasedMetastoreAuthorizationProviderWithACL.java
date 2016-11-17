@@ -208,12 +208,6 @@ public class TestStorageBasedMetastoreAuthorizationProviderWithACL
   }
 
   @Override
-  protected void disallowDropOnTable(String tblName, String userName, String location)
-      throws Exception {
-    disallowWriteAccessViaAcl(userName, location);
-  }
-
-  @Override
   protected void allowDropOnDb(String dbName, String userName, String location)
       throws Exception {
     allowWriteAccessViaAcl(userName, location);
