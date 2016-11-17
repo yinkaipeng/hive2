@@ -424,7 +424,7 @@ STAGE PLANS:
         Create Table
           columns: col int
           input format: org.apache.hadoop.mapred.TextInputFormat
-#### A masked pattern was here ####
+          location: ### test.blobstore.path ###/ctas_blobstore_table_dst/
           output format: org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat
           serde name: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
           name: default.ctas_blobstore_table_dst
@@ -689,7 +689,7 @@ STAGE PLANS:
         Create Table
           columns: col int
           input format: org.apache.hadoop.mapred.TextInputFormat
-#### A masked pattern was here ####
+          location: ### test.blobstore.path ###/ctas_blobstore_table_dst/
           output format: org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat
           serde name: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
           name: default.ctas_blobstore_table_dst
