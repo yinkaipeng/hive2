@@ -21,6 +21,19 @@ BUG FIXES
     HIVE-14655: LLAP input format should escape the query string being passed to getSplits()
     HIVE-14656: Clean up driver instance in get_splits
     HIVE-14648: LLAP: Avoid private pages in the SSD cache
+    HIVE-15099: PTFOperator.PTFInvocation didn't properly reset the input partition
+    HIVE-14959: Fix DISTINCT with windowing when CBO is enabled/disabled
+    HIVE-14805: Subquery inside a view will have the object in the subquery as the direct input
+    HIVE-14774: Canceling query using Ctrl-C in beeline might lead to stale locks
+    HIVE-14715: Hive throws NumberFormatException with query with Null value
+    HIVE-13756: Map failure attempts to delete reducer _temporary directory on multi-query pig query
+    HIVE-14457: Partitions in encryption zone are still trashed though an exception is returned
+    HIVE-14690: Query fail when hive.exec.parallel=true, with conflicting session dir
+    HIVE-12077: MSCK Repair table should fix partitions in batches
+    HIVE-14693: Some paritions will be left out when partition number is the multiple of the option hive.msck.repair.batch.size
+    HIVE-14702: LLAPIF: after a long period of inactivity, signing key may be removed from local store
+    HIVE-14621: LLAP: memory.mode = none has NPE
+    HIVE-14773: NPE aggregating column statistics for date column in partitioned table
 
   HDP-2.5.0:
     HIVE-14436: Hive 1.2.1/Hitting "ql.Driver: FAILED: IllegalArgumentException Error: , expected at the end of 'decimal(9'" after enabling hive.optimize.skewjoin and with MR engine
