@@ -34,6 +34,7 @@ BUG FIXES
     HIVE-14702: LLAPIF: after a long period of inactivity, signing key may be removed from local store
     HIVE-14621: LLAP: memory.mode = none has NPE
     HIVE-14773: NPE aggregating column statistics for date column in partitioned table
+    HIVE-15137: metastore add partitions background thread should use current username
 
   HDP-2.5.0:
     HIVE-14436: Hive 1.2.1/Hitting "ql.Driver: FAILED: IllegalArgumentException Error: , expected at the end of 'decimal(9'" after enabling hive.optimize.skewjoin and with MR engine
