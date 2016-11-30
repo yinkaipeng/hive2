@@ -304,7 +304,7 @@ public abstract class VectorMapJoinGenerateResultOperator extends VectorMapJoinC
           int length = byteSegmentRef.getLength();
           smallTableVectorDeserializeRow.setBytes(bytes, offset, length);
 
-          smallTableVectorDeserializeRow.deserialize(overflowBatch, overflowBatch.DEFAULT_SIZE);
+          smallTableVectorDeserializeRow.deserialize(overflowBatch, overflowBatch.size);
         }
 
         overflowBatch.size++;
