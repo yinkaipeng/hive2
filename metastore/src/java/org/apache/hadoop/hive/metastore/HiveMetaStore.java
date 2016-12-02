@@ -5975,10 +5975,14 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       throws TException {
       return getTxnHandler().heartbeatTxnRange(rqst);
     }
-
+    @Deprecated
     @Override
     public void compact(CompactionRequest rqst) throws TException {
-      getTxnHandler().compact(rqst);
+      compact2(rqst);
+    }
+    @Override
+    public CompactionResponse compact2(CompactionRequest rqst) throws TException {
+      return getTxnHandler().compact(rqst);
     }
 
     @Override
