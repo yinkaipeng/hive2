@@ -2972,6 +2972,7 @@ public final class Utilities {
 
       // The alias may not have any path
       Path path = null;
+      boolean hasLogged = false;
       for (String file : new LinkedList<String>(work.getPathToAliases().keySet())) {
         List<String> aliases = work.getPathToAliases().get(file);
         if (aliases.contains(alias)) {
@@ -2985,12 +2986,17 @@ public final class Utilities {
 
           pathsProcessed.add(path);
 
-          LOG.info("Adding input file " + path);
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Adding input file " + path);
+          } else if (!hasLogged) {
+            hasLogged = true;
+            LOG.info("Adding " + work.getPathToAliases().size()
+                + " inputs; the first input is " + path);
+          }
           if (!skipDummy
               && isEmptyPath(job, path, ctx)) {
             path = createDummyFileForEmptyPartition(path, job, work,
                  hiveScratchDir, alias, sequenceNumber++);
-
           }
           pathsToAdd.add(path);
         }

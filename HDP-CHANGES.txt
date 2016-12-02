@@ -3,6 +3,7 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 
 BUG FIXES
 
+    HIVE-15312: reduce logging in certain places
     HIVE-15693: LLAP: cached threadpool in AMReporter creates too many threads leading to OOM
     HIVE-12594: X lock on partition should not conflict with S lock on DB
     HIVE-15376 : Improve heartbeater scheduling for transactions (Wei Zheng, reviewed by Eugene Koifman)
