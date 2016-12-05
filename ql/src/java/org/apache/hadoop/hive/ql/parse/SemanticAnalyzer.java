@@ -2567,8 +2567,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       List<String> rightAliases, ASTNode condn, QBJoinTree joinTree,
       List<String> leftSrc) throws SemanticException {
     if ((leftAliases.size() != 0) && (rightAliases.size() != 0)) {
-      joinTree.addPostJoinFilter(condn);
-      return;
+      throw new SemanticException(ErrorMsg.INVALID_JOIN_CONDITION_1
+          .getMsg(condn));
     }
 
     if (rightAliases.size() != 0) {
@@ -2582,7 +2582,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         }
       }
     } else {
-      joinTree.addPostJoinFilter(condn);
+      throw new SemanticException(ErrorMsg.INVALID_JOIN_CONDITION_2
+          .getMsg(condn));
     }
   }
 
@@ -2796,8 +2797,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     switch (joinCond.getToken().getType()) {
     case HiveParser.KW_OR:
-      joinTree.addPostJoinFilter(joinCond);
-      break;
+      throw new SemanticException(ErrorMsg.INVALID_JOIN_CONDITION_3
+          .getMsg(joinCond));
 
     case HiveParser.KW_AND:
       parseJoinCondition(joinTree, (ASTNode) joinCond.getChild(0), leftSrc, type, aliasToOpInfo);
@@ -2826,13 +2827,15 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       // * join is right outer and filter is on right alias
       if (((leftCondAl1.size() != 0) && (leftCondAl2.size() != 0))
           || ((rightCondAl1.size() != 0) && (rightCondAl2.size() != 0))) {
-        joinTree.addPostJoinFilter(joinCond);
-      } else {
-        applyEqualityPredicateToQBJoinTree(joinTree, type, leftSrc,
-            joinCond, leftCondn, rightCondn,
-            leftCondAl1, leftCondAl2,
-            rightCondAl1, rightCondAl2);
+        throw new SemanticException(ErrorMsg.INVALID_JOIN_CONDITION_1
+            .getMsg(joinCond));
       }
+
+      applyEqualityPredicateToQBJoinTree(joinTree, type, leftSrc,
+          joinCond, leftCondn, rightCondn,
+          leftCondAl1, leftCondAl2,
+          rightCondAl1, rightCondAl2);
+
       break;
 
     default:
@@ -2874,32 +2877,33 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       }
 
       if (!leftAliasNull && !rightAliasNull) {
-        joinTree.addPostJoinFilter(joinCond);
-      } else {
-        if (!leftAliasNull) {
-          if (type.equals(JoinType.LEFTOUTER)
-              || type.equals(JoinType.FULLOUTER)) {
-            if (conf.getBoolVar(HiveConf.ConfVars.HIVEOUTERJOINSUPPORTSFILTERS)) {
-              joinTree.getFilters().get(0).add(joinCond);
-            } else {
-              LOG.warn(ErrorMsg.OUTERJOIN_USES_FILTERS.getErrorCodedMsg());
-              joinTree.getFiltersForPushing().get(0).add(joinCond);
-            }
+        throw new SemanticException(ErrorMsg.INVALID_JOIN_CONDITION_1
+            .getMsg(joinCond));
+      }
+
+      if (!leftAliasNull) {
+        if (type.equals(JoinType.LEFTOUTER)
+            || type.equals(JoinType.FULLOUTER)) {
+          if (conf.getBoolVar(HiveConf.ConfVars.HIVEOUTERJOINSUPPORTSFILTERS)) {
+            joinTree.getFilters().get(0).add(joinCond);
           } else {
+            LOG.warn(ErrorMsg.OUTERJOIN_USES_FILTERS.getErrorCodedMsg());
             joinTree.getFiltersForPushing().get(0).add(joinCond);
           }
         } else {
-          if (type.equals(JoinType.RIGHTOUTER)
-              || type.equals(JoinType.FULLOUTER)) {
-            if (conf.getBoolVar(HiveConf.ConfVars.HIVEOUTERJOINSUPPORTSFILTERS)) {
-              joinTree.getFilters().get(1).add(joinCond);
-            } else {
-              LOG.warn(ErrorMsg.OUTERJOIN_USES_FILTERS.getErrorCodedMsg());
-              joinTree.getFiltersForPushing().get(1).add(joinCond);
-            }
+          joinTree.getFiltersForPushing().get(0).add(joinCond);
+        }
+      } else {
+        if (type.equals(JoinType.RIGHTOUTER)
+            || type.equals(JoinType.FULLOUTER)) {
+          if (conf.getBoolVar(HiveConf.ConfVars.HIVEOUTERJOINSUPPORTSFILTERS)) {
+            joinTree.getFilters().get(1).add(joinCond);
           } else {
+            LOG.warn(ErrorMsg.OUTERJOIN_USES_FILTERS.getErrorCodedMsg());
             joinTree.getFiltersForPushing().get(1).add(joinCond);
           }
+        } else {
+          joinTree.getFiltersForPushing().get(1).add(joinCond);
         }
       }
 
@@ -8112,16 +8116,9 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     joinOp.getConf().setQBJoinTreeProps(joinTree);
     joinContext.put(joinOp, joinTree);
 
-    // Safety check for postconditions; currently we do not support them for outer join
-    if (joinTree.getPostJoinFilters().size() != 0 && !joinTree.getNoOuterJoin()) {
-      throw new SemanticException(ErrorMsg.INVALID_JOIN_CONDITION.getMsg());
-    }
     Operator op = joinOp;
-    for(ASTNode condn : joinTree.getPostJoinFilters()) {
+    for(ASTNode condn : joinTree.getPostJoinFilters() ) {
       op = genFilterPlan(qb, condn, op, false);
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("Generated " + op + " with post-filtering conditions after JOIN operator");
-      }
     }
     return op;
   }
@@ -8940,15 +8937,6 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       }
       target.setMapAliases(mapAliases);
     }
-
-    if (node.getPostJoinFilters().size() != 0) {
-      // Safety check: if we are merging join operators and there are post-filtering
-      // conditions, they cannot be outer joins
-      assert node.getNoOuterJoin() && target.getNoOuterJoin();
-      for (ASTNode exprPostFilter : node.getPostJoinFilters()) {
-        target.addPostJoinFilter(exprPostFilter);
-      }
-    }
   }
 
   private ObjectPair<Integer, int[]> findMergePos(QBJoinTree node, QBJoinTree target) {
@@ -9054,11 +9042,6 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         }
         JoinType currType = getType(node.getJoinCond());
         if (prevType != null && prevType != currType) {
-          break;
-        }
-        if ((!node.getNoOuterJoin() && node.getPostJoinFilters().size() != 0) ||
-                (!target.getNoOuterJoin() && target.getPostJoinFilters().size() != 0)) {
-          // Outer joins with post-filtering conditions cannot be merged
           break;
         }
         ObjectPair<Integer, int[]> mergeDetails = findMergePos(node, target);

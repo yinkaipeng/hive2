@@ -420,7 +420,7 @@ public class QBJoinTree implements Serializable, Cloneable {
 
     // clone postJoinFilters
     for (ASTNode filter : postJoinFilters) {
-      cloned.addPostJoinFilter(filter);
+      cloned.getPostJoinFilters().add(filter);
     }
     // clone rhsSemijoin
     for (Entry<String, ArrayList<ASTNode>> entry : rhsSemijoin.entrySet()) {
