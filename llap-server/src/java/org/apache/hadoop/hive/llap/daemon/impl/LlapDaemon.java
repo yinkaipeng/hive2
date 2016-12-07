@@ -258,7 +258,7 @@ public class LlapDaemon extends CompositeService implements ContainerRunner, Lla
     LOG.info("Started LlapMetricsSystem with displayName: " + displayName +
         " sessionId: " + sessionId);
 
-    this.amReporter = new AMReporter(srvAddress, new QueryFailedHandlerProxy(), daemonConf);
+    this.amReporter = new AMReporter(srvAddress, new QueryFailedHandlerProxy(), daemonConf, daemonId);
 
     SecretManager sm = null;
     if (UserGroupInformation.isSecurityEnabled()) {
