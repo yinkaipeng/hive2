@@ -22,11 +22,15 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.FileWriter;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.IllegalFormatException;
 import java.util.List;
 
@@ -144,12 +148,26 @@ public class HiveSchemaTool {
    * @throws MetaException
    */
   public void showInfo() throws HiveMetaException {
+    try {
+    PrintWriter pr = new PrintWriter(new FileWriter("/tmp/schemaTool.log", true));
+    pr.println("Begin getConnectionToMetastore");
+    pr.println(new SimpleDateFormat("yyyy-MM-ss HH:mm:ss:SSS").format(new Date()));
     Connection metastoreConn = getConnectionToMetastore(true);
+    pr.println("End getConnectionToMetastore");
+    pr.println(new SimpleDateFormat("yyyy-MM-ss HH:mm:ss:SSS").format(new Date()));
     String hiveVersion = MetaStoreSchemaInfo.getHiveSchemaVersion();
+    pr.println("Begin getMetaStoreSchemaVersion");
+    pr.println(new SimpleDateFormat("yyyy-MM-ss HH:mm:ss:SSS").format(new Date()));
     String dbVersion = getMetaStoreSchemaVersion(metastoreConn);
+    pr.println("End getMetaStoreSchemaVersion");
+    pr.println(new SimpleDateFormat("yyyy-MM-ss HH:mm:ss:SSS").format(new Date()));
+    pr.close();
     System.out.println("Hive distribution version:\t " + hiveVersion);
     System.out.println("Metastore schema version:\t " + dbVersion);
     assertCompatibleVersion(hiveVersion, dbVersion);
+    } catch (IOException e) {
+        throw new RuntimeException(e);
+    }
 
   }
 
@@ -458,7 +476,10 @@ public class HiveSchemaTool {
     cmdLineOptions.addOptionGroup(optGroup);
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
+    PrintWriter pr = new PrintWriter(new FileWriter("/tmp/schemaTool.log", true));
+    pr.println("Start main");
+    pr.println(new SimpleDateFormat("yyyy-MM-ss HH:mm:ss:SSS").format(new Date()));
     CommandLineParser parser = new GnuParser();
     CommandLine line = null;
     String dbType = null;
@@ -551,6 +572,7 @@ public class HiveSchemaTool {
       System.exit(1);
     }
     System.out.println("schemaTool completed");
-
+    pr.println(new SimpleDateFormat("yyyy-MM-ss HH:mm:ss:SSS").format(new Date()));
+    pr.close();
   }
 }
