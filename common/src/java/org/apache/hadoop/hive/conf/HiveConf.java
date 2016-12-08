@@ -3751,7 +3751,7 @@ public class HiveConf extends Configuration {
     origProp = getAllProperties();
 
     try {
-    PrintWriter pr = new PrintWriter(new FileWriter("/tmp/schemaTool.log"), true);
+    PrintWriter pr = new PrintWriter(new FileWriter("/tmp/schemaTool.log", true));
     pr.println("Before getConfVarInputStream");
     pr.println(new SimpleDateFormat("yyyy-MM-ss HH:mm:ss:SSS").format(new Date()));
     // Overlay the ConfVars. Note that this ignores ConfVars with null values
