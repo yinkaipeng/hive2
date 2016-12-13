@@ -144,7 +144,7 @@ public class TestHostAffinitySplitLocationProvider {
     LOG.info(errorMsg);
     // Give it a LOT of slack, since on low numbers consistent hashing is very imprecise.
     if (moveRatioAvg > 1.2f || newRatioAvg < 0.8f
-        || movedRatioWorst > 1.5f || newRatioWorst < 0.5f) {
+        || movedRatioWorst > 1.67f || newRatioWorst < 0.5f) {
       fail(errorMsg + "; example failures: " + failBuilder.toString());
     }
   }
