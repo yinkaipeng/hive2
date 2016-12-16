@@ -65,7 +65,7 @@ public class ATSHook implements ExecuteWithHookContext {
   private enum EventTypes { QUERY_SUBMITTED, QUERY_COMPLETED };
 
   private enum OtherInfoTypes {
-    QUERY, STATUS, TEZ, MAPRED, INVOKER_INFO, SESSION_ID, THREAD_NAME, VERSION,
+    QUERY, STATUS, TEZ, MAPRED, INVOKER_INFO, SESSION_ID, LOG_TRACE_ID, THREAD_NAME, VERSION,
     CLIENT_IP_ADDRESS, HIVE_ADDRESS, HIVE_INSTANCE_TYPE, CONF, PERF,
   };
   private enum ExecutionMode {
@@ -159,7 +159,6 @@ public class ATSHook implements ExecuteWithHookContext {
               explain.initialize(queryState, plan, null, null);
               String query = plan.getQueryStr();
               JSONObject explainPlan = explain.getJSONPlan(null, work);
-              String logID = conf.getLogIdVar(hookContext.getSessionId());
               List<String> tablesRead = getTablesFromEntitySet(hookContext.getInputs());
               List<String> tablesWritten = getTablesFromEntitySet(hookContext.getOutputs());
               String executionMode = getExecutionMode(plan).name();
@@ -172,7 +171,7 @@ public class ATSHook implements ExecuteWithHookContext {
                   createPreHookEvent(queryId, query, explainPlan, queryStartTime,
                       user, requestuser, numMrJobs, numTezJobs, opId,
                       hookContext.getIpAddress(), hiveInstanceAddress, hiveInstanceType,
-                      hookContext.getSessionId(), logID, hookContext.getThreadId(), executionMode,
+                      hookContext.getSessionId(), plan.getUserProvidedContext(), hookContext.getThreadId(), executionMode,
                       tablesRead, tablesWritten, conf));
               break;
             case POST_EXEC_HOOK:
@@ -229,7 +228,7 @@ public class ATSHook implements ExecuteWithHookContext {
   TimelineEntity createPreHookEvent(String queryId, String query, JSONObject explainPlan,
       long startTime, String user, String requestuser, int numMrJobs, int numTezJobs, String opId,
       String clientIpAddress, String hiveInstanceAddress, String hiveInstanceType,
-      String sessionID, String logID, String threadId, String executionMode,
+      String sessionID, String logTraceId, String threadId, String executionMode,
       List<String> tablesRead, List<String> tablesWritten, HiveConf conf) throws Exception {
 
     JSONObject queryObj = new JSONObject(new LinkedHashMap<>());
@@ -277,8 +276,10 @@ public class ATSHook implements ExecuteWithHookContext {
     atsEntity.addOtherInfo(OtherInfoTypes.TEZ.name(), numTezJobs > 0);
     atsEntity.addOtherInfo(OtherInfoTypes.MAPRED.name(), numMrJobs > 0);
     atsEntity.addOtherInfo(OtherInfoTypes.SESSION_ID.name(), sessionID);
-    atsEntity.addOtherInfo(OtherInfoTypes.INVOKER_INFO.name(), logID);
     atsEntity.addOtherInfo(OtherInfoTypes.THREAD_NAME.name(), threadId);
+    if ((logTraceId != null) && (logTraceId.equals("") == false)) {
+      atsEntity.addOtherInfo(OtherInfoTypes.LOG_TRACE_ID.name(), logTraceId);
+    }
     atsEntity.addOtherInfo(OtherInfoTypes.VERSION.name(), VERSION);
     if (clientIpAddress != null) {
       atsEntity.addOtherInfo(OtherInfoTypes.CLIENT_IP_ADDRESS.name(), clientIpAddress);
