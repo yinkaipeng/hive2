@@ -1403,12 +1403,17 @@ public class Hadoop23Shims extends HadoopShimsSecure {
   }
   
   public void setHadoopCallerContext(String callerContext) {
-    setHadoopCallerContext("HIVE_QUERY_ID:", callerContext);
+    CallerContext.setCurrent(new CallerContext.Builder(callerContext).build());
   }
 
-  public void setHadoopCallerContext(String prefix, String callerContext) {
-    callerContext = prefix + callerContext;
-    CallerContext.setCurrent(new CallerContext.Builder(callerContext).build());
+  @Override
+  public void setHadoopQueryContext(String callerContext) {
+    setHadoopCallerContext("HIVE_QUERY_ID:" + callerContext);
+  }
+
+  @Override
+  public void setHadoopSessionContext(String sessionId) {
+    setHadoopCallerContext("HIVE_SSN_ID:" + sessionId);
   }
 
   @Override
