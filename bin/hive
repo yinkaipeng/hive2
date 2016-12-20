@@ -15,8 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-echo "Start hive script" >> /tmp/schemaTool.log
-date +"%m-%d-%Y %k:%M:%S:%3N" >> /tmp/schemaTool.log
 cygwin=false
 case "`uname`" in
    CYGWIN*) cygwin=true;;
@@ -290,8 +288,6 @@ if [ "$SKIP_HBASECP" = false ]; then
   HBASE_BIN=${HBASE_BIN:-"$(which hbase)"}
 
   # perhaps we've located HBase. If so, include its details on the classpath
-  echo "Start mapredcp" >> /tmp/schemaTool.log
-  date +"%m-%d-%Y %k:%M:%S:%3N" >> /tmp/schemaTool.log
   if [[ -n $HBASE_BIN ]] ; then
     # exclude ZK, PB, and Guava (See HIVE-2055)
     # depends on HBASE-8438 (hbase-0.94.14+, hbase-0.96.1+) for `hbase mapredcp` command
@@ -303,8 +299,6 @@ if [ "$SKIP_HBASECP" = false ]; then
       export HADOOP_CLASSPATH="${HADOOP_CLASSPATH}:${x}"
     done
   fi
-  echo "End mapredcp" >> /tmp/schemaTool.log
-  date +"%m-%d-%Y %k:%M:%S:%3N" >> /tmp/schemaTool.log
 fi
 
 if [ "${AUX_PARAM}" != "" ]; then

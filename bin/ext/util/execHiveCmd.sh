@@ -43,9 +43,5 @@ execHiveCmd () {
   fi
 
   # hadoop 20 or newer - skip the aux_jars option. picked up from hiveconf
-  echo "Start invoking hadoop jar" >> /tmp/schemaTool.log
-  date +"%m-%d-%Y %k:%M:%S:%3N" >> /tmp/schemaTool.log
   exec $HADOOP jar ${HIVE_LIB}/$JAR $CLASS $HIVE_OPTS "$@"
-  echo "End invoking hadoop jar" >> /tmp/schemaTool.log
-  date +"%m-%d-%Y %k:%M:%S:%3N" >> /tmp/schemaTool.log
 }

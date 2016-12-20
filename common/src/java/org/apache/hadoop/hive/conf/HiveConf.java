@@ -40,17 +40,12 @@ import org.apache.hadoop.util.Shell;
 import org.apache.hive.common.HiveCompat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.FileWriter;
-import java.io.PrintWriter;
 
 import javax.security.auth.login.LoginException;
 
 import java.io.*;
 import java.net.URI;
 import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -3752,18 +3747,8 @@ public class HiveConf extends Configuration {
     // preserve the original configuration
     origProp = getAllProperties();
 
-    try {
-    PrintWriter pr = new PrintWriter(new FileWriter("/tmp/schemaTool.log", true));
-    pr.println("Before getConfVarInputStream");
-    pr.println(new SimpleDateFormat("yyyy-MM-ss HH:mm:ss:SSS").format(new Date()));
     // Overlay the ConfVars. Note that this ignores ConfVars with null values
     addResource(getConfVarInputStream());
-    pr.println("After getConfVarInputStream");
-    pr.println(new SimpleDateFormat("yyyy-MM-ss HH:mm:ss:SSS").format(new Date()));
-    pr.close();
-    } catch (IOException e) {
-        throw new RuntimeException(e);
-    }
 
     // Overlay hive-site.xml if it exists
     if (hiveSiteURL != null) {
