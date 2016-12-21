@@ -268,7 +268,7 @@ public abstract class TaskCompiler {
       setInputFormat(rootTask);
     }
 
-    optimizeTaskPlan(rootTasks, pCtx, ctx);
+    optimizeTaskPlan(rootTasks, pCtx, ctx); // cross product check
 
     /*
      * If the query was the result of analyze table column compute statistics rewrite, create

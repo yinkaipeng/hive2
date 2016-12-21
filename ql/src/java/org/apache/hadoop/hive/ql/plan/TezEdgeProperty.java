@@ -28,6 +28,7 @@ public class TezEdgeProperty {
     CONTAINS,
     CUSTOM_EDGE,
     CUSTOM_SIMPLE_EDGE,
+    XPROD_EDGE
   }
 
   private HiveConf hiveConf;
@@ -85,5 +86,9 @@ public class TezEdgeProperty {
 
   public long getInputSizePerReducer() {
     return inputSizePerReducer;
+  }
+
+  public void setEdgeType(EdgeType type) {
+    this.edgeType = type;
   }
 }

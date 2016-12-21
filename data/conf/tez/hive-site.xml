@@ -267,4 +267,9 @@
   <value>true</value>
 </property>
 
+<property>
+  <name>hive.tez.cartesian-product.enabled</name>
+  <value>true</value>
+</property>
+
 </configuration>
