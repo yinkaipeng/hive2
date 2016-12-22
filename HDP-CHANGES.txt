@@ -3,6 +3,7 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 
 BUG FIXES
 
+    HIVE-15376 : Improve heartbeater scheduling for transactions (Wei Zheng, reviewed by Eugene Koifman)
     HIVE-15327: Outerjoin might produce wrong result depending on joinEmitInterval value
     HIVE-15236: timestamp and date comparison should happen in timestamp
     HIVE-15120: Storage based auth: allow option to enforce write checks for external tables
