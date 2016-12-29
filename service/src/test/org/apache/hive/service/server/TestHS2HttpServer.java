@@ -19,10 +19,13 @@
 package org.apache.hive.service.server;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.metastore.MetaStoreUtils;
@@ -86,6 +89,17 @@ public class TestHS2HttpServer {
   }
 
   @Test
+  public void testContextRootUrlRewrite() throws Exception {
+    String baseURL = "http://localhost:" + webUIPort + "/";
+    String contextRootContent = getURLResponseAsString(baseURL);
+
+    String jspUrl = "http://localhost:" + webUIPort + "/hiveserver2.jsp";
+    String jspContent = getURLResponseAsString(jspUrl);
+
+    Assert.assertEquals(contextRootContent, jspContent);
+  }
+
+  @Test
   public void testConfStrippedFromWebUI() throws Exception {
 
     String pwdValFound = null;
@@ -120,6 +134,15 @@ public class TestHS2HttpServer {
 
     assertNotNull(pwdKeyFound);
     assertNull(pwdValFound);
+  }
+
+  private String getURLResponseAsString(String baseURL) throws IOException {
+    URL url = new URL(baseURL);
+    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    Assert.assertEquals(HttpURLConnection.HTTP_OK, conn.getResponseCode());
+    StringWriter writer = new StringWriter();
+    IOUtils.copy(conn.getInputStream(), writer, "UTF-8");
+    return writer.toString();
   }
 
 

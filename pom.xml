@@ -116,10 +116,10 @@
     <antlr.version>3.4</antlr.version>
     <apache-directory-server.version>1.5.6</apache-directory-server.version>
     <apache-directory-clientapi.version>0.1</apache-directory-clientapi.version>
-    <avatica.version>1.8.0</avatica.version>
+    <avatica.version>1.8.0.2.6.0.0-SNAPSHOT</avatica.version>
     <avro.version>1.7.7</avro.version>
     <bonecp.version>0.8.0.RELEASE</bonecp.version>
-    <calcite.version>1.11.0.2.6.0.0-SNAPSHOT</calcite.version>
+    <calcite.version>1.10.0.2.6.0.0-SNAPSHOT</calcite.version>
     <datanucleus-api-jdo.version>4.2.1</datanucleus-api-jdo.version>
     <datanucleus-core.version>4.1.6</datanucleus-core.version>
     <datanucleus-rdbms.version>4.1.7</datanucleus-rdbms.version>
@@ -138,7 +138,7 @@
     <derby.version>10.10.2.0</derby.version>
     <dropwizard.version>3.1.0</dropwizard.version>
     <dropwizard-metrics-hadoop-metrics2-reporter.version>0.1.2</dropwizard-metrics-hadoop-metrics2-reporter.version>
-    <druid.version>0.9.1.1</druid.version>
+    <druid.version>0.9.2</druid.version>
     <guava.version>14.0.1</guava.version>
     <groovy.version>2.4.4</groovy.version>
     <hadoop.version>2.7.3.2.6.0.0-SNAPSHOT</hadoop.version>

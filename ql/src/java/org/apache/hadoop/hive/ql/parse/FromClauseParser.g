@@ -96,14 +96,13 @@ joinSource
 uniqueJoinSource
 @init { gParent.pushMsg("unique join source", state); }
 @after { gParent.popMsg(state); }
-    : KW_PRESERVE? fromSource uniqueJoinExpr
+    : KW_PRESERVE? uniqueJoinTableSource uniqueJoinExpr
     ;
 
 uniqueJoinExpr
 @init { gParent.pushMsg("unique join expression list", state); }
 @after { gParent.popMsg(state); }
-    : LPAREN e1+=expression (COMMA e1+=expression)* RPAREN
-      -> ^(TOK_EXPLIST $e1*)
+    : LPAREN! expressionList RPAREN!
     ;
 
 uniqueJoinToken
@@ -145,7 +144,7 @@ tableAlias
 
 fromSource
 @init { gParent.pushMsg("from source", state); }
-@after { $fromSource.tree.matchedText = $fromSource.text; gParent.popMsg(state); }
+@after { gParent.popMsg(state); }
     :
     (LPAREN KW_VALUES) => fromSource0
     | (LPAREN) => LPAREN joinSource RPAREN -> joinSource
@@ -190,13 +189,15 @@ tableSample
 tableSource
 @init { gParent.pushMsg("table source", state); }
 @after { gParent.popMsg(state); }
-    : tabname=tableName 
-    ((tableProperties) => props=tableProperties)?
-    ((tableSample) => ts=tableSample)? 
-    ((KW_AS) => (KW_AS alias=identifier) 
-    |
-    (identifier) => (alias=identifier))?
+    : tabname=tableName props=tableProperties? ts=tableSample? (KW_AS? alias=identifier)?
     -> ^(TOK_TABREF $tabname $props? $ts? $alias?)
+    ;
+
+uniqueJoinTableSource
+@init { gParent.pushMsg("unique join table source", state); }
+@after { gParent.popMsg(state); }
+    : tabname=tableName ts=tableSample? (KW_AS? alias=identifier)?
+    -> ^(TOK_TABREF $tabname $ts? $alias?)
     ;
 
 tableName
@@ -222,7 +223,7 @@ subQuerySource
 @init { gParent.pushMsg("subquery source", state); }
 @after { gParent.popMsg(state); }
     :
-    LPAREN queryStatementExpression[false] RPAREN KW_AS? identifier -> ^(TOK_SUBQUERY queryStatementExpression identifier)
+    LPAREN queryStatementExpression RPAREN KW_AS? identifier -> ^(TOK_SUBQUERY queryStatementExpression identifier)
     ;
 
 //---------------------- Rules for parsing PTF clauses -----------------------------
@@ -281,7 +282,7 @@ searchCondition
 // INSERT INTO <table> (col1,col2,...) SELECT * FROM (VALUES(1,2,3),(4,5,6),...) as Foo(a,b,c)
 valueRowConstructor
 @init { gParent.pushMsg("value row constructor", state); }
-@after { $valueRowConstructor.tree.matchedText = $valueRowConstructor.text; gParent.popMsg(state); }
+@after { gParent.popMsg(state); }
     :
     LPAREN precedenceUnaryPrefixExpression (COMMA precedenceUnaryPrefixExpression)* RPAREN -> ^(TOK_VALUE_ROW precedenceUnaryPrefixExpression+)
     ;

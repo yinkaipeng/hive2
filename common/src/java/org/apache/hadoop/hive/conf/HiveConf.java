@@ -371,6 +371,7 @@ public class HiveConf extends Configuration {
     llapDaemonVarsSetLocal.add(ConfVars.LLAP_DAEMON_NUM_EXECUTORS.varname);
     llapDaemonVarsSetLocal.add(ConfVars.LLAP_DAEMON_RPC_PORT.varname);
     llapDaemonVarsSetLocal.add(ConfVars.LLAP_DAEMON_MEMORY_PER_INSTANCE_MB.varname);
+    llapDaemonVarsSetLocal.add(ConfVars.LLAP_DAEMON_HEADROOM_MEMORY_PER_INSTANCE_MB.varname);
     llapDaemonVarsSetLocal.add(ConfVars.LLAP_DAEMON_VCPUS_PER_INSTANCE.varname);
     llapDaemonVarsSetLocal.add(ConfVars.LLAP_DAEMON_NUM_FILE_CLEANER_THREADS.varname);
     llapDaemonVarsSetLocal.add(ConfVars.LLAP_FILE_CLEANUP_DELAY_SECONDS.varname);
@@ -952,7 +953,8 @@ public class HiveConf extends Configuration {
 
     // reloadable jars
     HIVERELOADABLEJARS("hive.reloadable.aux.jars.path", "",
-        "Jars can be renewed by executing reload command. And these jars can be "
+        "The locations of the plugin jars, which can be a comma-separated folders or jars. Jars can be renewed\n"
+        + "by executing reload command. And these jars can be "
             + "used as the auxiliary classes like creating a UDF or SerDe."),
 
     // hive added files and jars
@@ -1871,9 +1873,21 @@ public class HiveConf extends Configuration {
       new TimeValidator(TimeUnit.MILLISECONDS), "Frequency of WriteSet reaper runs"),
 
     // For Druid storage handler
+    HIVE_DRUID_INDEXING_GRANULARITY("hive.druid.indexer.segments.granularity", "DAY",
+            new PatternSet("YEAR", "MONTH", "WEEK", "DAY", "HOUR", "MINUTE", "SECOND"),
+            "Granularity for the segments created by the Druid storage handler"
+    ),
+    HIVE_DRUID_MAX_PARTITION_SIZE("hive.druid.indexer.partition.size.max", 5000000,
+            "Maximum number of records per segment partition"
+    ),
+    HIVE_DRUID_MAX_ROW_IN_MEMORY("hive.druid.indexer.memory.rownum.max", 75000,
+            "Maximum number of records in memory while storing data in Druid"
+    ),
     HIVE_DRUID_BROKER_DEFAULT_ADDRESS("hive.druid.broker.address.default", "localhost:8082",
-        "Address of the Druid broker. If we are querying Druid from Hive, this address needs to be\n" +
-        "declared"),
+            "Address of the Druid broker. If we are querying Druid from Hive, this address needs to be\n"
+                    +
+                    "declared"
+    ),
     HIVE_DRUID_SELECT_THRESHOLD("hive.druid.select.threshold", 10000,
         "When we can split a Select query, this is the maximum number of rows that we try to retrieve\n" +
         "per query. In order to do that, we obtain the estimated size for the complete result. If the\n" +
@@ -1884,7 +1898,27 @@ public class HiveConf extends Configuration {
         "the HTTP client."),
     HIVE_DRUID_HTTP_READ_TIMEOUT("hive.druid.http.read.timeout", "PT1M", "Read timeout period for the HTTP\n" +
         "client in ISO8601 format (for example P2W, P3M, PT1H30M, PT0.750S), default is period of 1 minute."),
-
+    HIVE_DRUID_BASE_PERSIST_DIRECTORY("hive.druid.basePersistDirectory", "/tmp",
+            "Local temporary directory used to persist intermediate indexing state."
+    ),
+    DRUID_SEGMENT_DIRECTORY("hive.druid.storage.storageDirectory", "/druid/segments"
+            , "druid deep storage location."),
+    DRUID_METADATA_BASE("hive.druid.metadata.base", "druid", "Default prefix for metadata tables"),
+    DRUID_METADATA_DB_TYPE("hive.druid.metadata.db.type", "mysql",
+            new PatternSet("mysql", "postgres"), "Type of the metadata database."
+    ),
+    DRUID_METADATA_DB_USERNAME("hive.druid.metadata.username", "",
+            "Username to connect to Type of the metadata DB."
+    ),
+    DRUID_METADATA_DB_PASSWORD("hive.druid.metadata.password", "",
+            "Password to connect to Type of the metadata DB."
+    ),
+    DRUID_METADATA_DB_URI("hive.druid.metadata.uri", "",
+            "URI to connect to the database (for example jdbc:mysql://hostname:port/DBName)."
+    ),
+    DRUID_WORKING_DIR("hive.druid.working.directory", "/tmp/workingDirectory",
+            "Default hdfs working directory used to store some intermediate metadata"
+    ),
     // For HBase storage handler
     HIVE_HBASE_WAL_ENABLED("hive.hbase.wal.enabled", true,
         "Whether writes to HBase should be forced to the write-ahead log. \n" +
@@ -2918,9 +2952,14 @@ public class HiveConf extends Configuration {
       "executed in parallel.", "llap.daemon.num.executors"),
     LLAP_DAEMON_RPC_PORT("hive.llap.daemon.rpc.port", 0, "The LLAP daemon RPC port.",
       "llap.daemon.rpc.port. A value of 0 indicates a dynamic port"),
-    LLAP_DAEMON_MEMORY_PER_INSTANCE_MB("hive.llap.daemon.memory.per.instance.mb", 3276,
+    LLAP_DAEMON_MEMORY_PER_INSTANCE_MB("hive.llap.daemon.memory.per.instance.mb", 4096,
       "The total amount of memory to use for the executors inside LLAP (in megabytes).",
       "llap.daemon.memory.per.instance.mb"),
+    LLAP_DAEMON_HEADROOM_MEMORY_PER_INSTANCE_MB("hive.llap.daemon.headroom.memory.per.instance.mb", 512,
+      "The total amount of memory deducted from daemon memory required for other LLAP services. The remaining memory" +
+      " will be used by the executors. If the cache is off-heap, Executor memory + Headroom memory = Xmx. If the " +
+        "cache is on-heap, Executor memory + Cache memory + Headroom memory = Xmx. The headroom memory has to be " +
+        "minimum of 5% from the daemon memory."),
     LLAP_DAEMON_VCPUS_PER_INSTANCE("hive.llap.daemon.vcpus.per.instance", 4,
       "The total number of vcpus to use for the executors inside LLAP.",
       "llap.daemon.vcpus.per.instance"),

@@ -18,6 +18,8 @@
 
 package org.apache.hadoop.hive.ql.exec;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import java.beans.DefaultPersistenceDelegate;
@@ -35,6 +37,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
@@ -84,6 +87,7 @@ import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.GlobFilter;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.permission.FsPermission;
@@ -196,9 +200,6 @@ import org.apache.hadoop.util.Shell;
 import org.apache.hive.common.util.ReflectionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.esotericsoftware.kryo.Kryo;
-import com.google.common.base.Preconditions;
 
 /**
  * Utilities.
@@ -1752,31 +1753,58 @@ public final class Utilities {
     return oneurl;
   }
 
-    /**
-     * get the jar files from specified directory or get jar files by several jar names sperated by comma
-     * @param path
-     * @return
-     */
-    public static Set<String> getJarFilesByPath(String path){
-        Set<String> result = new HashSet<String>();
-        if (path == null || path.isEmpty()) {
-            return result;
-        }
+  /**
+   * Get the URI of the path. Assume to be local file system if no scheme.
+   */
+  public static URI getURI(String path) throws URISyntaxException {
+    if (path == null) {
+      return null;
+    }
 
-        File paths = new File(path);
-        if (paths.exists() && paths.isDirectory()) {
-            // add all jar files under the reloadable auxiliary jar paths
-            Set<File> jarFiles = new HashSet<File>();
-            jarFiles.addAll(org.apache.commons.io.FileUtils.listFiles(
-                    paths, new String[]{"jar"}, true));
-            for (File f : jarFiles) {
-                result.add(f.getAbsolutePath());
+    URI uri = new URI(path);
+    if (uri.getScheme() == null) {
+      // if no scheme in the path, we assume it's file on local fs.
+      uri = new File(path).toURI();
+    }
+
+    return uri;
+  }
+
+    /**
+     * Given a path string, get all the jars from the folder or the files themselves.
+     *
+     * @param pathString  the path string is the comma-separated path list
+     * @return            the list of the file names in the format of URI formats.
+     */
+    public static Set<String> getJarFilesByPath(String pathString, Configuration conf) {
+      Set<String> result = new HashSet<String>();
+      if (pathString == null || StringUtils.isBlank(pathString)) {
+          return result;
+      }
+
+      String[] paths = pathString.split(",");
+      for(String path : paths) {
+        try {
+          Path p = new Path(getURI(path));
+          FileSystem fs = p.getFileSystem(conf);
+          if (!fs.exists(p)) {
+            LOG.error("The jar file path " + path + " doesn't exist");
+            continue;
+          }
+          if (fs.isDirectory(p)) {
+            // add all jar files under the folder
+            FileStatus[] files = fs.listStatus(p, new GlobFilter("*.jar"));
+            for(FileStatus file : files) {
+              result.add(file.getPath().toUri().toString());
             }
-        } else {
-            String[] files = path.split(",");
-            Collections.addAll(result, files);
+          } else {
+            result.add(p.toUri().toString());
+          }
+        } catch(URISyntaxException | IOException e) {
+          LOG.error("Invalid file path " + path, e);
         }
-        return result;
+      }
+      return result;
     }
 
   private static boolean useExistingClassLoader(ClassLoader cl) {
@@ -1798,7 +1826,7 @@ public final class Utilities {
    * @param newPaths
    *          Array of classpath elements
    */
-  public static ClassLoader addToClassPath(ClassLoader cloader, String[] newPaths) throws Exception {
+  public static ClassLoader addToClassPath(ClassLoader cloader, String[] newPaths) {
     final URLClassLoader loader = (URLClassLoader) cloader;
     if (useExistingClassLoader(cloader)) {
       final UDFClassLoader udfClassLoader = (UDFClassLoader) loader;
@@ -1829,7 +1857,7 @@ public final class Utilities {
    * @param pathsToRemove
    *          Array of classpath elements
    */
-  public static void removeFromClassPath(String[] pathsToRemove) throws Exception {
+  public static void removeFromClassPath(String[] pathsToRemove) throws IOException {
     Thread curThread = Thread.currentThread();
     URLClassLoader loader = (URLClassLoader) curThread.getContextClassLoader();
     Set<URL> newPath = new HashSet<URL>(Arrays.asList(loader.getURLs()));
@@ -3101,7 +3129,7 @@ public final class Utilities {
 
     TableDesc tableDesc = work.getAliasToPartnInfo().get(alias).getTableDesc();
     if (tableDesc.isNonNative()) {
-      // if this isn't a hive table we can't create an empty file for it.
+      // if it does not need native storage, we can't create an empty file for it.
       return null;
     }
 
