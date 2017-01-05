@@ -22,7 +22,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.serde2.fast.DeserializeRead;
 import org.apache.hadoop.hive.serde2.io.TimestampWritable;
 import org.apache.hadoop.hive.serde2.lazybinary.LazyBinarySerDe;
@@ -31,6 +30,7 @@ import org.apache.hadoop.hive.serde2.lazybinary.LazyBinaryUtils.VInt;
 import org.apache.hadoop.hive.serde2.lazybinary.LazyBinaryUtils.VLong;
 import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.io.WritableUtils;
 
 /*
  * Directly deserialize with the caller reading field-by-field the LazyBinary serialization format.
@@ -269,40 +269,48 @@ public final class LazyBinaryDeserializeRead extends DeserializeRead {
 
           // These calls are to see how much data there is. The setFromBytes call below will do the same
           // readVInt reads but actually unpack the decimal.
+
+          // The first bounds check requires at least one more byte beyond for 2nd int (hence >=).
+          // Parse the first byte of a vint/vlong to determine the number of bytes.
+          if (offset + WritableUtils.decodeVIntSize(bytes[offset]) >= end) {
+            throw new EOFException();
+          }
           LazyBinaryUtils.readVInt(bytes, offset, tempVInt);
+          offset += tempVInt.length;
+          int readScale = tempVInt.value;
+
+          // Parse the first byte of a vint/vlong to determine the number of bytes.
+          if (offset + WritableUtils.decodeVIntSize(bytes[offset]) > end) {
+            throw new EOFException();
+          }
+          LazyBinaryUtils.readVInt(bytes, offset, tempVInt);
+          offset += tempVInt.length;
           int saveStart = offset;
-          offset += tempVInt.length;
-          if (offset >= end) {
-            // Overshoot or not enough for next item.
-            warnBeyondEof();
-          }
-          LazyBinaryUtils.readVInt(bytes, offset, tempVInt);
-          offset += tempVInt.length;
-          if (offset >= end) {
-            // Overshoot or not enough for next item.
-            warnBeyondEof();
-          }
           offset += tempVInt.value;
           // Last item -- ok to be at end.
           if (offset > end) {
-            warnBeyondEof();
+            throw new EOFException();
           }
           int length = offset - saveStart;
 
-          LazyBinarySerDe.setFromBytes(bytes, saveStart, length,
-              currentHiveDecimalWritable);
+          //   scale = 2, length = 6, value = -6065716379.11
+          //   \002\006\255\114\197\131\083\105
+          //           \255\114\197\131\083\105
 
-          DecimalTypeInfo decimalTypeInfo = (DecimalTypeInfo) typeInfos[fieldIndex];
+          currentHiveDecimalWritable.setFromBigIntegerBytesAndScale(
+              bytes, saveStart, length, readScale);
+          boolean decimalIsNull = !currentHiveDecimalWritable.isSet();
+          if (!decimalIsNull) {
 
-          int precision = decimalTypeInfo.getPrecision();
-          int scale = decimalTypeInfo.getScale();
+            DecimalTypeInfo decimalTypeInfo = (DecimalTypeInfo) typeInfos[fieldIndex];
 
-          HiveDecimal decimal = currentHiveDecimalWritable.getHiveDecimal(precision, scale);
-          if (decimal == null) {
+            int precision = decimalTypeInfo.getPrecision();
+            int scale = decimalTypeInfo.getScale();
+
+            decimalIsNull = !currentHiveDecimalWritable.mutateEnforcePrecisionScale(precision, scale);
+          }
+          if (decimalIsNull) {
             isNull = true;
-          } else {
-            // Put value back into writable.
-            currentHiveDecimalWritable.set(decimal);
           }
         }
         break;
