@@ -718,9 +718,6 @@ insert into table table_change_lower_to_higher_numeric_group_float
            (9, '10.0', '0.100', 'new'),
            (10, '1.7', '17.8888', 'new');
 
-explain
-select insert_num,c1,c2,b from table_change_lower_to_higher_numeric_group_float order by insert_num;
-
 select insert_num,c1,c2,b from table_change_lower_to_higher_numeric_group_float order by insert_num;
 
 drop table table_change_lower_to_higher_numeric_group_float;
