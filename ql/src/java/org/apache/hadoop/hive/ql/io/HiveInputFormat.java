@@ -26,7 +26,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,6 @@ import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hive.common.FileUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.io.HiveIOExceptionHandlerUtil;
@@ -624,8 +622,6 @@ public class HiveInputFormat<K extends WritableComparable, V extends Writable>
     Iterator<Entry<String, ArrayList<String>>> iterator = this.mrwork
         .getPathToAliases().entrySet().iterator();
 
-    Set<Path> splitParentPaths = null;
-    int pathsSize = this.mrwork.getPathToAliases().entrySet().size();
     while (iterator.hasNext()) {
       Entry<String, ArrayList<String>> entry = iterator.next();
       String key = entry.getKey();
@@ -641,21 +637,7 @@ public class HiveInputFormat<K extends WritableComparable, V extends Writable>
         // subdirectories.  (Unlike non-native tables, prefix mixups don't seem
         // to be a potential problem here since we are always dealing with the
         // path to something deeper than the table location.)
-        if (pathsSize > 1) {
-          // Comparing paths multiple times creates lots of objects &
-          // creates GC pressure for tables having large number of partitions.
-          // In such cases, use pre-computed paths for comparison
-          if (splitParentPaths == null) {
-            splitParentPaths = new HashSet<>();
-            FileUtils.populateParentPaths(splitParentPaths, new Path(splitPath));
-            FileUtils.populateParentPaths(splitParentPaths, new Path(splitPathWithNoSchema));
-          }
-          match = splitParentPaths.contains(key);
-        } else {
-          Path pathKey = new Path(key);
-          match = FileUtils.isPathWithinSubtree(new Path(splitPath), pathKey)
-              || FileUtils.isPathWithinSubtree(new Path(splitPathWithNoSchema), pathKey);
-        }
+        match = isMatch(splitPath, key) || isMatch(splitPathWithNoSchema, key);
       }
       if (match) {
         ArrayList<String> list = entry.getValue();
