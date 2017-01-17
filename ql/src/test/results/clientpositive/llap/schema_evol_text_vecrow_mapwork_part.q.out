@@ -2140,7 +2140,7 @@ POSTHOOK: Input: default@part_change_numeric_group_string_group_floating_char@pa
 #### A masked pattern was here ####
 insert_num	part	c1	c2	c3	b
 1	1	-2.38667407E10                                    	753.7028                                          	-3651.672121                                      	original
-10	1	17.0                                              	90000.0                                           	754072151                                         	new
+10	1	17.0                                              	90000.0                                           	NULL	new
 2	1	-10.3                                             	-2.0                                              	-29.0764                                          	original
 3	1	8.9999995E9                                       	-255.0                                            	4957                                              	original
 4	1	-1.0E12                                           	0.0                                               	20435                                             	original
@@ -2148,7 +2148,7 @@ insert_num	part	c1	c2	c3	b
 6	2	-66475.561431                                     	52927714                                          	7203778961                                        	new
 7	2	256                                               	32768                                             	31889                                             	new
 8	2	5555                                              	40000                                             	-719017797                                        	new
-9	1	100.0                                             	5000.0                                            	5443                                              	new
+9	1	100.0                                             	5000.0                                            	NULL	new
 PREHOOK: query: drop table part_change_numeric_group_string_group_floating_char
 PREHOOK: type: DROPTABLE
 PREHOOK: Input: default@part_change_numeric_group_string_group_floating_char
@@ -2299,7 +2299,7 @@ insert_num	part	c1	c2	c3	b
 6	2	-66475.	5292771	7203778	new
 7	2	256    	32768  	31889  	new
 8	2	5555   	40000  	-719017	new
-9	1	100.0  	5000.0 	5443   	new
+9	1	100.0  	5000.0 	NULL	new
 PREHOOK: query: drop table part_change_numeric_group_string_group_floating_char_trunc
 PREHOOK: type: DROPTABLE
 PREHOOK: Input: default@part_change_numeric_group_string_group_floating_char_trunc
