@@ -450,6 +450,7 @@ public class TezJobMonitor {
     String execBreakdownHeader = String.format(OPERATION_SUMMARY, OPERATION, DURATION);
     console.printInfo(SEPARATOR);
     reprintLineWithColorAsBold(execBreakdownHeader, Ansi.Color.CYAN);
+    console.logInfo(execBreakdownHeader);
     console.printInfo(SEPARATOR);
 
     // parse, analyze, optimize and compile
@@ -513,10 +514,12 @@ public class TezJobMonitor {
     if (inPlaceEligible) {
       console.printInfo(SEPARATOR);
       reprintLineWithColorAsBold(SUMMARY_HEADER, Ansi.Color.CYAN);
+      console.logInfo(SUMMARY_HEADER);
       console.printInfo(SEPARATOR);
     } else {
       console.printInfo(FILE_HEADER_SEPARATOR);
       reprintLineWithColorAsBold(FILE_HEADER, Ansi.Color.CYAN);
+      console.logInfo(FILE_HEADER);
       console.printInfo(FILE_HEADER_SEPARATOR);
     }
     SortedSet<String> keys = new TreeSet<String>(progressMap.keySet());
@@ -688,6 +691,7 @@ public class TezJobMonitor {
         if (!first) {
           console.printInfo(SEPARATOR);
           reprintLineWithColorAsBold(LLAP_SUMMARY_HEADER, Ansi.Color.CYAN);
+          console.logInfo(LLAP_SUMMARY_HEADER);
           console.printInfo(SEPARATOR);
           first = true;
         }
@@ -721,8 +725,10 @@ public class TezJobMonitor {
 
       console.printInfo("");
       reprintLineWithColorAsBold("Scheme: " + scheme, Ansi.Color.RED);
+      console.logInfo("Scheme: " + scheme);
       console.printInfo(SEPARATOR);
       reprintLineWithColorAsBold(fsCountersHeader, Ansi.Color.CYAN);
+      console.logInfo(fsCountersHeader);
       console.printInfo(SEPARATOR);
 
       for (String vertexName : keys) {
