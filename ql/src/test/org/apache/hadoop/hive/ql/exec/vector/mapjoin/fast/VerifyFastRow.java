@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hadoop.hive.serde2;
+package org.apache.hadoop.hive.ql.exec.vector.mapjoin.fast;
 
 import java.io.IOException;
 import java.sql.Date;
@@ -30,7 +30,6 @@ import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
 import org.apache.hadoop.hive.common.type.HiveVarchar;
 import org.apache.hadoop.hive.serde2.fast.DeserializeRead;
-import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
 import org.apache.hadoop.hive.serde2.fast.SerializeWrite;
 import org.apache.hadoop.hive.serde2.io.ByteWritable;
 import org.apache.hadoop.hive.serde2.io.DateWritable;
@@ -55,10 +54,10 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
 /**
- * TestBinarySortableSerDe.
+ * (Copy of VerifyFast from serde).
  *
  */
-public class VerifyFast {
+public class VerifyFastRow {
 
   public static void verifyDeserializeRead(DeserializeRead deserializeRead,
       PrimitiveTypeInfo primitiveTypeInfo, Writable writable) throws IOException {
@@ -68,7 +67,7 @@ public class VerifyFast {
     isNull = !deserializeRead.readNextField();
     if (isNull) {
       if (writable != null) {
-        TestCase.fail("Field reports null but object is not null (class " + writable.getClass().getName() + ", " + writable.toString() + ")");
+        TestCase.fail("Field reports null but object is not null");
       }
       return;
     } else if (writable == null) {

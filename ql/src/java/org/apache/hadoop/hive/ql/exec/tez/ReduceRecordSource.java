@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.hive.ql.exec.CommonMergeJoinOperator;
@@ -184,6 +185,7 @@ public class ReduceRecordSource implements RecordSource {
                         new BinarySortableDeserializeRead(
                                   VectorizedBatchUtil.typeInfosFromStructObjectInspector(
                                       keyStructInspector),
+                                  /* useExternalBuffer */ true,
                                   binarySortableSerDe.getSortOrders()));
         keyBinarySortableDeserializeToRow.init(0);
 
@@ -193,7 +195,8 @@ public class ReduceRecordSource implements RecordSource {
                   new VectorDeserializeRow<LazyBinaryDeserializeRead>(
                         new LazyBinaryDeserializeRead(
                             VectorizedBatchUtil.typeInfosFromStructObjectInspector(
-                                       valueStructInspectors)));
+                                       valueStructInspectors),
+                            /* useExternalBuffer */ true));
           valueLazyBinaryDeserializeToRow.init(firstValueColumnOffset);
 
           // Create data buffers for value bytes column vectors.
@@ -413,7 +416,14 @@ public class ReduceRecordSource implements RecordSource {
     //     VectorizedBatchUtil.displayBytes(keyBytes, 0, keyLength));
 
     keyBinarySortableDeserializeToRow.setBytes(keyBytes, 0, keyLength);
-    keyBinarySortableDeserializeToRow.deserialize(batch, 0);
+    try {
+      keyBinarySortableDeserializeToRow.deserialize(batch, 0);
+    } catch (Exception e) {
+      throw new HiveException(
+          "\nDeserializeRead details: " +
+              keyBinarySortableDeserializeToRow.getDetailedReadPositionString(),
+          e);
+    }
     for(int i = 0; i < firstValueColumnOffset; i++) {
       VectorizedBatchUtil.setRepeatingColumn(batch, i);
     }
