@@ -15,6 +15,9 @@
 package org.apache.hadoop.hive.llap.tezplugins;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.io.Writable;
+
+import org.apache.hadoop.hive.llap.protocol.LlapTaskUmbilicalProtocol.TezAttemptArray;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -633,13 +636,18 @@ public class LlapTaskCommunicator extends TezTaskCommunicatorImpl {
 
   private final AtomicLong nodeNotFoundLogTime = new AtomicLong(0);
 
-  void nodePinged(String hostname, String uniqueId, int port) {
+  void nodePinged(String hostname, String uniqueId, int port, TezAttemptArray tasks) {
     // TODO: do we ever need the port? we could just do away with nodeId altogether.
     LlapNodeId nodeId = LlapNodeId.getInstance(hostname, port);
     registerPingingNode(nodeId);
     BiMap<ContainerId, TezTaskAttemptID> biMap =
         entityTracker.getContainerAttemptMapForNode(nodeId);
     if (biMap != null) {
+      HashSet<TezTaskAttemptID> attempts = new HashSet<>();
+      for (Writable w : tasks.get()) {
+        attempts.add((TezTaskAttemptID)w);
+      }
+      String error = "";
       synchronized (biMap) {
         for (Map.Entry<ContainerId, TezTaskAttemptID> entry : biMap.entrySet()) {
           // TODO: this is a stopgap fix. We really need to change all mappings by unique node ID,
@@ -652,14 +660,21 @@ public class LlapTaskCommunicator extends TezTaskCommunicatorImpl {
           // However, the next heartbeat(s) should get the value eventually and mark task as alive.
           // Also, we prefer a missed heartbeat over a stuck query in case of discrepancy in ET.
           if (taskNodeId != null && taskNodeId.equals(uniqueId)) {
-            // Note: This is not ideal, and there's still going to be unnecessary kills for
-            // fragments which are known to the TaskCommunicator when this heartbeat is received,
-            // but may not have actually been accepted.
-            maybeSendFragmentStart(entry.getValue());
-            getContext().taskAlive(entry.getValue());
+            if (attempts.contains(attemptId)) {
+              // Note: This is not ideal, and there's still going to be unnecessary kills for
+              // fragments which are known to the TaskCommunicator when this heartbeat is received,
+              // but may not have actually been accepted.
+              maybeSendFragmentStart(entry.getValue());
+              getContext().taskAlive(entry.getValue());
+            } else {
+              error += (attemptId + ", ");
+            }
             getContext().containerAlive(entry.getKey());
           }
         }
+      }
+      if (!error.isEmpty()) {
+        LOG.info("The tasks we expected to be on the node are not there: " + error);
       }
     } else {
       long currentTs = TimeUnit.MILLISECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS);
@@ -760,11 +775,13 @@ public class LlapTaskCommunicator extends TezTaskCommunicatorImpl {
     }
 
     @Override
-    public void nodeHeartbeat(Text hostname, Text uniqueId, int port) throws IOException {
+
+    public void nodeHeartbeat(
+        Text hostname, Text uniqueId, int port, TezAttemptArray aw) throws IOException {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Received heartbeat from [" + hostname + ":" + port +" (" + uniqueId +")]");
       }
-      nodePinged(hostname.toString(), uniqueId.toString(), port);
+      nodePinged(hostname.toString(), uniqueId.toString(), port, aw);
     }
 
     @Override

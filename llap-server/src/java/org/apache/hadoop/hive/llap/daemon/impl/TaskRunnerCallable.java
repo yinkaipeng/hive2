@@ -151,7 +151,7 @@ public class TaskRunnerCallable extends CallableWithNdc<TaskRunner2Result> {
     // Register with the AMReporter when the callable is setup. Unregister once it starts running.
     if (amReporter != null && jobToken != null) {
       this.amReporter.registerTask(request.getAmHost(), request.getAmPort(),
-          vertex.getTokenIdentifier(), jobToken, fragmentInfo.getQueryInfo().getQueryIdentifier());
+          vertex.getTokenIdentifier(), jobToken, fragmentInfo.getQueryInfo().getQueryIdentifier(), attemptId);
     }
     this.metrics = metrics;
     this.requestId = taskSpec.getTaskAttemptID().toString();
@@ -188,12 +188,13 @@ public class TaskRunnerCallable extends CallableWithNdc<TaskRunner2Result> {
       }
 
       // Unregister from the AMReporter, since the task is now running.
+      TezTaskAttemptID ta = taskSpec.getTaskAttemptID();
       this.amReporter.unregisterTask(request.getAmHost(), request.getAmPort(),
-          fragmentInfo.getQueryInfo().getQueryIdentifier());
+          fragmentInfo.getQueryInfo().getQueryIdentifier(), ta);
 
       synchronized (this) {
         if (!shouldRunTask) {
-          LOG.info("Not starting task {} since it was killed earlier", taskSpec.getTaskAttemptID());
+          LOG.info("Not starting task {} since it was killed earlier", ta);
           return new TaskRunner2Result(EndReason.KILL_REQUESTED, null, null, false);
         }
       }
@@ -348,7 +349,7 @@ public class TaskRunnerCallable extends CallableWithNdc<TaskRunner2Result> {
             boolean killed = taskRunner.killTask();
             if (killed) {
               // Sending a kill message to the AM right here. Don't need to wait for the task to complete.
-              LOG.info("Kill request for task {} completed. Informing AM", taskSpec.getTaskAttemptID());
+              LOG.info("Kill request for task {} completed. Informing AM", ta);
               // Inform the scheduler that this fragment has been killed.
               // If the kill failed - that means the task has already hit a final condition,
               // and a notification comes from the LlapTaskReporter
@@ -356,7 +357,7 @@ public class TaskRunnerCallable extends CallableWithNdc<TaskRunner2Result> {
               reportTaskKilled();
             } else {
               LOG.info("Kill request for task {} did not complete because the task is already complete",
-                  taskSpec.getTaskAttemptID());
+                  ta);
             }
           } else {
             // If the task hasn't started, and it is killed - report back to the AM that the task has been killed.
@@ -367,9 +368,8 @@ public class TaskRunnerCallable extends CallableWithNdc<TaskRunner2Result> {
             // If the task hasn't started - inform about fragment completion immediately. It's possible for
             // the callable to never run.
             fragmentCompletionHanler.fragmentComplete(fragmentInfo);
-            this.amReporter
-                .unregisterTask(request.getAmHost(), request.getAmPort(),
-                    fragmentInfo.getQueryInfo().getQueryIdentifier());
+            this.amReporter.unregisterTask(request.getAmHost(), request.getAmPort(),
+                fragmentInfo.getQueryInfo().getQueryIdentifier(), ta);
           }
         }
       } else {

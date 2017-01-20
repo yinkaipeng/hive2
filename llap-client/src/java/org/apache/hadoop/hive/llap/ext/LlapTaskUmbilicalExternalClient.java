@@ -16,6 +16,14 @@
  */
 package org.apache.hadoop.hive.llap.ext;
 
+import org.apache.hadoop.io.Writable;
+
+import java.util.HashSet;
+
+import org.apache.hadoop.hive.llap.protocol.LlapTaskUmbilicalProtocol.TezAttemptArray;
+
+import org.apache.hadoop.io.ArrayWritable;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -466,11 +474,12 @@ public class LlapTaskUmbilicalExternalClient implements Closeable {
     }
 
     @Override
-    public void nodeHeartbeat(Text hostname, Text uniqueId, int port) throws IOException {
+    public void nodeHeartbeat(
+        Text hostname, Text uniqueId, int port, TezAttemptArray aw) throws IOException {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Node heartbeat from " + hostname + ":" + port + ", " + uniqueId);
       }
-      updateHeartbeatInfo(hostname.toString(), uniqueId.toString(), port);
+      updateHeartbeatInfo(hostname.toString(), uniqueId.toString(), port, aw);
       // No need to propagate to this to the responder
     }
 
@@ -527,14 +536,26 @@ public class LlapTaskUmbilicalExternalClient implements Closeable {
       }
     }
 
-    private void updateHeartbeatInfo(String hostname, String uniqueId, int port) {
+    private void updateHeartbeatInfo(String hostname, String uniqueId, int port,
+        TezAttemptArray tasks) {
       int updateCount = 0;
-
+      HashSet<TezTaskAttemptID> attempts = new HashSet<>();
+      for (Writable w : tasks.get()) {
+        attempts.add((TezTaskAttemptID)w);
+      }
+  
+      String error = "";
       for (Map.Entry<String, LlapTaskUmbilicalExternalClient> entry : registeredClients.entrySet()) {
         LlapTaskUmbilicalExternalClient registeredClient = entry.getValue();
+        String taskAttemptId = entry.getKey();
         if (doesClientMatchHeartbeat(registeredClient, hostname, uniqueId, port)) {
-          registeredClient.setLastHeartbeat(System.currentTimeMillis());
-          updateCount++;
+          TezTaskAttemptID ta = TezTaskAttemptID.fromString(taskAttemptId);
+          if (attempts.contains(ta)) {
+            registeredClient.setLastHeartbeat(System.currentTimeMillis());
+            updateCount++;
+          } else {
+            error += (taskAttemptId + ", ");
+          }
         }
       }
 
