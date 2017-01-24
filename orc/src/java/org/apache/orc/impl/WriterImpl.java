@@ -126,17 +126,10 @@ public class WriterImpl implements Writer, MemoryManager.Callback {
   public WriterImpl(FileSystem fs,
                     Path path,
                     OrcFile.WriterOptions opts) throws IOException {
-    this(new PhysicalFsWriter(fs, path, opts.getSchema().getMaximumId() + 1, opts), path, opts);
-  }
-
-  public WriterImpl(PhysicalWriter writer,
-                    Path pathForMem,
-                    OrcFile.WriterOptions opts) throws IOException {
-    this.physWriter = writer;
-    this.path = pathForMem;
+    this.path = path;
     this.conf = opts.getConfiguration();
-    this.schema = opts.getSchema();
     this.callback = opts.getCallback();
+    this.schema = opts.getSchema();
     if (callback != null) {
       callbackContext = new OrcFile.WriterContext(){
 
@@ -161,6 +154,8 @@ public class WriterImpl implements Writer, MemoryManager.Callback {
           OrcUtils.includeColumns(opts.getBloomFilterColumns(), schema);
     }
     this.bloomFilterFpp = opts.getBloomFilterFpp();
+    int numColumns = schema.getMaximumId() + 1;
+    physWriter = new PhysicalFsWriter(fs, path, numColumns, opts);
     treeWriter = createTreeWriter(schema, streamFactory, false);
     if (buildIndex && rowIndexStride < MIN_ROW_INDEX_STRIDE) {
       throw new IllegalArgumentException("Row stride must be at least " +
@@ -168,9 +163,7 @@ public class WriterImpl implements Writer, MemoryManager.Callback {
     }
 
     // ensure that we are able to handle callbacks before we register ourselves
-    if (path != null) {
-      memoryManager.addWriter(path, opts.getStripeSize(), this);
-    }
+    memoryManager.addWriter(path, opts.getStripeSize(), this);
   }
 
   @Override
@@ -2136,7 +2129,83 @@ public class WriterImpl implements Writer, MemoryManager.Callback {
   private static void writeTypes(OrcProto.Footer.Builder builder,
                                  TypeDescription schema) {
     OrcProto.Type.Builder type = OrcProto.Type.newBuilder();
-    List<TypeDescription> children = OrcUtils.setTypeBuilderFromSchema(type, schema);
+    List<TypeDescription> children = schema.getChildren();
+    switch (schema.getCategory()) {
+      case BOOLEAN:
+        type.setKind(OrcProto.Type.Kind.BOOLEAN);
+        break;
+      case BYTE:
+        type.setKind(OrcProto.Type.Kind.BYTE);
+        break;
+      case SHORT:
+        type.setKind(OrcProto.Type.Kind.SHORT);
+        break;
+      case INT:
+        type.setKind(OrcProto.Type.Kind.INT);
+        break;
+      case LONG:
+        type.setKind(OrcProto.Type.Kind.LONG);
+        break;
+      case FLOAT:
+        type.setKind(OrcProto.Type.Kind.FLOAT);
+        break;
+      case DOUBLE:
+        type.setKind(OrcProto.Type.Kind.DOUBLE);
+        break;
+      case STRING:
+        type.setKind(OrcProto.Type.Kind.STRING);
+        break;
+      case CHAR:
+        type.setKind(OrcProto.Type.Kind.CHAR);
+        type.setMaximumLength(schema.getMaxLength());
+        break;
+      case VARCHAR:
+        type.setKind(OrcProto.Type.Kind.VARCHAR);
+        type.setMaximumLength(schema.getMaxLength());
+        break;
+      case BINARY:
+        type.setKind(OrcProto.Type.Kind.BINARY);
+        break;
+      case TIMESTAMP:
+        type.setKind(OrcProto.Type.Kind.TIMESTAMP);
+        break;
+      case DATE:
+        type.setKind(OrcProto.Type.Kind.DATE);
+        break;
+      case DECIMAL:
+        type.setKind(OrcProto.Type.Kind.DECIMAL);
+        type.setPrecision(schema.getPrecision());
+        type.setScale(schema.getScale());
+        break;
+      case LIST:
+        type.setKind(OrcProto.Type.Kind.LIST);
+        type.addSubtypes(children.get(0).getId());
+        break;
+      case MAP:
+        type.setKind(OrcProto.Type.Kind.MAP);
+        for(TypeDescription t: children) {
+          type.addSubtypes(t.getId());
+        }
+        break;
+      case STRUCT:
+        type.setKind(OrcProto.Type.Kind.STRUCT);
+        for(TypeDescription t: children) {
+          type.addSubtypes(t.getId());
+        }
+        for(String field: schema.getFieldNames()) {
+          type.addFieldNames(field);
+        }
+        break;
+      case UNION:
+        type.setKind(OrcProto.Type.Kind.UNION);
+        for(TypeDescription t: children) {
+          type.addSubtypes(t.getId());
+        }
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown category: " +
+          schema.getCategory());
+    }
     builder.addTypes(type);
     if (children != null) {
       for(TypeDescription child: children) {
@@ -2328,9 +2397,7 @@ public class WriterImpl implements Writer, MemoryManager.Callback {
       callback.preFooterWrite(callbackContext);
     }
     // remove us from the memory manager so that we don't get any callbacks
-    if (path != null) {
-      memoryManager.removeWriter(path);
-    }
+    memoryManager.removeWriter(path);
     // actually close the file
     flushStripe();
     writeMetadata();

@@ -32,11 +32,10 @@ import org.apache.hadoop.hive.ql.io.SyntheticFileId;
 import org.apache.hadoop.hive.ql.io.orc.encoded.OrcBatchKey;
 import org.apache.orc.DataReader;
 import org.apache.orc.OrcProto;
-import org.apache.orc.OrcProto.RowIndexEntry;
 import org.apache.orc.StripeInformation;
 import org.apache.orc.impl.OrcIndex;
 
-public class OrcStripeMetadata extends LlapCacheableBuffer implements ConsumerStripeMetadata {
+public class OrcStripeMetadata extends LlapCacheableBuffer {
   private final OrcBatchKey stripeKey;
   private final List<OrcProto.ColumnEncoding> encodings;
   private final List<OrcProto.Stream> streams;
@@ -172,15 +171,5 @@ public class OrcStripeMetadata extends LlapCacheableBuffer implements ConsumerSt
   @VisibleForTesting
   public void resetRowIndex() {
     rowIndex = null;
-  }
-
-  @Override
-  public RowIndexEntry getRowIndexEntry(int colIx, int rgIx) {
-    return rowIndex.getRowGroupIndex()[colIx].getEntry(rgIx);
-  }
-
-  @Override
-  public boolean supportsRowIndexes() {
-    return true;
   }
 }

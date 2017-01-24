@@ -18,11 +18,10 @@
 
 package org.apache.hadoop.hive.llap.io.api;
 
-import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapred.InputFormat;
 
 public interface LlapIo<T> {
-  InputFormat<NullWritable, T> getInputFormat(InputFormat sourceInputFormat, Deserializer serde);
+  InputFormat<NullWritable, T> getInputFormat(InputFormat sourceInputFormat);
   void close();
 }

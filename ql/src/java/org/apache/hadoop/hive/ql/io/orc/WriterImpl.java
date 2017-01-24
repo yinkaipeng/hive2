@@ -93,28 +93,14 @@ public class WriterImpl extends org.apache.orc.impl.WriterImpl implements Writer
              OrcFile.WriterOptions opts) throws IOException {
     super(fs, path, opts);
     this.inspector = opts.getInspector();
-    this.internalBatch = opts.getSchema().createRowBatch(opts.getBatchSize());
-    this.fields = initializeFieldsFromOi(inspector);
-  }
-
-  public WriterImpl(PhysicalWriter writer,
-                    Path pathForMem,
-                    OrcFile.WriterOptions opts) throws IOException {
-    super(writer, pathForMem, opts);
-    this.inspector = opts.getInspector();
-    this.internalBatch = opts.getSchema().createRowBatch(opts.getBatchSize());
-    this.fields = initializeFieldsFromOi(inspector);
-  }
-
-  private static StructField[] initializeFieldsFromOi(ObjectInspector inspector) {
+    internalBatch = opts.getSchema().createRowBatch(opts.getBatchSize());
     if (inspector instanceof StructObjectInspector) {
       List<? extends StructField> fieldList =
           ((StructObjectInspector) inspector).getAllStructFieldRefs();
-      StructField[] fields = new StructField[fieldList.size()];
+      fields = new StructField[fieldList.size()];
       fieldList.toArray(fields);
-      return fields;
     } else {
-      return null;
+      fields = null;
     }
   }
 

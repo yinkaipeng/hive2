@@ -605,8 +605,7 @@ public final class BuddyAllocator implements EvictionAwareAllocator, BuddyAlloca
       assert data != null;
       int headerIx = buffer.byteBuffer.position() >>> minAllocLog2,
           freeListIx = freeListFromHeader(headers[headerIx]);
-      assert freeListIx == (31 - Integer.numberOfLeadingZeros(buffer.allocSize) - minAllocLog2)
-          : buffer.allocSize + " " + freeListIx;
+      assert freeListIx == (31 - Integer.numberOfLeadingZeros(buffer.allocSize) - minAllocLog2);
       while (true) {
         FreeList freeList = freeLists[freeListIx];
         int bHeaderIx = headerIx ^ (1 << freeListIx);

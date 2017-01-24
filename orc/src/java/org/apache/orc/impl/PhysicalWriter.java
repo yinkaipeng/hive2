@@ -19,6 +19,7 @@
 package org.apache.orc.impl;
 
 import java.io.IOException;
+import java.util.EnumSet;
 
 import org.apache.orc.OrcProto.BloomFilterIndex;
 import org.apache.orc.OrcProto.Footer;
