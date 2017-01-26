@@ -2851,7 +2851,7 @@ public class HiveConf extends Configuration {
         "Whether LLAP should use fileId (inode)-based path to ensure better consistency for the\n" +
         "cases of file overwrites. This is supported on HDFS."),
     // Restricted to text for now as this is a new feature; only text files can be sliced.
-    LLAP_IO_ENCODE_ENABLED("hive.llap.io.encode.enabled", true,
+    LLAP_IO_ENCODE_ENABLED("hive.llap.io.encode.enabled", false,
         "Whether LLAP should try to re-encode and cache data for non-ORC formats. This is used\n" +
         "on LLAP Server side to determine if the infrastructure for that is initialized."),
     LLAP_IO_ENCODE_FORMATS("hive.llap.io.encode.formats",
