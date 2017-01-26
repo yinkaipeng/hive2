@@ -651,7 +651,7 @@ public class TestDbTxnManager2 {
     txnMgr.openTxn(ctx, "T1");
     checkCmdOnDriver(driver.compileAndRespond("select * from tab_acid inner join tab_not_acid on a = na"));
     txnMgr.acquireLocks(driver.getPlan(), ctx, "T1");
-    List<ShowLocksResponseElement> locks = getLocks(txnMgr, true);
+    List<ShowLocksResponseElement> locks = getLocks(txnMgr);
     Assert.assertEquals("Unexpected lock count", 6, locks.size());
     checkLock(LockType.SHARED_READ, LockState.ACQUIRED, "default", "tab_acid", null, locks);
     checkLock(LockType.SHARED_READ, LockState.ACQUIRED, "default", "tab_acid", "p=bar", locks);
@@ -664,7 +664,7 @@ public class TestDbTxnManager2 {
     txnMgr2.openTxn(ctx, "T2");
     checkCmdOnDriver(driver.compileAndRespond("insert into tab_not_acid partition(np='doh') values(5,6)"));
     LockState ls = ((DbTxnManager)txnMgr2).acquireLocks(driver.getPlan(), ctx, "T2", false);
-    locks = getLocks(txnMgr2, true);
+    locks = getLocks(txnMgr2);
     Assert.assertEquals("Unexpected lock count", 7, locks.size());
     checkLock(LockType.SHARED_READ, LockState.ACQUIRED, "default", "tab_acid", null, locks);
     checkLock(LockType.SHARED_READ, LockState.ACQUIRED, "default", "tab_acid", "p=bar", locks);
@@ -794,85 +794,13 @@ public class TestDbTxnManager2 {
     return s == null ? null : s.toLowerCase();
   }
 
-  /**
-   * @deprecated use {@link #getLocks(boolean)}
-   */
   private List<ShowLocksResponseElement> getLocks() throws Exception {
-    return getLocks(false);
+    return getLocks(txnMgr);
   }
-  private List<ShowLocksResponseElement> getLocks(boolean sorted) throws Exception {
-    return getLocks(this.txnMgr, sorted);
-  }
-  /**
-   * @deprecated use {@link #getLocks(HiveTxnManager, boolean)}
-   */
   private List<ShowLocksResponseElement> getLocks(HiveTxnManager txnMgr) throws Exception {
-    return getLocks(txnMgr, false);
-  }
-
-  /**
-   * for some reason sort order of locks changes across different branches...
-   */
-  private List<ShowLocksResponseElement> getLocks(HiveTxnManager txnMgr, boolean sorted) throws Exception {
     ShowLocksResponse rsp = ((DbLockManager)txnMgr.getLockManager()).getLocks();
-    if(sorted) {
-      Collections.sort(rsp.getLocks(), new LockComparator());
-    }
     return rsp.getLocks();
   }
-  private static class LockComparator implements Comparator<ShowLocksResponseElement> {
-    @Override
-    public boolean equals(Object other) {
-      return other instanceof LockComparator;
-    }
-    //sort is not important except that it's consistent
-    @Override
-    public int compare(ShowLocksResponseElement p1, ShowLocksResponseElement p2) {
-      if(p1 == null && p2 == null) {
-        return 0;
-      }
-      if(p1 == null) {
-        return -1;
-      }
-      if(p2 == null) {
-        return 1;
-      }
-      int v = 0;
-      if((v = compare(p1.getDbname(), p2.getDbname())) != 0) {
-        return v;
-      }
-      if((v = compare(p1.getTablename(), p2.getTablename())) != 0) {
-        return v;
-      }
-      if((v = compare(p1.getPartname(), p2.getPartname())) != 0) {
-        return v;
-      }
-      if((v = p1.getType().getValue() - p2.getType().getValue()) != 0) {
-        return v;
-      }
-      if((v = p1.getState().getValue() - p2.getState().getValue()) != 0) {
-        return v;
-      }
-      //we should never get here (given current code)
-      if(p1.getLockid() == p2.getLockid()) {
-        return (int)(p1.getLockIdInternal() - p2.getLockIdInternal());
-      }
-      return (int)(p1.getLockid() - p2.getLockid());
-    }
-    private static int compare(String s1, String s2) {
-      if(s1 == null && s2 == null) {
-        return 0;
-      }
-      if(s1 == null) {
-        return -1;
-      }
-      if(s2 == null) {
-        return 1;
-      }
-      return s1.compareTo(s2);
-    }
-  }
-
     /**
    * txns update same resource but do not overlap in time - no conflict
    */
