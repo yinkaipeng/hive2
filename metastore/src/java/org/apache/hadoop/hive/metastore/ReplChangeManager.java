@@ -180,7 +180,11 @@ public class ReplChangeManager {
           // Note we currently only track the last known trace as
           // xattr has limited capacity. We shall revisit and store all original
           // locations if orig-loc becomes important
-          fs.setXAttr(cmPath, ORIG_LOC_TAG, path.toString().getBytes());
+          try {
+            fs.setXAttr(cmPath, ORIG_LOC_TAG, path.toString().getBytes());
+          } catch (UnsupportedOperationException e) {
+            LOG.warn("Error setting xattr for " + path.toString());
+          }
 
           count++;
         }
@@ -188,7 +192,11 @@ public class ReplChangeManager {
         // If multiple files share the same content, then
         // any file claim remain in trash would be granted
         if (!ifPurge) {
-          fs.setXAttr(cmPath, REMAIN_IN_TRASH_TAG, new byte[]{0});
+          try {
+            fs.setXAttr(cmPath, REMAIN_IN_TRASH_TAG, new byte[]{0});
+          } catch (UnsupportedOperationException e) {
+            LOG.warn("Error setting xattr for " + cmPath.toString());
+          }
         }
       }
       return count;
@@ -331,24 +339,28 @@ public class ReplChangeManager {
         for (FileStatus file : files) {
           long modifiedTime = file.getModificationTime();
           if (now - modifiedTime > secRetain*1000) {
-            if (fs.getXAttrs(file.getPath()).containsKey(REMAIN_IN_TRASH_TAG)) {
-              boolean succ = Trash.moveToAppropriateTrash(fs, file.getPath(), hiveConf);
-              if (succ) {
-                if (LOG.isDebugEnabled()) {
-                  LOG.debug("Move " + file.toString() + " to trash");
+            try {
+              if (fs.getXAttrs(file.getPath()).containsKey(REMAIN_IN_TRASH_TAG)) {
+                boolean succ = Trash.moveToAppropriateTrash(fs, file.getPath(), hiveConf);
+                if (succ) {
+                  if (LOG.isDebugEnabled()) {
+                    LOG.debug("Move " + file.toString() + " to trash");
+                  }
+                } else {
+                  LOG.warn("Fail to move " + file.toString() + " to trash");
                 }
               } else {
-                LOG.warn("Fail to move " + file.toString() + " to trash");
-              }
-            } else {
-              boolean succ = fs.delete(file.getPath(), false);
-              if (succ) {
-                if (LOG.isDebugEnabled()) {
-                  LOG.debug("Remove " + file.toString());
+                boolean succ = fs.delete(file.getPath(), false);
+                if (succ) {
+                  if (LOG.isDebugEnabled()) {
+                    LOG.debug("Remove " + file.toString());
+                  }
+                } else {
+                  LOG.warn("Fail to remove " + file.toString());
                 }
-              } else {
-                LOG.warn("Fail to remove " + file.toString());
               }
+            } catch (UnsupportedOperationException e) {
+              LOG.warn("Error getting xattr for " + file.getPath().toString());
             }
           }
         }
