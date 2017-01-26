@@ -178,6 +178,14 @@ POSTHOOK: Input: default@alltypesorc
 POSTHOOK: Output: default@acid_dtt
 POSTHOOK: Lineage: acid_dtt.a SIMPLE [(alltypesorc)alltypesorc.FieldSchema(name:cint, type:int, comment:null), ]
 POSTHOOK: Lineage: acid_dtt.b EXPRESSION [(alltypesorc)alltypesorc.FieldSchema(name:cstring1, type:string, comment:null), ]
+PREHOOK: query: alter table acid_dtt update statistics set('numRows'='430', 'rawDataSize'='1722')
+PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
+PREHOOK: Input: default@acid_dtt
+PREHOOK: Output: default@acid_dtt
+POSTHOOK: query: alter table acid_dtt update statistics set('numRows'='430', 'rawDataSize'='1722')
+POSTHOOK: type: ALTERTABLE_UPDATETABLESTATS
+POSTHOOK: Input: default@acid_dtt
+POSTHOOK: Output: default@acid_dtt
 PREHOOK: query: explain select max(a) from acid_dtt
 PREHOOK: type: QUERY
 POSTHOOK: query: explain select max(a) from acid_dtt
@@ -192,11 +200,11 @@ STAGE PLANS:
       Map Operator Tree:
           TableScan
             alias: acid_dtt
-            Statistics: Num rows: 428 Data size: 1714 Basic stats: COMPLETE Column stats: NONE
+            Statistics: Num rows: 430 Data size: 1722 Basic stats: COMPLETE Column stats: NONE
             Select Operator
               expressions: a (type: int)
               outputColumnNames: a
-              Statistics: Num rows: 428 Data size: 1714 Basic stats: COMPLETE Column stats: NONE
+              Statistics: Num rows: 430 Data size: 1722 Basic stats: COMPLETE Column stats: NONE
               Group By Operator
                 aggregations: max(a)
                 mode: hash
@@ -248,11 +256,11 @@ STAGE PLANS:
       Map Operator Tree:
           TableScan
             alias: acid_dtt
-            Statistics: Num rows: 679 Data size: 2719 Basic stats: COMPLETE Column stats: NONE
+            Statistics: Num rows: 430 Data size: 1722 Basic stats: COMPLETE Column stats: NONE
             Select Operator
               expressions: a (type: int)
               outputColumnNames: a
-              Statistics: Num rows: 679 Data size: 2719 Basic stats: COMPLETE Column stats: NONE
+              Statistics: Num rows: 430 Data size: 1722 Basic stats: COMPLETE Column stats: NONE
               Group By Operator
                 aggregations: max(a)
                 mode: hash
