@@ -19,13 +19,14 @@
 
 package org.apache.hadoop.hive.metastore.messaging.json;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Nullable;
+
+import com.google.common.collect.Iterables;
 
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Function;
@@ -49,6 +50,8 @@ import org.apache.hadoop.hive.metastore.messaging.DropTableMessage;
 import org.apache.hadoop.hive.metastore.messaging.InsertMessage;
 import org.apache.hadoop.hive.metastore.messaging.MessageDeserializer;
 import org.apache.hadoop.hive.metastore.messaging.MessageFactory;
+import org.apache.hadoop.hive.metastore.messaging.PartitionFiles;
+import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
@@ -73,6 +76,7 @@ public class JSONMessageFactory extends MessageFactory {
   private static final Logger LOG = LoggerFactory.getLogger(JSONMessageFactory.class.getName());
 
   private static JSONMessageDeserializer deserializer = new JSONMessageDeserializer();
+  private static TDeserializer thriftDeSerializer = new TDeserializer(new TJSONProtocol.Factory());
 
   @Override
   public MessageDeserializer getDeserializer() {
@@ -100,13 +104,13 @@ public class JSONMessageFactory extends MessageFactory {
   }
 
   @Override
-  public CreateTableMessage buildCreateTableMessage(Table table) {
-    return new JSONCreateTableMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL, table, now());
+  public CreateTableMessage buildCreateTableMessage(Table table, Iterator<String> fileIter) {
+    return new JSONCreateTableMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL, table, fileIter, now());
   }
 
   @Override
   public AlterTableMessage buildAlterTableMessage(Table before, Table after) {
-    return new JSONAlterTableMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL, after, now());
+    return new JSONAlterTableMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL, before, after, now());
   }
 
   @Override
@@ -117,9 +121,9 @@ public class JSONMessageFactory extends MessageFactory {
 
   @Override
   public AddPartitionMessage buildAddPartitionMessage(Table table,
-      Iterator<Partition> partitionsIterator) {
+      Iterator<Partition> partitionsIterator, Iterator<PartitionFiles> partitionFileIter) {
     return new JSONAddPartitionMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL, table,
-        partitionsIterator, now());
+        partitionsIterator, partitionFileIter, now());
   }
 
   @Override
@@ -132,8 +136,8 @@ public class JSONMessageFactory extends MessageFactory {
   @Override
   public DropPartitionMessage buildDropPartitionMessage(Table table,
       Iterator<Partition> partitionsIterator) {
-    return new JSONDropPartitionMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL, table.getDbName(),
-        table.getTableName(), getPartitionKeyValues(table, partitionsIterator), now());
+    return new JSONDropPartitionMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL, table,
+        getPartitionKeyValues(table, partitionsIterator), now());
   }
 
   @Override
@@ -163,9 +167,9 @@ public class JSONMessageFactory extends MessageFactory {
 
   @Override
   public InsertMessage buildInsertMessage(String db, String table, Map<String, String> partKeyVals,
-      List<String> files) {
+      Iterator<String> fileIter) {
     return new JSONInsertMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL, db, table, partKeyVals,
-        files, now());
+        fileIter, now());
   }
 
   private long now() {
@@ -211,7 +215,11 @@ public class JSONMessageFactory extends MessageFactory {
   }
 
   public static ObjectNode getJsonTree(NotificationEvent event) throws Exception {
-    JsonParser jsonParser = (new JsonFactory()).createJsonParser(event.getMessage());
+    return getJsonTree(event.getMessage());
+  }
+
+  public static ObjectNode getJsonTree(String eventMessage) throws Exception {
+    JsonParser jsonParser = (new JsonFactory()).createJsonParser(eventMessage);
     ObjectMapper mapper = new ObjectMapper();
     return mapper.readValue(jsonParser, ObjectNode.class);
   }
@@ -224,35 +232,76 @@ public class JSONMessageFactory extends MessageFactory {
     return tableObj;
   }
 
-  public static List<Partition> getPartitionObjList(ObjectNode jsonTree) throws Exception {
-    TDeserializer deSerializer = new TDeserializer(new TJSONProtocol.Factory());
-    List<Partition> partitionObjList = new ArrayList<Partition>();
-    Partition partitionObj = new Partition();
-    Iterator<JsonNode> jsonArrayIterator = jsonTree.get("partitionListJson").iterator();
-    while (jsonArrayIterator.hasNext()) {
-      deSerializer.deserialize(partitionObj, jsonArrayIterator.next().asText(), "UTF-8");
-      partitionObjList.add(partitionObj);
+  /*
+   * TODO: Some thoughts here : We have a current todo to move some of these methods over to
+   * MessageFactory instead of being here, so we can override them, but before we move them over,
+   * we should keep the following in mind:
+   *
+   * a) We should return Iterables, not Lists. That makes sure that we can be memory-safe when
+   * implementing it rather than forcing ourselves down a path wherein returning List is part of
+   * our interface, and then people use .size() or somesuch which makes us need to materialize
+   * the entire list and not change. Also, returning Iterables allows us to do things like
+   * Iterables.transform for some of these.
+   * b) We should not have "magic" names like "tableObjJson", because that breaks expectation of a
+   * couple of things - firstly, that of serialization format, although that is fine for this
+   * JSONMessageFactory, and secondly, that makes us just have a number of mappings, one for each
+   * obj type, and sometimes, as the case is with alter, have multiples. Also, any event-specific
+   * item belongs in that event message / event itself, as opposed to in the factory. It's okay to
+   * have utility accessor methods here that are used by each of the messages to provide accessors.
+   * I'm adding a couple of those here.
+   *
+   */
+
+  public static TBase getTObj(String tSerialized, Class<? extends TBase> objClass) throws Exception{
+    TBase obj = objClass.newInstance();
+    thriftDeSerializer.deserialize(obj, tSerialized, "UTF-8");
+    return obj;
+  }
+
+
+  public static Iterable<? extends TBase> getTObjs(
+      Iterable<String> objRefStrs, final Class<? extends TBase> objClass) throws Exception {
+
+    try {
+      return Iterables.transform(objRefStrs, new com.google.common.base.Function<String,TBase>(){
+        @Override
+        public TBase apply(@Nullable String objStr){
+          try {
+            return getTObj(objStr, objClass);
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        }
+      });
+    } catch (RuntimeException re){
+      // We have to add this bit of exception handling here, because Function.apply does not allow us to throw
+      // the actual exception that might be a checked exception, so we wind up needing to throw a RuntimeException
+      // with the previously thrown exception as its cause. However, since RuntimeException.getCause() returns
+      // a throwable instead of an Exception, we have to account for the possibility that the underlying code
+      // might have thrown a Throwable that we wrapped instead, in which case, continuing to throw the
+      // RuntimeException is the best thing we can do.
+      Throwable t = re.getCause();
+      if (t instanceof Exception){
+        throw (Exception) t;
+      } else {
+        throw re;
+      }
     }
-    return partitionObjList;
   }
 
-  public static Function getFunctionObj(ObjectNode jsonTree) throws Exception {
-    TDeserializer deSerializer = new TDeserializer(new TJSONProtocol.Factory());
-    Function funcObj = new Function();
-    String tableJson = jsonTree.get("functionObjJson").asText();
-    deSerializer.deserialize(funcObj, tableJson, "UTF-8");
-    return funcObj;
+  // If we do not need this format of accessor using ObjectNode, this is a candidate for removal as well
+  public static Iterable<? extends TBase> getTObjs(
+      ObjectNode jsonTree, String objRefListName, final Class<? extends TBase> objClass) throws Exception {
+    Iterable<JsonNode> jsonArrayIterator = jsonTree.get(objRefListName);
+    com.google.common.base.Function<JsonNode,String> textExtractor =
+        new com.google.common.base.Function<JsonNode, String>() {
+      @Nullable
+      @Override
+      public String apply(@Nullable JsonNode input) {
+        return input.asText();
+      }
+    };
+    return getTObjs(Iterables.transform(jsonArrayIterator, textExtractor), objClass);
   }
 
-  public static Index getIndexObj(ObjectNode jsonTree) throws Exception {
-    return getIndexObj(jsonTree, "indexObjJson");
-  }
-
-  public static Index getIndexObj(ObjectNode jsonTree, String indexObjKey) throws Exception {
-    TDeserializer deSerializer = new TDeserializer(new TJSONProtocol.Factory());
-    Index indexObj = new Index();
-    String tableJson = jsonTree.get(indexObjKey).asText();
-    deSerializer.deserialize(indexObj, tableJson, "UTF-8");
-    return indexObj;
-  }
 }

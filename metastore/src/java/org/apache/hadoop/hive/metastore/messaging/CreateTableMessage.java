@@ -19,6 +19,8 @@
 
 package org.apache.hadoop.hive.metastore.messaging;
 
+import org.apache.hadoop.hive.metastore.api.Table;
+
 public abstract class CreateTableMessage extends EventMessage {
 
   protected CreateTableMessage() {
@@ -26,10 +28,19 @@ public abstract class CreateTableMessage extends EventMessage {
   }
 
   /**
-   * Getter for the name of table created in HCatalog.
+   * Getter for the name of table created
    * @return Table-name (String).
    */
   public abstract String getTable();
+
+  public abstract Table getTableObj() throws Exception;
+
+  /**
+   * Get list of files created as a result of this DML operation
+   *
+   * @return The iterable of files
+   */
+  public abstract Iterable<String> getFiles();
 
   @Override
   public EventMessage checkValid() {

@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -102,9 +103,11 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
       String parsedDbName = null;
       LinkedHashMap<String, String> parsedPartSpec = new LinkedHashMap<String, String>();
 
-      // waitOnCreateDb determines whether or not non-existence of
-      // db is an error. For regular imports, it is.
-      boolean waitOnCreateDb = false;
+      // waitOnPrecursor determines whether or not non-existence of
+      // a dependent object is an error. For regular imports, it is.
+      // for now, the only thing this affects is whether or not the
+      // db exists.
+      boolean waitOnPrecursor = false;
 
       for (int i = 1; i < ast.getChildCount(); ++i){
         ASTNode child = (ASTNode) ast.getChild(i);
@@ -133,9 +136,10 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
 
       // parsing statement is now done, on to logic.
       tableExists = prepareImport(
-          isLocationSet, isExternalSet, isPartSpecSet, waitOnCreateDb,
+          isLocationSet, isExternalSet, isPartSpecSet, waitOnPrecursor,
           parsedLocation, parsedTableName, parsedDbName, parsedPartSpec, fromTree.getText(),
-          new EximUtil.SemanticAnalyzerWrapperContext(conf, db, inputs, outputs, rootTasks, LOG, ctx));
+          new EximUtil.SemanticAnalyzerWrapperContext(conf, db, inputs, outputs, rootTasks, LOG, ctx),
+          null, null);
 
     } catch (SemanticException e) {
       throw e;
@@ -168,10 +172,11 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
   }
 
   public static boolean prepareImport(
-      boolean isLocationSet, boolean isExternalSet, boolean isPartSpecSet, boolean waitOnCreateDb,
+      boolean isLocationSet, boolean isExternalSet, boolean isPartSpecSet, boolean waitOnPrecursor,
       String parsedLocation, String parsedTableName, String parsedDbName,
       LinkedHashMap<String, String> parsedPartSpec,
-      String fromLocn, EximUtil.SemanticAnalyzerWrapperContext x
+      String fromLocn, EximUtil.SemanticAnalyzerWrapperContext x,
+      Map<String,Long> dbsUpdated, Map<String,Long> tablesUpdated
   ) throws IOException, MetaException, HiveException, URISyntaxException {
 
     // initialize load path
@@ -199,6 +204,11 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
       // If the parsed statement contained a db.tablename specification, prefer that.
       dbname = parsedDbName;
     }
+    if (dbsUpdated != null){
+      dbsUpdated.put(
+          dbname,
+          Long.valueOf(replicationSpec.get(ReplicationSpec.KEY.EVENT_ID)));
+    }
 
     // Create table associated with the import
     // Executed if relevant, and used to contain all the other details about the table if not.
@@ -222,6 +232,11 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
 
     if ((parsedTableName!= null) && (!parsedTableName.isEmpty())){
       tblDesc.setTableName(parsedTableName);
+    }
+    if (tablesUpdated != null){
+      tablesUpdated.put(
+          dbname + "." + tblDesc.getTableName(),
+          Long.valueOf(replicationSpec.get(ReplicationSpec.KEY.EVENT_ID)));
     }
 
     List<AddPartitionDesc> partitionDescs = new ArrayList<AddPartitionDesc>();
@@ -281,7 +296,7 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
     } else {
       createReplImportTasks(
           tblDesc, partitionDescs,
-          isPartSpecSet, replicationSpec, waitOnCreateDb, table,
+          isPartSpecSet, replicationSpec, waitOnPrecursor, table,
           fromURI, fs, wh, x);
     }
     return tableExists;
@@ -342,7 +357,7 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
 
   private static Task<?> loadTable(URI fromURI, Table table, boolean replace, Path tgtPath,
                             ReplicationSpec replicationSpec, EximUtil.SemanticAnalyzerWrapperContext x) {
-    Path dataPath = new Path(fromURI.toString(), "data");
+    Path dataPath = new Path(fromURI.toString(), EximUtil.DATA_PATH_NAME);
     Path tmpPath = x.getCtx().getExternalTmpPath(tgtPath);
     Task<?> copyTask = ReplCopyTask.getLoadCopyTask(replicationSpec, dataPath, tmpPath, x.getConf());
     LoadTableDesc loadTableWork = new LoadTableDesc(tmpPath,
@@ -775,7 +790,7 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
         x.getLOG().debug("adding dependent CopyWork/MoveWork for table");
         if (tblDesc.isExternal() && (tblDesc.getLocation() == null)) {
           x.getLOG().debug("Importing in place, no emptiness check, no copying/loading");
-          Path dataPath = new Path(fromURI.toString(), "data");
+          Path dataPath = new Path(fromURI.toString(), EximUtil.DATA_PATH_NAME);
           tblDesc.setLocation(dataPath.toString());
         } else {
           Path tablePath = null;
@@ -799,7 +814,7 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
   private static void createReplImportTasks(
       CreateTableDesc tblDesc,
       List<AddPartitionDesc> partitionDescs,
-      boolean isPartSpecSet, ReplicationSpec replicationSpec, boolean waitOnCreateDb,
+      boolean isPartSpecSet, ReplicationSpec replicationSpec, boolean waitOnPrecursor,
       Table table, URI fromURI, FileSystem fs, Warehouse wh,
       EximUtil.SemanticAnalyzerWrapperContext x)
       throws HiveException, URISyntaxException, IOException, MetaException {
@@ -829,12 +844,12 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
     // defaults and do not error out in that case.
     Database parentDb = x.getHive().getDatabase(tblDesc.getDatabaseName());
     if (parentDb == null){
-      if (!waitOnCreateDb){
+      if (!waitOnPrecursor){
         throw new SemanticException(ErrorMsg.DATABASE_NOT_EXISTS.getMsg(tblDesc.getDatabaseName()));
       }
     }
     if (tblDesc.getLocation() == null) {
-      if (!waitOnCreateDb){
+      if (!waitOnPrecursor){
         tblDesc.setLocation(wh.getTablePath(parentDb, tblDesc.getTableName()).toString());
       } else {
         tblDesc.setLocation(

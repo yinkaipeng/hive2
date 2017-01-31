@@ -22,11 +22,14 @@ package org.apache.hadoop.hive.metastore.messaging.json;
 import org.apache.hadoop.hive.metastore.messaging.InsertMessage;
 import org.codehaus.jackson.annotate.JsonProperty;
 
+import com.google.common.collect.Lists;
+
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /**
- * JSON implementation of DropTableMessage.
+ * JSON implementation of InsertMessage
  */
 public class JSONInsertMessage extends InsertMessage {
 
@@ -40,57 +43,66 @@ public class JSONInsertMessage extends InsertMessage {
   List<String> files;
 
   @JsonProperty
-  Map<String,String> partKeyVals;
+  Map<String, String> partKeyVals;
 
   /**
    * Default constructor, needed for Jackson.
    */
-  public JSONInsertMessage() {}
+  public JSONInsertMessage() {
+  }
 
   public JSONInsertMessage(String server, String servicePrincipal, String db, String table,
-                           Map<String,String> partKeyVals, List<String> files, Long timestamp) {
+      Map<String, String> partKeyVals, Iterator<String> fileIter, Long timestamp) {
     this.server = server;
     this.servicePrincipal = servicePrincipal;
     this.db = db;
     this.table = table;
     this.timestamp = timestamp;
     this.partKeyVals = partKeyVals;
-    this.files = files;
+    this.files = Lists.newArrayList(fileIter);
     checkValid();
   }
 
+  @Override
+  public String getTable() {
+    return table;
+  }
 
   @Override
-  public String getTable() { return table; }
+  public String getServer() {
+    return server;
+  }
 
   @Override
-  public String getServer() { return server; }
-
-  @Override
-  public Map<String,String> getPartitionKeyValues() {
+  public Map<String, String> getPartitionKeyValues() {
     return partKeyVals;
   }
 
   @Override
-  public List<String> getFiles() {
+  public Iterable<String> getFiles() {
     return files;
   }
 
   @Override
-  public String getServicePrincipal() { return servicePrincipal; }
+  public String getServicePrincipal() {
+    return servicePrincipal;
+  }
 
   @Override
-  public String getDB() { return db; }
+  public String getDB() {
+    return db;
+  }
 
   @Override
-  public Long getTimestamp() { return timestamp; }
+  public Long getTimestamp() {
+    return timestamp;
+  }
 
   @Override
   public String toString() {
     try {
       return JSONMessageDeserializer.mapper.writeValueAsString(this);
-    }
-    catch (Exception exception) {
+    } catch (Exception exception) {
       throw new IllegalArgumentException("Could not serialize: ", exception);
     }
   }

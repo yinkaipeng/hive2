@@ -66,6 +66,7 @@ public class Warehouse {
 
   private MetaStoreFS fsHandler = null;
   private boolean storageAuthCheck = false;
+  private ReplChangeManager cm = null;
 
   public Warehouse(Configuration conf) throws MetaException {
     this.conf = conf;
@@ -75,6 +76,7 @@ public class Warehouse {
           + " is not set in the config or blank");
     }
     fsHandler = getMetaStoreFsHandler(conf);
+    cm = ReplChangeManager.getInstance((HiveConf)conf);
     storageAuthCheck = HiveConf.getBoolVar(conf,
         HiveConf.ConfVars.METASTORE_AUTHORIZATION_STORAGE_AUTH_CHECKS);
   }
@@ -223,6 +225,7 @@ public class Warehouse {
   }
 
   public boolean deleteDir(Path f, boolean recursive, boolean ifPurge) throws MetaException {
+    cm.recycle(f, ifPurge);
     FileSystem fs = getFs(f);
     return fsHandler.deleteDir(fs, f, recursive, ifPurge, conf);
   }
@@ -458,11 +461,11 @@ public class Warehouse {
   }
 
   public Path getPartitionPath(Database db, String tableName,
-      LinkedHashMap<String, String> pm) throws MetaException {
+      Map<String, String> pm) throws MetaException {
     return new Path(getTablePath(db, tableName), makePartPath(pm));
   }
 
-  public Path getPartitionPath(Path tblPath, LinkedHashMap<String, String> pm)
+  public Path getPartitionPath(Path tblPath, Map<String, String> pm)
       throws MetaException {
     return new Path(tblPath, makePartPath(pm));
   }

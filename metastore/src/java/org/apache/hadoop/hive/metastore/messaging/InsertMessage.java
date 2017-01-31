@@ -19,7 +19,6 @@
 
 package org.apache.hadoop.hive.metastore.messaging;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,10 +44,11 @@ public abstract class InsertMessage extends EventMessage {
   public abstract Map<String,String> getPartitionKeyValues();
 
   /**
-   * Get the list of files created as a result of this DML operation.  May be null.
-   * @return List of new files, or null.
+   * Get list of file name and checksum created as a result of this DML operation
+   *
+   * @return The iterable of files
    */
-  public abstract List<String> getFiles();
+  public abstract Iterable<String> getFiles();
 
   @Override
   public EventMessage checkValid() {

@@ -6321,23 +6321,23 @@ public class HiveMetaStore extends ThriftHiveMetastore {
     @Override
     public FireEventResponse fire_listener_event(FireEventRequest rqst) throws TException {
       switch (rqst.getData().getSetField()) {
-        case INSERT_DATA:
-          InsertEvent event = new InsertEvent(rqst.getDbName(), rqst.getTableName(),
-              rqst.getPartitionVals(), rqst.getData().getInsertData().getFilesAdded(),
-              rqst.isSuccessful(), this);
-          for (MetaStoreEventListener transactionalListener : transactionalListeners) {
-            transactionalListener.onInsert(event);
-          }
+      case INSERT_DATA:
+        InsertEvent event =
+            new InsertEvent(rqst.getDbName(), rqst.getTableName(), rqst.getPartitionVals(), rqst
+                .getData().getInsertData(), rqst.isSuccessful(), this);
+        for (MetaStoreEventListener transactionalListener : transactionalListeners) {
+          transactionalListener.onInsert(event);
+        }
 
-          for (MetaStoreEventListener listener : listeners) {
-            listener.onInsert(event);
-          }
+        for (MetaStoreEventListener listener : listeners) {
+          listener.onInsert(event);
+        }
 
-          return new FireEventResponse();
+        return new FireEventResponse();
 
-        default:
-          throw new TException("Event type " + rqst.getData().getSetField().toString() +
-              " not currently supported.");
+      default:
+        throw new TException("Event type " + rqst.getData().getSetField().toString()
+            + " not currently supported.");
       }
 
     }
@@ -7033,6 +7033,8 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         } finally {
           startLock.unlock();
         }
+
+        ReplChangeManager.scheduleCMClearer(conf);
       }
     };
     t.setDaemon(true);
