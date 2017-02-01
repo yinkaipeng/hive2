@@ -34,6 +34,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.llap.LlapUtil;
@@ -73,6 +75,7 @@ import org.eclipse.jetty.server.ssl.SslSocketConnector;
 import org.json.JSONObject;
 
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class LlapServiceDriver {
 
@@ -186,8 +189,11 @@ public class LlapServiceDriver {
     for (String f : OPTIONAL_CONFIGS) {
       conf.addResource(f);
     }
-
     conf.reloadConfiguration();
+
+    int threadCount = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
+    final ExecutorService executor = Executors.newFixedThreadPool(threadCount,
+            new ThreadFactoryBuilder().setNameFormat("llap-pkg-%d").build());
 
     populateConfWithLlapProperties(conf, options.getConfig());
 
