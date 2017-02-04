@@ -982,7 +982,7 @@
                   <onlyWhenRelease>true</onlyWhenRelease>
                 </requireReleaseDeps>
               </rules>
-              <fail>false</fail>
+              <fail>true</fail>
             </configuration>
           </execution>
         </executions>
