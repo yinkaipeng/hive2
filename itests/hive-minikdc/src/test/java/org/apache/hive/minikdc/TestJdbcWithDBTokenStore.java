@@ -21,8 +21,11 @@ package org.apache.hive.minikdc;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hive.jdbc.miniHS2.MiniHS2;
-import org.junit.BeforeClass;
 
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+
+@Ignore
 public class TestJdbcWithDBTokenStore extends TestJdbcWithMiniKdc{
 
   @BeforeClass
