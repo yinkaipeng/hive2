@@ -82,7 +82,7 @@ class VertorDeserializeOrcWriter extends EncodingWriter implements Runnable {
 
   // TODO: if more writers are added, separate out an EncodingWriterFactory
   public static EncodingWriter create(InputFormat<?, ?> sourceIf, Deserializer serDe,
-      Map<Path, PartitionDesc> parts, Configuration daemonConf, Configuration jobConf,
+      Map<String, PartitionDesc> parts, Configuration daemonConf, Configuration jobConf,
       Path splitPath, StructObjectInspector sourceOi, List<Integer> sourceIncludes,
       boolean[] cacheIncludes) throws IOException {
     // Vector SerDe can be disabled both on client and server side.
