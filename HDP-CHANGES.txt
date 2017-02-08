@@ -2,6 +2,7 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 ===================================================================
 
 BUG FIXES
+    HIVE-14432 : LLAP signing unit test may be timing-dependent (Sergey Shelukhin, reviewed by Prasanth Jayachandran)
     HIVE-15783: small glitch in LlapServiceDriver on small VMs
     HIVE-14942: HiveServer UI: CANCELED queries show up as open
     HIVE-14957: HiveSortLimitPullUpConstantsRule misses branches when parent operator is Union
