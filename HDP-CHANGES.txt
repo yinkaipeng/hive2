@@ -3,6 +3,7 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 
 BUG FIXES
 
+    HIVE-15002 : HiveSessionImpl#executeStatementInternal may leave locks in an inconsistent state (Zoltan Haindrich via Thejas Nair)
   HDP-2.5.3:
     HIVE-14933: include argparse with LLAP scripts to support antique Python versions
     HIVE-14251: Union All of different types resolves to incorrect data
