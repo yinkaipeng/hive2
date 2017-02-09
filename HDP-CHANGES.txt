@@ -3,6 +3,7 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 
 BUG FIXES
 
+    : HIVE-15589 : Flaky org.apache.hadoop.hive.ql.lockmgr.TestDbTxnManager.testHeartbeater (Wei Zheng)
     HIVE-15355: Concurrency issues during parallel moveFile due to HDFSUtils.setFullFileStatus (Vihang Karajgaonkar, reviewed by Sergio Pena and Sahil Takiar)
     HIVE-15178 : ORC stripe merge may produce many MR jobs and no merge if split size is small (Sergey Shelukhin, reviewed by Prasanth Jayachandran)
     : Backport HIVE-14924: MSCK REPAIR table with single threaded is throwing null pointer exception HIVE-14924: MSCK REPAIR table with single threaded is throwing null pointer exception (Pengcheng Xiong, reviewed by Ashutosh Chauhan)
