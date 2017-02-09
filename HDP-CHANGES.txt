@@ -3,6 +3,7 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 
 BUG FIXES
 
+    HIVE-15178 : ORC stripe merge may produce many MR jobs and no merge if split size is small (Sergey Shelukhin, reviewed by Prasanth Jayachandran)
     : Backport HIVE-14924: MSCK REPAIR table with single threaded is throwing null pointer exception HIVE-14924: MSCK REPAIR table with single threaded is throwing null pointer exception (Pengcheng Xiong, reviewed by Ashutosh Chauhan)
     : Backport HIVE-14924: MSCK REPAIR table with single threaded is throwing null pointer exception HIVE-14290: Refactor HIVE-14054 to use Collections#newSetFromMap (Peter Slawski via Ashutosh Chauhan)
     HIVE-9941: sql std authorization on partitioned table: truncate and insert (Sushanth Sowmyan via Jason Dere)
