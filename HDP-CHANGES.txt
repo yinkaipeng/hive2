@@ -3,6 +3,7 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 
 BUG FIXES
 
+    HIVE-9941: sql std authorization on partitioned table: truncate and insert (Sushanth Sowmyan via Jason Dere)
     HIVE-14929: Adding JDBC test for query cancellation scenario (Deepak Jaiswal via Jason Dere)
     HIVE-14928 Analyze table no scan mess up schema (Jimmy Xiang, reviewed by Prasanth Jayachandran)
     /HIVE-13936: Add streaming support for row_number
