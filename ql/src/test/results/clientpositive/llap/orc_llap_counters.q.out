@@ -1,6 +1,4 @@
-PREHOOK: query: -- disabling map side aggregation as that can lead to different intermediate record counts
-
-CREATE TABLE staging(t tinyint,
+PREHOOK: query: CREATE TABLE staging(t tinyint,
            si smallint,
            i int,
            b bigint,
@@ -16,9 +14,7 @@ STORED AS TEXTFILE
 PREHOOK: type: CREATETABLE
 PREHOOK: Output: database:default
 PREHOOK: Output: default@staging
-POSTHOOK: query: -- disabling map side aggregation as that can lead to different intermediate record counts
-
-CREATE TABLE staging(t tinyint,
+POSTHOOK: query: CREATE TABLE staging(t tinyint,
            si smallint,
            i int,
            b bigint,
@@ -105,23 +101,11 @@ POSTHOOK: Lineage: orc_ppd_staging.s SIMPLE [(staging)staging.FieldSchema(name:s
 POSTHOOK: Lineage: orc_ppd_staging.si SIMPLE [(staging)staging.FieldSchema(name:si, type:smallint, comment:null), ]
 POSTHOOK: Lineage: orc_ppd_staging.t SIMPLE [(staging)staging.FieldSchema(name:t, type:tinyint, comment:null), ]
 POSTHOOK: Lineage: orc_ppd_staging.v EXPRESSION [(staging)staging.FieldSchema(name:s, type:string, comment:null), ]
-<<<<<<< HEAD
-PREHOOK: query: -- just to introduce a gap in min/max range for bloom filters. The dataset has contiguous values
--- which makes it hard to test bloom filters
-insert into orc_ppd_staging select -10,-321,-65680,-4294967430,-97.94,-13.07,true,"aaa","aaa","aaa","1990-03-11",-71.54,"aaa" from staging limit 1
+PREHOOK: query: insert into orc_ppd_staging select -10,-321,-65680,-4294967430,-97.94,-13.07,true,"aaa","aaa","aaa","1990-03-11",-71.54,"aaa" from staging limit 1
 PREHOOK: type: QUERY
 PREHOOK: Input: default@staging
 PREHOOK: Output: default@orc_ppd_staging
-POSTHOOK: query: -- just to introduce a gap in min/max range for bloom filters. The dataset has contiguous values
--- which makes it hard to test bloom filters
-insert into orc_ppd_staging select -10,-321,-65680,-4294967430,-97.94,-13.07,true,"aaa","aaa","aaa","1990-03-11",-71.54,"aaa" from staging limit 1
-=======
-PREHOOK: query: insert into orc_ppd_staging select -10,-321,-65680,-4294967430,-97.94,-13.07,true,"aaa","aaa","aaa","1990-03-11","1990-03-11 10:11:58.703308",-71.54,"aaa" from staging limit 1
-PREHOOK: type: QUERY
-PREHOOK: Input: default@staging
-PREHOOK: Output: default@orc_ppd_staging
-POSTHOOK: query: insert into orc_ppd_staging select -10,-321,-65680,-4294967430,-97.94,-13.07,true,"aaa","aaa","aaa","1990-03-11","1990-03-11 10:11:58.703308",-71.54,"aaa" from staging limit 1
->>>>>>> 65a6582... HIVE-15297: Hive should not split semicolon within quoted string literals (Pengcheng Xiong, reviewed by Ashutosh Chauhan)
+POSTHOOK: query: insert into orc_ppd_staging select -10,-321,-65680,-4294967430,-97.94,-13.07,true,"aaa","aaa","aaa","1990-03-11",-71.54,"aaa" from staging limit 1
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@staging
 POSTHOOK: Output: default@orc_ppd_staging

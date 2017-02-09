@@ -1030,13 +1030,11 @@ POSTHOOK: Input: default@src
 97	val_97
 98	val_98
 98	val_98
-PREHOOK: query: -- uncorr, aggregate in sub which produces result irrespective of zero rows
-create table t(i int)
+PREHOOK: query: create table t(i int)
 PREHOOK: type: CREATETABLE
 PREHOOK: Output: database:default
 PREHOOK: Output: default@t
-POSTHOOK: query: -- uncorr, aggregate in sub which produces result irrespective of zero rows
-create table t(i int)
+POSTHOOK: query: create table t(i int)
 POSTHOOK: type: CREATETABLE
 POSTHOOK: Output: database:default
 POSTHOOK: Output: default@t

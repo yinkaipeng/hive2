@@ -230,25 +230,15 @@ POSTHOOK: type: QUERY
 POSTHOOK: Input: default@orc_llap_small
 #### A masked pattern was here ####
 0
-<<<<<<< HEAD
-PREHOOK: query: -- Hash cannot be vectorized, so run hash as the last step on a temp table
-drop table llap_temp_table
+PREHOOK: query: drop table llap_temp_table
 PREHOOK: type: DROPTABLE
-POSTHOOK: query: -- Hash cannot be vectorized, so run hash as the last step on a temp table
-drop table llap_temp_table
+POSTHOOK: query: drop table llap_temp_table
 POSTHOOK: type: DROPTABLE
 PREHOOK: query: explain
 select cint, csmallint, cbigint from orc_llap where cint > 10 and cbigint is not null
 PREHOOK: type: QUERY
 POSTHOOK: query: explain
 select cint, csmallint, cbigint from orc_llap where cint > 10 and cbigint is not null
-=======
-PREHOOK: query: explain
-select sum(hash(*)) from (select cint, csmallint, cbigint from orc_llap where cint > 10 and cbigint is not null) t
-PREHOOK: type: QUERY
-POSTHOOK: query: explain
-select sum(hash(*)) from (select cint, csmallint, cbigint from orc_llap where cint > 10 and cbigint is not null) t
->>>>>>> ef33237...  IVE-15297: Hive should not split semicolon within quoted string literals (Pengcheng Xiong, reviewed by Ashutosh Chauhan) (addendum I)
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
   Stage-0 is a root stage

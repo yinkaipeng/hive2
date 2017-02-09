@@ -1,10 +1,6 @@
-PREHOOK: query: -- SORT_QUERY_RESULTS
-
-drop table float_text
+PREHOOK: query: drop table float_text
 PREHOOK: type: DROPTABLE
-POSTHOOK: query: -- SORT_QUERY_RESULTS
-
-drop table float_text
+POSTHOOK: query: drop table float_text
 POSTHOOK: type: DROPTABLE
 PREHOOK: query: create table float_text(f float)
 PREHOOK: type: CREATETABLE
