@@ -19,6 +19,7 @@
 package org.apache.hive.jdbc;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.hive.jdbc.logs.InPlaceUpdateStream;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.rpc.thrift.TCLIService;
@@ -113,6 +114,8 @@ public class HiveStatement implements java.sql.Statement {
   private boolean isExecuteStatementFailed = false;
 
   private int queryTimeout = 0;
+
+  private InPlaceUpdateStream inPlaceUpdateStream = InPlaceUpdateStream.NO_OP;
 
   public HiveStatement(HiveConnection connection, TCLIService.Iface client,
       TSessionHandle sessHandle) {
@@ -248,10 +251,10 @@ public class HiveStatement implements java.sql.Statement {
   @Override
   public boolean execute(String sql) throws SQLException {
     runAsyncOnServer(sql);
-    waitForOperationToComplete();
+    TGetOperationStatusResp status = waitForOperationToComplete();
 
     // The query should be completed by now
-    if (!stmtHandle.isHasResultSet()) {
+    if (!status.isHasResultSet()) {
       return false;
     }
     resultSet =  new HiveQueryResultSet.Builder(this).setClient(client).setSessionHandle(sessHandle)
@@ -299,7 +302,7 @@ public class HiveStatement implements java.sql.Statement {
      * Run asynchronously whenever possible
      * Currently only a SQLOperation can be run asynchronously,
      * in a background operation thread
-     * Compilation is synchronous and execution is asynchronous
+     * Compilation can run asynchronously or synchronously and execution run asynchronously
      */
     execReq.setRunAsync(true);
     execReq.setConfOverlay(sessConf);
@@ -318,9 +321,10 @@ public class HiveStatement implements java.sql.Statement {
     }
   }
 
-  void waitForOperationToComplete() throws SQLException {
+  TGetOperationStatusResp waitForOperationToComplete() throws SQLException {
     TGetOperationStatusReq statusReq = new TGetOperationStatusReq(stmtHandle);
-    TGetOperationStatusResp statusResp;
+    statusReq.setGetProgressUpdate(inPlaceUpdateStream != InPlaceUpdateStream.NO_OP);
+    TGetOperationStatusResp statusResp = null;
 
     // Poll on the operation status, till the operation is complete
     while (!isOperationComplete) {
@@ -330,6 +334,7 @@ public class HiveStatement implements java.sql.Statement {
          * essentially return after the HIVE_SERVER2_LONG_POLLING_TIMEOUT (a server config) expires
          */
         statusResp = client.GetOperationStatus(statusReq);
+        inPlaceUpdateStream.update(statusResp.getProgressUpdateResponse());
         Utils.verifySuccessWithInfo(statusResp.getStatus());
         if (statusResp.isSetOperationState()) {
           switch (statusResp.getOperationState()) {
@@ -363,6 +368,8 @@ public class HiveStatement implements java.sql.Statement {
         throw new SQLException(e.toString(), "08S01", e);
       }
     }
+
+    return statusResp;
   }
 
   private void checkConnection(String action) throws SQLException {
@@ -926,5 +933,13 @@ public class HiveStatement implements java.sql.Statement {
       return guid64;
     }
     return null;
+  }
+
+  /**
+   * This is only used by the beeline client to set the stream on which in place progress updates
+   * are to be shown
+   */
+  public void setInPlaceUpdateStream(InPlaceUpdateStream stream) {
+    this.inPlaceUpdateStream = stream;
   }
 }

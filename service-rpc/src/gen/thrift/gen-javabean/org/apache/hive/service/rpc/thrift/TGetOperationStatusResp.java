@@ -46,6 +46,8 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
   private static final org.apache.thrift.protocol.TField TASK_STATUS_FIELD_DESC = new org.apache.thrift.protocol.TField("taskStatus", org.apache.thrift.protocol.TType.STRING, (short)6);
   private static final org.apache.thrift.protocol.TField OPERATION_STARTED_FIELD_DESC = new org.apache.thrift.protocol.TField("operationStarted", org.apache.thrift.protocol.TType.I64, (short)7);
   private static final org.apache.thrift.protocol.TField OPERATION_COMPLETED_FIELD_DESC = new org.apache.thrift.protocol.TField("operationCompleted", org.apache.thrift.protocol.TType.I64, (short)8);
+  private static final org.apache.thrift.protocol.TField HAS_RESULT_SET_FIELD_DESC = new org.apache.thrift.protocol.TField("hasResultSet", org.apache.thrift.protocol.TType.BOOL, (short)9);
+  private static final org.apache.thrift.protocol.TField PROGRESS_UPDATE_RESPONSE_FIELD_DESC = new org.apache.thrift.protocol.TField("progressUpdateResponse", org.apache.thrift.protocol.TType.STRUCT, (short)10);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -61,6 +63,8 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
   private String taskStatus; // optional
   private long operationStarted; // optional
   private long operationCompleted; // optional
+  private boolean hasResultSet; // optional
+  private TProgressUpdateResp progressUpdateResponse; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -75,7 +79,9 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
     ERROR_MESSAGE((short)5, "errorMessage"),
     TASK_STATUS((short)6, "taskStatus"),
     OPERATION_STARTED((short)7, "operationStarted"),
-    OPERATION_COMPLETED((short)8, "operationCompleted");
+    OPERATION_COMPLETED((short)8, "operationCompleted"),
+    HAS_RESULT_SET((short)9, "hasResultSet"),
+    PROGRESS_UPDATE_RESPONSE((short)10, "progressUpdateResponse");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -106,6 +112,10 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
           return OPERATION_STARTED;
         case 8: // OPERATION_COMPLETED
           return OPERATION_COMPLETED;
+        case 9: // HAS_RESULT_SET
+          return HAS_RESULT_SET;
+        case 10: // PROGRESS_UPDATE_RESPONSE
+          return PROGRESS_UPDATE_RESPONSE;
         default:
           return null;
       }
@@ -149,8 +159,9 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
   private static final int __ERRORCODE_ISSET_ID = 0;
   private static final int __OPERATIONSTARTED_ISSET_ID = 1;
   private static final int __OPERATIONCOMPLETED_ISSET_ID = 2;
+  private static final int __HASRESULTSET_ISSET_ID = 3;
   private byte __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.OPERATION_STATE,_Fields.SQL_STATE,_Fields.ERROR_CODE,_Fields.ERROR_MESSAGE,_Fields.TASK_STATUS,_Fields.OPERATION_STARTED,_Fields.OPERATION_COMPLETED};
+  private static final _Fields optionals[] = {_Fields.OPERATION_STATE,_Fields.SQL_STATE,_Fields.ERROR_CODE,_Fields.ERROR_MESSAGE,_Fields.TASK_STATUS,_Fields.OPERATION_STARTED,_Fields.OPERATION_COMPLETED,_Fields.HAS_RESULT_SET,_Fields.PROGRESS_UPDATE_RESPONSE};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -170,6 +181,10 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
     tmpMap.put(_Fields.OPERATION_COMPLETED, new org.apache.thrift.meta_data.FieldMetaData("operationCompleted", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
+    tmpMap.put(_Fields.HAS_RESULT_SET, new org.apache.thrift.meta_data.FieldMetaData("hasResultSet", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.BOOL)));
+    tmpMap.put(_Fields.PROGRESS_UPDATE_RESPONSE, new org.apache.thrift.meta_data.FieldMetaData("progressUpdateResponse", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRUCT        , "TProgressUpdateResp")));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(TGetOperationStatusResp.class, metaDataMap);
   }
@@ -207,6 +222,10 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
     }
     this.operationStarted = other.operationStarted;
     this.operationCompleted = other.operationCompleted;
+    this.hasResultSet = other.hasResultSet;
+    if (other.isSetProgressUpdateResponse()) {
+      this.progressUpdateResponse = other.progressUpdateResponse;
+    }
   }
 
   public TGetOperationStatusResp deepCopy() {
@@ -226,6 +245,9 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
     this.operationStarted = 0;
     setOperationCompletedIsSet(false);
     this.operationCompleted = 0;
+    setHasResultSetIsSet(false);
+    this.hasResultSet = false;
+    this.progressUpdateResponse = null;
   }
 
   public TStatus getStatus() {
@@ -417,6 +439,51 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __OPERATIONCOMPLETED_ISSET_ID, value);
   }
 
+  public boolean isHasResultSet() {
+    return this.hasResultSet;
+  }
+
+  public void setHasResultSet(boolean hasResultSet) {
+    this.hasResultSet = hasResultSet;
+    setHasResultSetIsSet(true);
+  }
+
+  public void unsetHasResultSet() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __HASRESULTSET_ISSET_ID);
+  }
+
+  /** Returns true if field hasResultSet is set (has been assigned a value) and false otherwise */
+  public boolean isSetHasResultSet() {
+    return EncodingUtils.testBit(__isset_bitfield, __HASRESULTSET_ISSET_ID);
+  }
+
+  public void setHasResultSetIsSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __HASRESULTSET_ISSET_ID, value);
+  }
+
+  public TProgressUpdateResp getProgressUpdateResponse() {
+    return this.progressUpdateResponse;
+  }
+
+  public void setProgressUpdateResponse(TProgressUpdateResp progressUpdateResponse) {
+    this.progressUpdateResponse = progressUpdateResponse;
+  }
+
+  public void unsetProgressUpdateResponse() {
+    this.progressUpdateResponse = null;
+  }
+
+  /** Returns true if field progressUpdateResponse is set (has been assigned a value) and false otherwise */
+  public boolean isSetProgressUpdateResponse() {
+    return this.progressUpdateResponse != null;
+  }
+
+  public void setProgressUpdateResponseIsSet(boolean value) {
+    if (!value) {
+      this.progressUpdateResponse = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case STATUS:
@@ -483,6 +550,22 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
       }
       break;
 
+    case HAS_RESULT_SET:
+      if (value == null) {
+        unsetHasResultSet();
+      } else {
+        setHasResultSet((Boolean)value);
+      }
+      break;
+
+    case PROGRESS_UPDATE_RESPONSE:
+      if (value == null) {
+        unsetProgressUpdateResponse();
+      } else {
+        setProgressUpdateResponse((TProgressUpdateResp)value);
+      }
+      break;
+
     }
   }
 
@@ -512,6 +595,12 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
     case OPERATION_COMPLETED:
       return getOperationCompleted();
 
+    case HAS_RESULT_SET:
+      return isHasResultSet();
+
+    case PROGRESS_UPDATE_RESPONSE:
+      return getProgressUpdateResponse();
+
     }
     throw new IllegalStateException();
   }
@@ -539,6 +628,10 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
       return isSetOperationStarted();
     case OPERATION_COMPLETED:
       return isSetOperationCompleted();
+    case HAS_RESULT_SET:
+      return isSetHasResultSet();
+    case PROGRESS_UPDATE_RESPONSE:
+      return isSetProgressUpdateResponse();
     }
     throw new IllegalStateException();
   }
@@ -628,6 +721,24 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
         return false;
     }
 
+    boolean this_present_hasResultSet = true && this.isSetHasResultSet();
+    boolean that_present_hasResultSet = true && that.isSetHasResultSet();
+    if (this_present_hasResultSet || that_present_hasResultSet) {
+      if (!(this_present_hasResultSet && that_present_hasResultSet))
+        return false;
+      if (this.hasResultSet != that.hasResultSet)
+        return false;
+    }
+
+    boolean this_present_progressUpdateResponse = true && this.isSetProgressUpdateResponse();
+    boolean that_present_progressUpdateResponse = true && that.isSetProgressUpdateResponse();
+    if (this_present_progressUpdateResponse || that_present_progressUpdateResponse) {
+      if (!(this_present_progressUpdateResponse && that_present_progressUpdateResponse))
+        return false;
+      if (!this.progressUpdateResponse.equals(that.progressUpdateResponse))
+        return false;
+    }
+
     return true;
   }
 
@@ -674,6 +785,16 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
     list.add(present_operationCompleted);
     if (present_operationCompleted)
       list.add(operationCompleted);
+
+    boolean present_hasResultSet = true && (isSetHasResultSet());
+    list.add(present_hasResultSet);
+    if (present_hasResultSet)
+      list.add(hasResultSet);
+
+    boolean present_progressUpdateResponse = true && (isSetProgressUpdateResponse());
+    list.add(present_progressUpdateResponse);
+    if (present_progressUpdateResponse)
+      list.add(progressUpdateResponse);
 
     return list.hashCode();
   }
@@ -766,6 +887,26 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(isSetHasResultSet()).compareTo(other.isSetHasResultSet());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetHasResultSet()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.hasResultSet, other.hasResultSet);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(isSetProgressUpdateResponse()).compareTo(other.isSetProgressUpdateResponse());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetProgressUpdateResponse()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.progressUpdateResponse, other.progressUpdateResponse);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -849,6 +990,22 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
       if (!first) sb.append(", ");
       sb.append("operationCompleted:");
       sb.append(this.operationCompleted);
+      first = false;
+    }
+    if (isSetHasResultSet()) {
+      if (!first) sb.append(", ");
+      sb.append("hasResultSet:");
+      sb.append(this.hasResultSet);
+      first = false;
+    }
+    if (isSetProgressUpdateResponse()) {
+      if (!first) sb.append(", ");
+      sb.append("progressUpdateResponse:");
+      if (this.progressUpdateResponse == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.progressUpdateResponse);
+      }
       first = false;
     }
     sb.append(")");
@@ -968,6 +1125,23 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 9: // HAS_RESULT_SET
+            if (schemeField.type == org.apache.thrift.protocol.TType.BOOL) {
+              struct.hasResultSet = iprot.readBool();
+              struct.setHasResultSetIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 10: // PROGRESS_UPDATE_RESPONSE
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+              struct.progressUpdateResponse = new TProgressUpdateResp();
+              struct.progressUpdateResponse.read(iprot);
+              struct.setProgressUpdateResponseIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -1029,6 +1203,18 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
         oprot.writeI64(struct.operationCompleted);
         oprot.writeFieldEnd();
       }
+      if (struct.isSetHasResultSet()) {
+        oprot.writeFieldBegin(HAS_RESULT_SET_FIELD_DESC);
+        oprot.writeBool(struct.hasResultSet);
+        oprot.writeFieldEnd();
+      }
+      if (struct.progressUpdateResponse != null) {
+        if (struct.isSetProgressUpdateResponse()) {
+          oprot.writeFieldBegin(PROGRESS_UPDATE_RESPONSE_FIELD_DESC);
+          struct.progressUpdateResponse.write(oprot);
+          oprot.writeFieldEnd();
+        }
+      }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -1069,7 +1255,13 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
       if (struct.isSetOperationCompleted()) {
         optionals.set(6);
       }
-      oprot.writeBitSet(optionals, 7);
+      if (struct.isSetHasResultSet()) {
+        optionals.set(7);
+      }
+      if (struct.isSetProgressUpdateResponse()) {
+        optionals.set(8);
+      }
+      oprot.writeBitSet(optionals, 9);
       if (struct.isSetOperationState()) {
         oprot.writeI32(struct.operationState.getValue());
       }
@@ -1091,6 +1283,12 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
       if (struct.isSetOperationCompleted()) {
         oprot.writeI64(struct.operationCompleted);
       }
+      if (struct.isSetHasResultSet()) {
+        oprot.writeBool(struct.hasResultSet);
+      }
+      if (struct.isSetProgressUpdateResponse()) {
+        struct.progressUpdateResponse.write(oprot);
+      }
     }
 
     @Override
@@ -1099,7 +1297,7 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
       struct.status = new TStatus();
       struct.status.read(iprot);
       struct.setStatusIsSet(true);
-      BitSet incoming = iprot.readBitSet(7);
+      BitSet incoming = iprot.readBitSet(9);
       if (incoming.get(0)) {
         struct.operationState = org.apache.hive.service.rpc.thrift.TOperationState.findByValue(iprot.readI32());
         struct.setOperationStateIsSet(true);
@@ -1127,6 +1325,15 @@ public class TGetOperationStatusResp implements org.apache.thrift.TBase<TGetOper
       if (incoming.get(6)) {
         struct.operationCompleted = iprot.readI64();
         struct.setOperationCompletedIsSet(true);
+      }
+      if (incoming.get(7)) {
+        struct.hasResultSet = iprot.readBool();
+        struct.setHasResultSetIsSet(true);
+      }
+      if (incoming.get(8)) {
+        struct.progressUpdateResponse = new TProgressUpdateResp();
+        struct.progressUpdateResponse.read(iprot);
+        struct.setProgressUpdateResponseIsSet(true);
       }
     }
   }

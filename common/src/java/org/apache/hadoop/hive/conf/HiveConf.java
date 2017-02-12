@@ -2271,7 +2271,7 @@ public class HiveConf extends Configuration {
     HIVE_SERVER2_THRIFT_BIND_HOST("hive.server2.thrift.bind.host", "",
         "Bind host on which to run the HiveServer2 Thrift service."),
     HIVE_SERVER2_PARALLEL_COMPILATION("hive.driver.parallel.compilation", false, "Whether to\n" +
-        "enable parallel compilation between sessions on HiveServer2. The default is false."),
+        "enable parallel compilation of the queries between sessions and within the same session on HiveServer2. The default is false."),
     HIVE_SERVER2_COMPILE_LOCK_TIMEOUT("hive.server2.compile.lock.timeout", "0s",
         new TimeValidator(TimeUnit.SECONDS),
         "Number of seconds a request will wait to acquire the compile lock before giving up. " +
@@ -2831,7 +2831,14 @@ public class HiveConf extends Configuration {
     TEZ_EXEC_INPLACE_PROGRESS(
         "hive.tez.exec.inplace.progress",
         true,
-        "Updates tez job execution progress in-place in the terminal."),
+        "Updates tez job execution progress in-place in the terminal when hive-cli is used."),
+    HIVE_SERVER2_INPLACE_PROGRESS(
+        "hive.server2.in.place.progress",
+        true,
+        "Allows hive server 2 to send progress bar update information. This is currently available"
+            + " only if the execution engine is tez."),
+    SPARK_EXEC_INPLACE_PROGRESS("hive.spark.exec.inplace.progress", true,
+        "Updates spark job execution progress in-place in the terminal."),
     TEZ_CONTAINER_MAX_JAVA_HEAP_FRACTION("hive.tez.container.max.java.heap.fraction", 0.8f,
         "This is to override the tez setting with the same name"),
     TEZ_TASK_SCALE_MEMORY_RESERVE_FRACTION_MIN("hive.tez.task.scale.memory.reserve-fraction.min",
