@@ -32,11 +32,13 @@ STORED AS ORC
 POSTHOOK: type: CREATETABLE
 POSTHOOK: Output: database:default
 POSTHOOK: Output: default@part_orc
-PREHOOK: query: LOAD DATA LOCAL INPATH '../../data/files/part.orc' OVERWRITE INTO TABLE part_orc
+PREHOOK: query: -- writer version for this file is HIVE_13083;
+LOAD DATA LOCAL INPATH '../../data/files/part.orc' OVERWRITE INTO TABLE part_orc
 PREHOOK: type: LOAD
 #### A masked pattern was here ####
 PREHOOK: Output: default@part_orc
-POSTHOOK: query: LOAD DATA LOCAL INPATH '../../data/files/part.orc' OVERWRITE INTO TABLE part_orc
+POSTHOOK: query: -- writer version for this file is HIVE_13083;
+LOAD DATA LOCAL INPATH '../../data/files/part.orc' OVERWRITE INTO TABLE part_orc
 POSTHOOK: type: LOAD
 #### A masked pattern was here ####
 POSTHOOK: Output: default@part_orc
@@ -59,11 +61,13 @@ POSTHOOK: Lineage: part_orc_staging.p_partkey SIMPLE [(part_orc)part_orc.FieldSc
 POSTHOOK: Lineage: part_orc_staging.p_retailprice SIMPLE [(part_orc)part_orc.FieldSchema(name:p_retailprice, type:double, comment:null), ]
 POSTHOOK: Lineage: part_orc_staging.p_size SIMPLE [(part_orc)part_orc.FieldSchema(name:p_size, type:int, comment:null), ]
 POSTHOOK: Lineage: part_orc_staging.p_type SIMPLE [(part_orc)part_orc.FieldSchema(name:p_type, type:string, comment:null), ]
-PREHOOK: query: insert into table part_orc select * from part_orc_staging
+PREHOOK: query: -- will be written with current writer version;
+insert into table part_orc select * from part_orc_staging
 PREHOOK: type: QUERY
 PREHOOK: Input: default@part_orc_staging
 PREHOOK: Output: default@part_orc
-POSTHOOK: query: insert into table part_orc select * from part_orc_staging
+POSTHOOK: query: -- will be written with current writer version;
+insert into table part_orc select * from part_orc_staging
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@part_orc_staging
 POSTHOOK: Output: default@part_orc
@@ -87,11 +91,13 @@ POSTHOOK: type: QUERY
 POSTHOOK: Input: default@part_orc
 #### A masked pattern was here ####
 26132451616
-PREHOOK: query: ALTER TABLE part_orc CONCATENATE
+PREHOOK: query: -- will not be merged as writer version is not matching;
+ALTER TABLE part_orc CONCATENATE
 PREHOOK: type: ALTER_TABLE_MERGE
 PREHOOK: Input: default@part_orc
 PREHOOK: Output: default@part_orc
-POSTHOOK: query: ALTER TABLE part_orc CONCATENATE
+POSTHOOK: query: -- will not be merged as writer version is not matching;
+ALTER TABLE part_orc CONCATENATE
 POSTHOOK: type: ALTER_TABLE_MERGE
 POSTHOOK: Input: default@part_orc
 POSTHOOK: Output: default@part_orc
