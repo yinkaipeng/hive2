@@ -84,8 +84,13 @@ public class JSONMessageFactory extends MessageFactory {
   }
 
   @Override
+  public String getVersion() {
+    return "0.1";
+  }
+
+  @Override
   public String getMessageFormat() {
-    return "json-0.2";
+    return "json";
   }
 
   @Override

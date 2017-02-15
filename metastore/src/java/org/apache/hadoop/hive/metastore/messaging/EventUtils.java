@@ -63,24 +63,6 @@ public class EventUtils {
     };
   }
 
-  public static IMetaStoreClient.NotificationFilter restrictByMessageFormat(final String messageFormat){
-    return new IMetaStoreClient.NotificationFilter() {
-      @Override
-      public boolean accept(NotificationEvent event) {
-        if (event == null){
-          return false; // get rid of trivial case first, so that we can safely assume non-null
-        }
-        if (messageFormat == null){
-          return true; // let's say that passing null in will not do any filtering.
-        }
-        if (messageFormat.equalsIgnoreCase(event.getMessageFormat())){
-          return true;
-        }
-        return false;
-      }
-    };
-  }
-
   public static IMetaStoreClient.NotificationFilter getEventBoundaryFilter(final Long eventFrom, final Long eventTo){
     return new IMetaStoreClient.NotificationFilter() {
       @Override
@@ -94,16 +76,12 @@ public class EventUtils {
   }
 
   public static IMetaStoreClient.NotificationFilter andFilter(
-      final IMetaStoreClient.NotificationFilter... filters ) {
+      final IMetaStoreClient.NotificationFilter filter1,
+      final IMetaStoreClient.NotificationFilter filter2) {
     return new IMetaStoreClient.NotificationFilter() {
       @Override
       public boolean accept(NotificationEvent event) {
-        for (IMetaStoreClient.NotificationFilter filter : filters){
-          if (!filter.accept(event)){
-            return false;
-          }
-        }
-        return true;
+        return filter1.accept(event) && filter2.accept(event);
       }
     };
   }

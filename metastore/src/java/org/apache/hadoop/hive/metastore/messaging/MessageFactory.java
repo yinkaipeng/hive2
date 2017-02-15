@@ -116,6 +116,11 @@ public abstract class MessageFactory {
   public abstract MessageDeserializer getDeserializer();
 
   /**
+   * Getter for version-string, corresponding to all constructed messages.
+   */
+  public abstract String getVersion();
+
+  /**
    * Getter for message-format.
    */
   public abstract String getMessageFormat();

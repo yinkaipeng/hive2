@@ -474,7 +474,6 @@ public class DbNotificationListener extends MetaStoreEventListener {
 
   // Process this notification by adding it to metastore DB
   private void process(NotificationEvent event) {
-    event.setMessageFormat(msgFactory.getMessageFormat());
     if (rs != null) {
       synchronized (NOTIFICATION_TBL_LOCK) {
         LOG.debug("DbNotificationListener: Processing : {}:{}", event.getEventId(),

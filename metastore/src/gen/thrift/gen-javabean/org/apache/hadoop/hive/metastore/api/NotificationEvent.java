@@ -44,7 +44,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
   private static final org.apache.thrift.protocol.TField DB_NAME_FIELD_DESC = new org.apache.thrift.protocol.TField("dbName", org.apache.thrift.protocol.TType.STRING, (short)4);
   private static final org.apache.thrift.protocol.TField TABLE_NAME_FIELD_DESC = new org.apache.thrift.protocol.TField("tableName", org.apache.thrift.protocol.TType.STRING, (short)5);
   private static final org.apache.thrift.protocol.TField MESSAGE_FIELD_DESC = new org.apache.thrift.protocol.TField("message", org.apache.thrift.protocol.TType.STRING, (short)6);
-  private static final org.apache.thrift.protocol.TField MESSAGE_FORMAT_FIELD_DESC = new org.apache.thrift.protocol.TField("messageFormat", org.apache.thrift.protocol.TType.STRING, (short)7);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -58,7 +57,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
   private String dbName; // optional
   private String tableName; // optional
   private String message; // required
-  private String messageFormat; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -67,8 +65,7 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
     EVENT_TYPE((short)3, "eventType"),
     DB_NAME((short)4, "dbName"),
     TABLE_NAME((short)5, "tableName"),
-    MESSAGE((short)6, "message"),
-    MESSAGE_FORMAT((short)7, "messageFormat");
+    MESSAGE((short)6, "message");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -95,8 +92,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
           return TABLE_NAME;
         case 6: // MESSAGE
           return MESSAGE;
-        case 7: // MESSAGE_FORMAT
-          return MESSAGE_FORMAT;
         default:
           return null;
       }
@@ -140,7 +135,7 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
   private static final int __EVENTID_ISSET_ID = 0;
   private static final int __EVENTTIME_ISSET_ID = 1;
   private byte __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.DB_NAME,_Fields.TABLE_NAME,_Fields.MESSAGE_FORMAT};
+  private static final _Fields optionals[] = {_Fields.DB_NAME,_Fields.TABLE_NAME};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -155,8 +150,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
     tmpMap.put(_Fields.TABLE_NAME, new org.apache.thrift.meta_data.FieldMetaData("tableName", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     tmpMap.put(_Fields.MESSAGE, new org.apache.thrift.meta_data.FieldMetaData("message", org.apache.thrift.TFieldRequirementType.REQUIRED, 
-        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-    tmpMap.put(_Fields.MESSAGE_FORMAT, new org.apache.thrift.meta_data.FieldMetaData("messageFormat", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(NotificationEvent.class, metaDataMap);
@@ -199,9 +192,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
     if (other.isSetMessage()) {
       this.message = other.message;
     }
-    if (other.isSetMessageFormat()) {
-      this.messageFormat = other.messageFormat;
-    }
   }
 
   public NotificationEvent deepCopy() {
@@ -218,7 +208,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
     this.dbName = null;
     this.tableName = null;
     this.message = null;
-    this.messageFormat = null;
   }
 
   public long getEventId() {
@@ -357,29 +346,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
     }
   }
 
-  public String getMessageFormat() {
-    return this.messageFormat;
-  }
-
-  public void setMessageFormat(String messageFormat) {
-    this.messageFormat = messageFormat;
-  }
-
-  public void unsetMessageFormat() {
-    this.messageFormat = null;
-  }
-
-  /** Returns true if field messageFormat is set (has been assigned a value) and false otherwise */
-  public boolean isSetMessageFormat() {
-    return this.messageFormat != null;
-  }
-
-  public void setMessageFormatIsSet(boolean value) {
-    if (!value) {
-      this.messageFormat = null;
-    }
-  }
-
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case EVENT_ID:
@@ -430,14 +396,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
       }
       break;
 
-    case MESSAGE_FORMAT:
-      if (value == null) {
-        unsetMessageFormat();
-      } else {
-        setMessageFormat((String)value);
-      }
-      break;
-
     }
   }
 
@@ -460,9 +418,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
 
     case MESSAGE:
       return getMessage();
-
-    case MESSAGE_FORMAT:
-      return getMessageFormat();
 
     }
     throw new IllegalStateException();
@@ -487,8 +442,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
       return isSetTableName();
     case MESSAGE:
       return isSetMessage();
-    case MESSAGE_FORMAT:
-      return isSetMessageFormat();
     }
     throw new IllegalStateException();
   }
@@ -560,15 +513,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
         return false;
     }
 
-    boolean this_present_messageFormat = true && this.isSetMessageFormat();
-    boolean that_present_messageFormat = true && that.isSetMessageFormat();
-    if (this_present_messageFormat || that_present_messageFormat) {
-      if (!(this_present_messageFormat && that_present_messageFormat))
-        return false;
-      if (!this.messageFormat.equals(that.messageFormat))
-        return false;
-    }
-
     return true;
   }
 
@@ -605,11 +549,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
     list.add(present_message);
     if (present_message)
       list.add(message);
-
-    boolean present_messageFormat = true && (isSetMessageFormat());
-    list.add(present_messageFormat);
-    if (present_messageFormat)
-      list.add(messageFormat);
 
     return list.hashCode();
   }
@@ -682,16 +621,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
         return lastComparison;
       }
     }
-    lastComparison = Boolean.valueOf(isSetMessageFormat()).compareTo(other.isSetMessageFormat());
-    if (lastComparison != 0) {
-      return lastComparison;
-    }
-    if (isSetMessageFormat()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.messageFormat, other.messageFormat);
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-    }
     return 0;
   }
 
@@ -755,16 +684,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
       sb.append(this.message);
     }
     first = false;
-    if (isSetMessageFormat()) {
-      if (!first) sb.append(", ");
-      sb.append("messageFormat:");
-      if (this.messageFormat == null) {
-        sb.append("null");
-      } else {
-        sb.append(this.messageFormat);
-      }
-      first = false;
-    }
     sb.append(")");
     return sb.toString();
   }
@@ -874,14 +793,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 7: // MESSAGE_FORMAT
-            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
-              struct.messageFormat = iprot.readString();
-              struct.setMessageFormatIsSet(true);
-            } else { 
-              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
-            }
-            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -925,13 +836,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
         oprot.writeString(struct.message);
         oprot.writeFieldEnd();
       }
-      if (struct.messageFormat != null) {
-        if (struct.isSetMessageFormat()) {
-          oprot.writeFieldBegin(MESSAGE_FORMAT_FIELD_DESC);
-          oprot.writeString(struct.messageFormat);
-          oprot.writeFieldEnd();
-        }
-      }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -960,18 +864,12 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
       if (struct.isSetTableName()) {
         optionals.set(1);
       }
-      if (struct.isSetMessageFormat()) {
-        optionals.set(2);
-      }
-      oprot.writeBitSet(optionals, 3);
+      oprot.writeBitSet(optionals, 2);
       if (struct.isSetDbName()) {
         oprot.writeString(struct.dbName);
       }
       if (struct.isSetTableName()) {
         oprot.writeString(struct.tableName);
-      }
-      if (struct.isSetMessageFormat()) {
-        oprot.writeString(struct.messageFormat);
       }
     }
 
@@ -986,7 +884,7 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
       struct.setEventTypeIsSet(true);
       struct.message = iprot.readString();
       struct.setMessageIsSet(true);
-      BitSet incoming = iprot.readBitSet(3);
+      BitSet incoming = iprot.readBitSet(2);
       if (incoming.get(0)) {
         struct.dbName = iprot.readString();
         struct.setDbNameIsSet(true);
@@ -994,10 +892,6 @@ public class NotificationEvent implements org.apache.thrift.TBase<NotificationEv
       if (incoming.get(1)) {
         struct.tableName = iprot.readString();
         struct.setTableNameIsSet(true);
-      }
-      if (incoming.get(2)) {
-        struct.messageFormat = iprot.readString();
-        struct.setMessageFormatIsSet(true);
       }
     }
   }
