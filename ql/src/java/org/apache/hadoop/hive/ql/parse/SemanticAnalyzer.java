@@ -293,7 +293,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
   Map<GroupByOperator, Set<String>> groupOpToInputTables;
   Map<String, PrunedPartitionList> prunedPartitions;
   protected List<FieldSchema> resultSchema;
-  private CreateViewDesc createVwDesc;
+  protected CreateViewDesc createVwDesc;
   private ArrayList<String> viewsExpanded;
   private ASTNode viewSelect;
   protected final UnparseTranslator unparseTranslator;
@@ -10706,6 +10706,9 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     void setCTASToken(ASTNode child) {
     }
+    
+    void setViewToken(ASTNode child) {
+    }
 
     void setInsertToken(ASTNode ast, boolean isTmpFileDest) {
     }
@@ -10894,7 +10897,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     // 3. analyze create view command
     if (ast.getToken().getType() == HiveParser.TOK_CREATEVIEW
         || (ast.getToken().getType() == HiveParser.TOK_ALTERVIEW && ast.getChild(1).getType() == HiveParser.TOK_QUERY)) {
-      child = analyzeCreateView(ast, qb);
+      child = analyzeCreateView(ast, qb, plannerCtx);
       queryState.setCommandType(HiveOperation.CREATEVIEW);
       if (child == null) {
         return false;
@@ -11016,7 +11019,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     }
 
     // 3. Deduce Resultset Schema
-    if (createVwDesc != null) {
+    if (createVwDesc != null && !this.ctx.isCboSucceeded()) {
       resultSchema = convertRowSchemaToViewSchema(opParseCtx.get(sinkOp).getRowResolver());
     } else {
       // resultSchema will be null if
@@ -11044,7 +11047,9 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     // 5. Take care of view creation
     if (createVwDesc != null) {
-      saveViewDefinition();
+      if (!ctx.isCboSucceeded()) {
+        saveViewDefinition();
+      }
 
       // validate the create view statement at this point, the createVwDesc gets
       // all the information for semanticcheck
@@ -11210,8 +11215,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     return resultSchema;
   }
 
-  private void saveViewDefinition() throws SemanticException {
-
+  protected void saveViewDefinition() throws SemanticException {
     // Make a copy of the statement's result schema, since we may
     // modify it below as part of imposing view column names.
     List<FieldSchema> derivedSchema =
@@ -11498,6 +11502,11 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         continue;
       }
       String[] tmp = input.reverseLookup(columnDesc.getColumn());
+      // in subquery case, tmp may be from outside.
+      if (tmp[0] != null && columnDesc.getTabAlias() != null
+          && !tmp[0].equals(columnDesc.getTabAlias()) && tcCtx.getOuterRR() != null) {
+        tmp = tcCtx.getOuterRR().reverseLookup(columnDesc.getColumn());
+      }
       StringBuilder replacementText = new StringBuilder();
       replacementText.append(HiveUtils.unparseIdentifier(tmp[0], conf));
       replacementText.append(".");
@@ -12010,7 +12019,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     outputs.add(new WriteEntity(t, WriteEntity.WriteType.DDL_NO_LOCK));
   }
 
-  private ASTNode analyzeCreateView(ASTNode ast, QB qb)
+  protected ASTNode analyzeCreateView(ASTNode ast, QB qb, PlannerContext plannerCtx)
       throws SemanticException {
     String[] qualTabName = getQualifiedTableName((ASTNode) ast.getChild(0));
     String dbDotTable = getDotName(qualTabName);
@@ -12036,6 +12045,10 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         orReplace = true;
         break;
       case HiveParser.TOK_QUERY:
+        // For CBO
+        if (plannerCtx != null) {
+          plannerCtx.setViewToken(child);
+        }
         selectStmt = child;
         break;
       case HiveParser.TOK_TABCOLNAME:
@@ -12075,6 +12088,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     unparseTranslator.enable();
     rootTasks.add(TaskFactory.get(new DDLWork(getInputs(), getOutputs(),
         createVwDesc), conf));
+    qb.setViewDesc(createVwDesc);
 
     addDbAndTabToOutputs(qualTabName, TableType.VIRTUAL_VIEW);
     return selectStmt;
