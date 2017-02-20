@@ -10902,7 +10902,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     ctesExpanded = new ArrayList<String>();
 
     // 1. analyze and process the position alias
-    processPositionAlias(ast);
+    // step processPositionAlias out of genResolvedParseTree
 
     // 2. analyze create table command
     if (ast.getToken().getType() == HiveParser.TOK_CREATETABLE) {
@@ -11017,6 +11017,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
   void analyzeInternal(ASTNode ast, PlannerContext plannerCtx) throws SemanticException {
     // 1. Generate Resolved Parse tree from syntax tree
     LOG.info("Starting Semantic Analysis");
+    //change the location of position alias process here
+    processPositionAlias(ast);
     if (!genResolvedParseTree(ast, plannerCtx)) {
       return;
     }
@@ -11030,6 +11032,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       if (tree != ast) {
         ctx.setSkipTableMasking(true);
         init(true);
+        //change the location of position alias process here
+        processPositionAlias(tree);
         genResolvedParseTree(tree, plannerCtx);
         if (this instanceof CalcitePlanner) {
           ((CalcitePlanner) this).resetCalciteConfiguration();
@@ -12187,7 +12191,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
   }
 
   // Process the position alias in GROUPBY and ORDERBY
-  private void processPositionAlias(ASTNode ast) throws SemanticException {
+  public void processPositionAlias(ASTNode ast) throws SemanticException {
     boolean isBothByPos = HiveConf.getBoolVar(conf, ConfVars.HIVE_GROUPBY_ORDERBY_POSITION_ALIAS);
     boolean isGbyByPos = isBothByPos
         || HiveConf.getBoolVar(conf, ConfVars.HIVE_GROUPBY_POSITION_ALIAS);
