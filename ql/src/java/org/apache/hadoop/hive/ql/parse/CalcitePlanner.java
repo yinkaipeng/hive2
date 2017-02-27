@@ -3282,10 +3282,11 @@ public class CalcitePlanner extends SemanticAnalyzer {
       final boolean cubeRollupGrpSetPresent = (!qbp.getDestRollups().isEmpty()
               || !qbp.getDestGroupingSets().isEmpty() || !qbp.getDestCubes().isEmpty());
       for (WindowExpressionSpec wExprSpec : windowExpressions) {
-        if (cubeRollupGrpSetPresent) {
+        if (!qbp.getDestToGroupBy().isEmpty()) {
           // Special handling of grouping function
           wExprSpec.setExpression(rewriteGroupingFunctionAST(
-                  getGroupByForClause(qbp, selClauseName), wExprSpec.getExpression()));
+                  getGroupByForClause(qbp, selClauseName), wExprSpec.getExpression(),
+                  !cubeRollupGrpSetPresent));
         }
         if (out_rwsch.getExpression(wExprSpec.getExpression()) == null) {
           Pair<RexNode, TypeInfo> wtp = genWindowingProj(qb, wExprSpec, srcRel);
@@ -3573,9 +3574,10 @@ public class CalcitePlanner extends SemanticAnalyzer {
           TypeCheckCtx tcCtx = new TypeCheckCtx(inputRR);
           // We allow stateful functions in the SELECT list (but nowhere else)
           tcCtx.setAllowStatefulFunctions(true);
-          if (cubeRollupGrpSetPresent) {
+          if (!qbp.getDestToGroupBy().isEmpty()) {
             // Special handling of grouping function
-            expr = rewriteGroupingFunctionAST(getGroupByForClause(qbp, selClauseName), expr);
+            expr = rewriteGroupingFunctionAST(getGroupByForClause(qbp, selClauseName), expr,
+                !cubeRollupGrpSetPresent);
           }
           ExprNodeDesc exp = genExprNodeDesc(expr, inputRR, tcCtx);
           String recommended = recommendName(exp, colAlias);
@@ -3956,11 +3958,12 @@ public class CalcitePlanner extends SemanticAnalyzer {
         }
         ASTNode targetNode = (ASTNode) havingClause.getChild(0);
         validateNoHavingReferenceToAlias(qb, targetNode);
-        final boolean cubeRollupGrpSetPresent = (!qbp.getDestRollups().isEmpty()
-                || !qbp.getDestGroupingSets().isEmpty() || !qbp.getDestCubes().isEmpty());
-        if (cubeRollupGrpSetPresent) {
+        if (!qbp.getDestToGroupBy().isEmpty()) {
+          final boolean cubeRollupGrpSetPresent = (!qbp.getDestRollups().isEmpty()
+                  || !qbp.getDestGroupingSets().isEmpty() || !qbp.getDestCubes().isEmpty());
           // Special handling of grouping function
-          targetNode = rewriteGroupingFunctionAST(getGroupByForClause(qbp, destClauseName), targetNode);
+          targetNode = rewriteGroupingFunctionAST(getGroupByForClause(qbp, destClauseName), targetNode,
+              !cubeRollupGrpSetPresent);
         }
         gbFilter = genFilterRelNode(qb, (ASTNode) havingClause.getChild(0), srcRel, aliasToRel,
             null, null, true);
