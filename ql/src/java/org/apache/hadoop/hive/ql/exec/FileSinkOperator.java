@@ -652,6 +652,7 @@ public class FileSinkOperator extends TerminalOperator<FileSinkDesc> implements
 
   @Override
   public void process(Object row, int tag) throws HiveException {
+    runTimeNumRows++;
     /* Create list bucketing sub-directory only if stored-as-directories is on. */
     String lbDirName = null;
     lbDirName = (lbCtx == null) ? null : generateListBucketingDirName(row);
@@ -1085,6 +1086,7 @@ public class FileSinkOperator extends TerminalOperator<FileSinkDesc> implements
       }
     }
     fsp = prevFsp = null;
+    super.closeOp(abort);
   }
 
   /**
@@ -1229,7 +1231,7 @@ public class FileSinkOperator extends TerminalOperator<FileSinkDesc> implements
         }
       }
     }
-    sContext.setIndexForTezUnion(this.conf.getIndexInTezUnion());
+    sContext.setIndexForTezUnion(this.getIndexForTezUnion());
     if (!statsPublisher.closeConnection(sContext)) {
       // The original exception is lost.
       // Not changing the interface to maintain backward compatibility

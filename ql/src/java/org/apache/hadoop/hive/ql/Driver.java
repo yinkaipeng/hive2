@@ -82,6 +82,7 @@ import org.apache.hadoop.hive.ql.optimizer.ppr.PartitionPruner;
 import org.apache.hadoop.hive.ql.parse.ASTNode;
 import org.apache.hadoop.hive.ql.parse.BaseSemanticAnalyzer;
 import org.apache.hadoop.hive.ql.parse.ColumnAccessInfo;
+import org.apache.hadoop.hive.ql.parse.ExplainSemanticAnalyzer;
 import org.apache.hadoop.hive.ql.parse.HiveSemanticAnalyzerHook;
 import org.apache.hadoop.hive.ql.parse.HiveSemanticAnalyzerHookContext;
 import org.apache.hadoop.hive.ql.parse.HiveSemanticAnalyzerHookContextImpl;
@@ -92,6 +93,7 @@ import org.apache.hadoop.hive.ql.parse.ParseUtils;
 import org.apache.hadoop.hive.ql.parse.PrunedPartitionList;
 import org.apache.hadoop.hive.ql.parse.SemanticAnalyzer;
 import org.apache.hadoop.hive.ql.parse.SemanticAnalyzerFactory;
+import org.apache.hadoop.hive.ql.parse.ExplainConfiguration.AnalyzeState;
 import org.apache.hadoop.hive.ql.plan.FileSinkDesc;
 import org.apache.hadoop.hive.ql.plan.HiveOperation;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
@@ -306,6 +308,11 @@ public class Driver implements CommandProcessor {
     this(new QueryState(conf), null);
   }
 
+  public Driver(HiveConf conf, Context ctx) {
+    this(new QueryState(conf), null);
+    this.ctx = ctx;
+  }
+
   public Driver(HiveConf conf, String userName) {
     this(new QueryState(conf), userName);
   }
@@ -357,7 +364,7 @@ public class Driver implements CommandProcessor {
       LOG.warn("WARNING! Query command could not be redacted." + e);
     }
 
-    if (ctx != null) {
+    if (ctx != null && ctx.getExplainAnalyze() != AnalyzeState.RUNNING) {
       close();
     }
 
@@ -404,7 +411,10 @@ public class Driver implements CommandProcessor {
           + queryId);
       shim.setHadoopQueryContext(queryId);
 
-      ctx = new Context(conf);
+      if (ctx == null) {
+        ctx = new Context(conf);
+      }
+      
       ctx.setTryCount(getTryCount());
       ctx.setCmd(command);
       ctx.setHDFSCleanup(true);
