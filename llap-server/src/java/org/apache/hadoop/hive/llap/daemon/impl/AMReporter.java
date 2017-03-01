@@ -183,7 +183,7 @@ public class AMReporter extends AbstractService {
     }
   }
 
-  public void registerTask(String amLocation, int port, String user,
+  public void registerTask(String amLocation, int port, String umbilicalUser,
                            Token<JobTokenIdentifier> jobToken, QueryIdentifier queryIdentifier) {
     if (LOG.isTraceEnabled()) {
       LOG.trace(
@@ -199,7 +199,7 @@ public class AMReporter extends AbstractService {
       amNodeInfo = knownAppMasters.get(queryIdentifier);
       if (amNodeInfo == null) {
         amNodeInfo =
-            new AMNodeInfo(amNodeId, user, jobToken, queryIdentifier, retryPolicy, retryTimeout, socketFactory,
+            new AMNodeInfo(amNodeId, umbilicalUser, jobToken, queryIdentifier, retryPolicy, retryTimeout, socketFactory,
                 conf);
         knownAppMasters.put(queryIdentifier, amNodeInfo);
         // Add to the queue only the first time this is registered, and on
@@ -232,14 +232,14 @@ public class AMReporter extends AbstractService {
     }
   }
 
-  public void taskKilled(String amLocation, int port, String user, Token<JobTokenIdentifier> jobToken,
+  public void taskKilled(String amLocation, int port, String umbilicalUser, Token<JobTokenIdentifier> jobToken,
                          final QueryIdentifier queryIdentifier, final TezTaskAttemptID taskAttemptId) {
     LlapNodeId amNodeId = LlapNodeId.getInstance(amLocation, port);
     AMNodeInfo amNodeInfo;
     synchronized (knownAppMasters) {
       amNodeInfo = knownAppMasters.get(queryIdentifier);
       if (amNodeInfo == null) {
-        amNodeInfo = new AMNodeInfo(amNodeId, user, jobToken, queryIdentifier, retryPolicy, retryTimeout, socketFactory,
+        amNodeInfo = new AMNodeInfo(amNodeId, umbilicalUser, jobToken, queryIdentifier, retryPolicy, retryTimeout, socketFactory,
           conf);
       }
     }
@@ -406,7 +406,7 @@ public class AMReporter extends AbstractService {
 
   private static class AMNodeInfo implements Delayed {
     private final AtomicInteger taskCount = new AtomicInteger(0);
-    private final String user;
+    private final String umbilicalUser;
     private final Token<JobTokenIdentifier> jobToken;
     private final Configuration conf;
     private final LlapNodeId amNodeId;
@@ -420,14 +420,14 @@ public class AMReporter extends AbstractService {
     private final AtomicBoolean isDone = new AtomicBoolean(false);
 
 
-    public AMNodeInfo(LlapNodeId amNodeId, String user,
+    public AMNodeInfo(LlapNodeId amNodeId, String umbilicalUser,
                       Token<JobTokenIdentifier> jobToken,
                       QueryIdentifier currentQueryIdentifier,
                       RetryPolicy retryPolicy,
                       long timeout,
                       SocketFactory socketFactory,
                       Configuration conf) {
-      this.user = user;
+      this.umbilicalUser = umbilicalUser;
       this.jobToken = jobToken;
       this.queryIdentifier = currentQueryIdentifier;
       this.retryPolicy = retryPolicy;
@@ -442,7 +442,7 @@ public class AMReporter extends AbstractService {
         final InetSocketAddress address =
             NetUtils.createSocketAddrForHost(amNodeId.getHostname(), amNodeId.getPort());
         SecurityUtil.setTokenService(this.jobToken, address);
-        UserGroupInformation ugi = UserGroupInformation.createRemoteUser(user);
+        UserGroupInformation ugi = UserGroupInformation.createRemoteUser(umbilicalUser);
         ugi.addToken(jobToken);
         umbilical = ugi.doAs(new PrivilegedExceptionAction<LlapTaskUmbilicalProtocol>() {
           @Override
