@@ -82,3 +82,15 @@ NULL
 NULL
 NULL
 NULL
+PREHOOK: query: -- HIVE-16050
+select null as c1 UNION ALL select 1 as c1
+PREHOOK: type: QUERY
+PREHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+POSTHOOK: query: -- HIVE-16050
+select null as c1 UNION ALL select 1 as c1
+POSTHOOK: type: QUERY
+POSTHOOK: Input: _dummy_database@_dummy_table
+#### A masked pattern was here ####
+NULL
+1
