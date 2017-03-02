@@ -416,7 +416,7 @@ public class RecordReaderImpl implements RecordReader {
             " Exception: " + e.getMessage() +
             " StatsType: " + statsType +
             " PredicateType: " + predicateType;
-        LOG.debug(reason, e);
+        LOG.debug(reason);
       }
       if (predicate.getOperator().equals(PredicateLeaf.Operator.NULL_SAFE_EQUALS) || !hasNull) {
         result = TruthValue.YES_NO;
