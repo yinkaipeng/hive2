@@ -29,10 +29,12 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.common.FileUtils;
+import org.apache.hadoop.hive.common.StatsSetupConst;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.MetaStoreUtils;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
@@ -131,6 +133,14 @@ class TextMetaDataFormatter implements MetaDataFormatter {
                   MetaDataFormatUtils.getAllColumnsInformation(cols, partCols, isFormatted, isOutputPadded, showPartColsSeparately);
       } else {
         output = MetaDataFormatUtils.getAllColumnsInformation(cols, isFormatted, isOutputPadded, colStats);
+        String statsState;
+        if (tbl.getParameters() != null && (statsState = tbl.getParameters().get(StatsSetupConst.COLUMN_STATS_ACCURATE)) != null) {
+          StringBuilder str = new StringBuilder();
+          MetaDataFormatUtils.formatOutput(StatsSetupConst.COLUMN_STATS_ACCURATE,
+              StringEscapeUtils.escapeJava(statsState),
+              str, isOutputPadded);
+          output = output.concat(str.toString());
+        }
       }
       outStream.write(output.getBytes("UTF-8"));
 

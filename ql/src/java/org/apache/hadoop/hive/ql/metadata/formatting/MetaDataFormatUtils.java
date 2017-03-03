@@ -495,6 +495,22 @@ public final class MetaDataFormatUtils {
     tableInfo.append(String.format("%-" + ALIGNMENT + "s", value)).append(LINE_DELIM);
   }
 
+  /**
+   * Prints the name value pair
+   * It the output is padded then unescape the value, so it could be printed in multiple lines.
+   * In this case it assumes the pair is already indented with a field delimiter
+   * @param name The field name to print
+   * @param value The value t print
+   * @param tableInfo The target builder
+   * @param isOutputPadded Should the value printed as a padded string?
+   */
+  protected static void formatOutput(String name, String value, StringBuilder tableInfo,
+      boolean isOutputPadded) {
+    String unescapedValue =
+        (isOutputPadded && value != null) ? value.replaceAll("\\\\n|\\\\r|\\\\r\\\\n","\n"):value;
+    formatOutput(name, unescapedValue, tableInfo);
+  }
+
   private static void formatWithIndentation(String colName, String colType, String colComment,
       StringBuilder tableInfo, List<ColumnStatisticsObj> colStats) {
     tableInfo.append(String.format("%-" + ALIGNMENT + "s", colName)).append(FIELD_DELIM);
@@ -518,8 +534,8 @@ public final class MetaDataFormatUtils {
               bcsd.getNumTrues(), bcsd.getNumFalses());
         } else if (csd.isSetDecimalStats()) {
           DecimalColumnStatsData dcsd = csd.getDecimalStats();
-          appendColumnStats(tableInfo, convertToString(dcsd.getLowValue()), 
-              convertToString(dcsd.getHighValue()), dcsd.getNumNulls(), dcsd.getNumDVs(), 
+          appendColumnStats(tableInfo, convertToString(dcsd.getLowValue()),
+              convertToString(dcsd.getHighValue()), dcsd.getNumNulls(), dcsd.getNumDVs(),
               "", "", "", "");
         } else if (csd.isSetDoubleStats()) {
           DoubleColumnStatsData dcsd = csd.getDoubleStats();

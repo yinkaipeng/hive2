@@ -90,6 +90,7 @@ POSTHOOK: Input: statsdb1@testtable1
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             
 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	8                   	                    	                    	                    	                    	from deserializer   
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"col1\":\"true\",\"col2\":\"true\",\"col3\":\"true\"}}	 	 	 	 	 	 	 	 	 
 PREHOOK: query: describe formatted statsdb1.testtable1 col2
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: statsdb1@testtable1
@@ -99,6 +100,7 @@ POSTHOOK: Input: statsdb1@testtable1
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             
 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	12                  	6.7                 	7                   	                    	                    	from deserializer   
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"col1\":\"true\",\"col2\":\"true\",\"col3\":\"true\"}}	 	 	 	 	 	 	 	 	 
 PREHOOK: query: describe formatted statsdb1.testtable1 col3
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: statsdb1@testtable1
@@ -108,6 +110,7 @@ POSTHOOK: Input: statsdb1@testtable1
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             
 	 	 	 	 	 	 	 	 	 	 
 col3                	string              	                    	                    	0                   	1                   	4.0                 	4                   	                    	                    	from deserializer   
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"col1\":\"true\",\"col2\":\"true\",\"col3\":\"true\"}}	 	 	 	 	 	 	 	 	 
 PREHOOK: query: alter table testtable1 replace columns (col1 int, col2 string, col4 string)
 PREHOOK: type: ALTERTABLE_REPLACECOLS
 PREHOOK: Input: statsdb1@testtable1
@@ -556,6 +559,7 @@ POSTHOOK: Input: statsdb1@testtable1
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             
 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	8                   	                    	                    	                    	                    	from deserializer   
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"col1\":\"true\",\"col2\":\"true\",\"col3\":\"true\"}}	 	 	 	 	 	 	 	 	 
 PREHOOK: query: describe formatted statsdb1.testtable1 col2
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: statsdb1@testtable1
@@ -565,6 +569,7 @@ POSTHOOK: Input: statsdb1@testtable1
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             
 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	12                  	6.7                 	7                   	                    	                    	from deserializer   
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"col1\":\"true\",\"col2\":\"true\",\"col3\":\"true\"}}	 	 	 	 	 	 	 	 	 
 PREHOOK: query: describe formatted statsdb1.testtable1 col3
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: statsdb1@testtable1
@@ -574,6 +579,7 @@ POSTHOOK: Input: statsdb1@testtable1
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             
 	 	 	 	 	 	 	 	 	 	 
 col3                	string              	                    	                    	0                   	1                   	4.0                 	4                   	                    	                    	from deserializer   
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"col1\":\"true\",\"col2\":\"true\",\"col3\":\"true\"}}	 	 	 	 	 	 	 	 	 
 PREHOOK: query: alter table testtable1 replace columns (col1 int, col2 string, col4 string)
 PREHOOK: type: ALTERTABLE_REPLACECOLS
 PREHOOK: Input: statsdb1@testtable1

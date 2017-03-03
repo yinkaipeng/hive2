@@ -240,12 +240,16 @@ public class StatsSetupConst {
   }
 
   public static void setColumnStatsState(Map<String, String> params, List<String> colNames) {
+    setColumnStatsState(params, colNames, TRUE);
+  }
+
+  public static void setColumnStatsState(Map<String, String> params, List<String> colNames, String state) {
     try {
       String statsAcc = params.get(COLUMN_STATS_ACCURATE);
       JSONObject colStats = new JSONObject(new LinkedHashMap());
       // duplicate key is not possible
       for (String colName : colNames) {
-        colStats.put(colName.toLowerCase(), TRUE);
+        colStats.put(colName.toLowerCase(), state);
       }
       if (statsAcc == null) {
         JSONObject stats = new JSONObject(new LinkedHashMap());
@@ -281,7 +285,7 @@ public class StatsSetupConst {
           for (String colName : colNames) {
             if (!allColumnStats.has(colName)) {
               // duplicate key is not possible
-              allColumnStats.put(colName, TRUE);
+              allColumnStats.put(colName, state);
             }
           }
           stats.remove(COLUMN_STATS);
