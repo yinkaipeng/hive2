@@ -210,7 +210,6 @@ public class AMReporter extends AbstractService {
         // when we detect a failure on the AM side (failure to heartbeat).
         // A single queueLookupCallable is added here. We have to make sure one instance stays
         // in the queue till the query completes.
-        LOG.info("DBG: Pending heartbeat queue size={}", pendingHeartbeatQueeu.size());
       }
       amNodeInfo.incrementAndGetTaskCount();
     }
@@ -380,7 +379,6 @@ public class AMReporter extends AbstractService {
       if (LOG.isTraceEnabled()) {
         LOG.trace("Attempting to heartbeat to AM: " + amNodeInfo);
       }
-      LOG.info("DBG: Attempting to heartbeat to AM: {}", amNodeInfo);
       if (amNodeInfo.getTaskCount() > 0) {
         try {
           if (LOG.isTraceEnabled()) {
@@ -399,9 +397,7 @@ public class AMReporter extends AbstractService {
             LOG.warn("Interrupted while trying to send heartbeat to AM {}", amNodeInfo.amNodeId, e);
           }
         }
-      } else {  
-        LOG.info("DBG: Skipping node heartbeat to AM: " + amNodeInfo + ", since ref count is 0");
-      }
+      } 
       return null;
     }
   }
