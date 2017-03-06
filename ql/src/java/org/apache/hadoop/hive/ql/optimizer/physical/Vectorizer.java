@@ -764,10 +764,6 @@ public class Vectorizer implements PhysicalPlanResolver {
           return false;
         }
         VectorPartitionDesc vectorPartDesc = partDesc.getVectorPartitionDesc();
-        if (LOG.isInfoEnabled()) {
-          LOG.info("Vectorizer path: " + path + ", " + vectorPartDesc.toString() +
-              ", aliases " + aliases);
-        }
 
         if (isFirst) {
 
