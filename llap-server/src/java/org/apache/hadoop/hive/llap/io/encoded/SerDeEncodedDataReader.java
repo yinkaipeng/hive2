@@ -52,7 +52,7 @@ import org.apache.hadoop.hive.llap.counters.QueryFragmentCounters;
 import org.apache.hadoop.hive.llap.io.api.impl.LlapIoImpl;
 import org.apache.hadoop.hive.llap.io.decode.GenericColumnVectorProducer.SerDeStripeMetadata;
 import org.apache.hadoop.hive.llap.io.decode.OrcEncodedDataConsumer;
-import org.apache.hadoop.hive.llap.io.encoded.VertorDeserializeOrcWriter.AsyncCallback;
+import org.apache.hadoop.hive.llap.io.encoded.VectorDeserializeOrcWriter.AsyncCallback;
 import org.apache.hadoop.hive.ql.exec.vector.ColumnVector;
 import org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch;
 import org.apache.hadoop.hive.ql.io.HdfsUtils;
@@ -173,7 +173,7 @@ public class SerDeEncodedDataReader extends CallableWithNdc<Void>
    * the consumer, at which point the consumer is responsible for it.
    */
   private FileData cachedData;
-  private List<VertorDeserializeOrcWriter> asyncWriters = new ArrayList<>();
+  private List<VectorDeserializeOrcWriter> asyncWriters = new ArrayList<>();
 
   public SerDeEncodedDataReader(SerDeLowLevelCacheImpl cache,
       BufferUsageManager bufferManager, Configuration daemonConf, FileSplit split,
@@ -1397,14 +1397,14 @@ public class SerDeEncodedDataReader extends CallableWithNdc<Void>
       List<Integer> splitColumnIds = OrcInputFormat.genIncludedColumnsReverse(
           schema, splitIncludes, false);
       // fileread writes to the writer, which writes to orcWriter, which writes to cacheWriter
-      EncodingWriter writer = VertorDeserializeOrcWriter.create(sourceInputFormat, sourceSerDe,
+      EncodingWriter writer = VectorDeserializeOrcWriter.create(sourceInputFormat, sourceSerDe,
           parts, daemonConf, jobConf, split.getPath(), originalOi, splitColumnIds, splitIncludes);
       // TODO: move this into ctor? EW would need to create CacheWriter then
       List<Integer> cwColIds = writer.isOnlyWritingIncludedColumns() ? splitColumnIds : columnIds;
       writer.init(new CacheWriter(bufferManager, allocSize, cwColIds,
           splitIncludes, writer.isOnlyWritingIncludedColumns()), daemonConf);
-      if (writer instanceof VertorDeserializeOrcWriter) {
-        VertorDeserializeOrcWriter asyncWriter = (VertorDeserializeOrcWriter)writer;
+      if (writer instanceof VectorDeserializeOrcWriter) {
+        VectorDeserializeOrcWriter asyncWriter = (VectorDeserializeOrcWriter)writer;
         asyncWriter.startAsync(new AsyncCacheDataCallback());
         this.asyncWriters.add(asyncWriter);
       }
@@ -1424,7 +1424,7 @@ public class SerDeEncodedDataReader extends CallableWithNdc<Void>
 
   private class AsyncCacheDataCallback implements AsyncCallback {
     @Override
-    public void onComplete(VertorDeserializeOrcWriter writer) {
+    public void onComplete(VectorDeserializeOrcWriter writer) {
       CacheWriter cacheWriter = null;
       try {
         cacheWriter = writer.getCacheWriter();
@@ -1606,7 +1606,7 @@ public class SerDeEncodedDataReader extends CallableWithNdc<Void>
   private void cleanup(boolean isError) {
     cleanUpCurrentRead();
     if (!isError) return;
-    for (VertorDeserializeOrcWriter asyncWriter : asyncWriters) {
+    for (VectorDeserializeOrcWriter asyncWriter : asyncWriters) {
       try {
         asyncWriter.interrupt();
       } catch (Exception ex) {

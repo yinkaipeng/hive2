@@ -60,7 +60,7 @@ import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 
 /** The class that writes rows from a text reader to an ORC writer using VectorDeserializeRow. */
-class VertorDeserializeOrcWriter extends EncodingWriter implements Runnable {
+class VectorDeserializeOrcWriter extends EncodingWriter implements Runnable {
   private final VectorizedRowBatchCtx vrbCtx;
   private final LazySimpleDeserializeRead deserializeRead;
   private final VectorDeserializeRow<?> vectorDeserializeRow;
@@ -95,29 +95,29 @@ class VertorDeserializeOrcWriter extends EncodingWriter implements Runnable {
     PartitionDesc partDesc = HiveFileFormatUtils.getPartitionDescFromPathRecursively(
         parts, path, null);
     if (partDesc == null) {
-      LlapIoImpl.LOG.info("Not using VertorDeserializeOrcWriter: no partition desc for " + path);
+      LlapIoImpl.LOG.info("Not using VectorDeserializeOrcWriter: no partition desc for " + path);
       return new DeserializerOrcWriter(serDe, sourceOi);
     }
     Properties tblProps = partDesc.getTableDesc().getProperties();
     if ("true".equalsIgnoreCase(tblProps.getProperty(
         serdeConstants.SERIALIZATION_LAST_COLUMN_TAKES_REST))) {
-      LlapIoImpl.LOG.info("Not using VertorDeserializeOrcWriter due to "
+      LlapIoImpl.LOG.info("Not using VectorDeserializeOrcWriter due to "
         + serdeConstants.SERIALIZATION_LAST_COLUMN_TAKES_REST);
       return new DeserializerOrcWriter(serDe, sourceOi);
     }
     for (StructField sf : sourceOi.getAllStructFieldRefs()) {
       Category c = sf.getFieldObjectInspector().getCategory();
       if (c != Category.PRIMITIVE) {
-        LlapIoImpl.LOG.info("Not using VertorDeserializeOrcWriter: " + c + " is not supported");
+        LlapIoImpl.LOG.info("Not using VectorDeserializeOrcWriter: " + c + " is not supported");
         return new DeserializerOrcWriter(serDe, sourceOi);
       }
     }
-    LlapIoImpl.LOG.info("Creating VertorDeserializeOrcWriter for " + path);
-    return new VertorDeserializeOrcWriter(
+    LlapIoImpl.LOG.info("Creating VectorDeserializeOrcWriter for " + path);
+    return new VectorDeserializeOrcWriter(
       daemonConf, tblProps, sourceOi, sourceIncludes, cacheIncludes);
   }
 
-  private VertorDeserializeOrcWriter(Configuration conf, Properties tblProps,
+  private VectorDeserializeOrcWriter(Configuration conf, Properties tblProps,
       StructObjectInspector sourceOi, List<Integer> sourceIncludes, boolean[] cacheIncludes)
           throws IOException {
     super(sourceOi);
@@ -220,7 +220,7 @@ class VertorDeserializeOrcWriter extends EncodingWriter implements Runnable {
   }
 
   public interface AsyncCallback {
-    void onComplete(VertorDeserializeOrcWriter writer);
+    void onComplete(VectorDeserializeOrcWriter writer);
   }
 
   @Override
