@@ -997,6 +997,23 @@ public abstract class BaseSemanticAnalyzer {
       }
     }
 
+    public TableSpec(Table tableHandle, List<Partition> partitions)
+        throws HiveException {
+      this.tableHandle = tableHandle;
+      this.tableName = tableHandle.getTableName();
+      if (partitions != null && !partitions.isEmpty()) {
+        this.specType = SpecType.STATIC_PARTITION;
+        this.partitions = partitions;
+        List<FieldSchema> partCols = this.tableHandle.getPartCols();
+        this.partSpec = new LinkedHashMap<>();
+        for (FieldSchema partCol : partCols) {
+          partSpec.put(partCol.getName(), null);
+        }
+      } else {
+        this.specType = SpecType.TABLE_ONLY;
+      }
+    }
+
     public TableSpec(Hive db, HiveConf conf, ASTNode ast, boolean allowDynamicPartitionsSpec,
         boolean allowPartialPartitionsSpec) throws SemanticException {
       assert (ast.getToken().getType() == HiveParser.TOK_TAB
@@ -1143,7 +1160,6 @@ public abstract class BaseSemanticAnalyzer {
     private List<String> colType;
     private boolean tblLvl;
 
-
     public String getTableName() {
       return tableName;
     }
@@ -1175,6 +1191,7 @@ public abstract class BaseSemanticAnalyzer {
     public void setColType(List<String> colType) {
       this.colType = colType;
     }
+
   }
 
   /**
