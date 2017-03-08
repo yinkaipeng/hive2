@@ -1334,6 +1334,7 @@ public class ReplicationSemanticAnalyzer extends BaseSemanticAnalyzer {
     }
 
     prepareReturnValues(Collections.singletonList(replLastId), "last_repl_id#string");
+    setFetchTask(createFetchTask("last_repl_id#string"));
     LOG.debug("ReplicationSemanticAnalyzer.analyzeReplStatus: writing repl.last.id={} out to {}",
         String.valueOf(replLastId), ctx.getResFile());
   }
