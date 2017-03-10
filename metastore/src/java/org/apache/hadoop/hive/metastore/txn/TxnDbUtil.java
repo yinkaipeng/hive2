@@ -229,10 +229,18 @@ public final class TxnDbUtil {
   private static boolean dropTable(Statement stmt, String name, int retryCount) throws SQLException {
     try {
       stmt.execute("DROP TABLE " + name);
-      return true;
+      stmt.execute("SELECT * FROM " + name);  // the table should be gone, and we should throw an exception here
+      // if we reach here without throwing any exception, it means the above SELECT actually succeeded, which is wrong!
+      LOG.error("BUG-76727 : table " + name + " was not dropped!");
+      return false;
     } catch (SQLException e) {
       if("42Y55".equals(e.getSQLState()) && 30000 == e.getErrorCode()) {
         //failed because object doesn't exist
+        // "DROP" failed because the table doesn't exist at all. This is OK too.
+        return true;
+      }
+      if ("42X05".equals(e.getSQLState()) && 30000 == e.getErrorCode()) {
+        // expected, "SELECT" should fail since whatever the table is, it should have been dropped
         return true;
       }
       LOG.error("Unable to drop table " + name + ": " + e.getMessage() +
