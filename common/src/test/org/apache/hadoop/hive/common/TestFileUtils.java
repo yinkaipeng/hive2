@@ -35,7 +35,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.shims.HadoopShims;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.slf4j.Logger;
@@ -62,7 +61,7 @@ public class TestFileUtils {
     HadoopShims shims = mock(HadoopShims.class);
     when(shims.runDistCp(Collections.singletonList(copySrc), copyDst, conf)).thenReturn(true);
 
-    Assert.assertTrue(FileUtils.copy(mockFs, copySrc, mockFs, copyDst, false, false, conf, shims));
+    assertTrue(FileUtils.copy(mockFs, copySrc, mockFs, copyDst, false, false, conf, shims));
     verify(shims).runDistCp(Collections.singletonList(copySrc), copyDst, conf);
   }
 
@@ -86,10 +85,10 @@ public class TestFileUtils {
     when(shims.runDistCp(Collections.singletonList(copySrc), copyDst, conf)).thenReturn(false);
 
     // doAs when asked
-    Assert.assertTrue(FileUtils.distCp(mockFs, Collections.singletonList(copySrc), copyDst, true, doAsUser, conf, shims));
+    assertTrue(FileUtils.distCp(mockFs, Collections.singletonList(copySrc), copyDst, true, doAsUser, conf, shims));
     verify(shims).runDistCpAs(Collections.singletonList(copySrc), copyDst, conf, doAsUser);
     // don't doAs when not asked
-    Assert.assertFalse(FileUtils.distCp(mockFs, Collections.singletonList(copySrc), copyDst, true, null, conf, shims));
+    assertFalse(FileUtils.distCp(mockFs, Collections.singletonList(copySrc), copyDst, true, null, conf, shims));
     verify(shims).runDistCp(Collections.singletonList(copySrc), copyDst, conf);
   }
 }
