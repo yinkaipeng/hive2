@@ -64,6 +64,7 @@ import java.util.Map;
  * simulate interleaved transactional/locking operations but all from within a single thread.
  * The later not only controls concurrency precisely but is the only way to run in UT env with DerbyDB.
  */
+@Ignore("Due to test flakieness, BUG-76727")
 public class TestDbTxnManager2 {
   private static HiveConf conf = new HiveConf(Driver.class);
   private HiveTxnManager txnMgr;
