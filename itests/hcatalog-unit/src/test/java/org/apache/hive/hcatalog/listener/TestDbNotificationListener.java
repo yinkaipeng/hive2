@@ -1139,6 +1139,7 @@ public class TestDbNotificationListener {
   }
 
   @Test
+  @Ignore("Deferring flaky test, See BUG-76705")
   public void sqlInsertPartition() throws Exception {
     String tblName = "sqlinsptn";
     // Event 1
