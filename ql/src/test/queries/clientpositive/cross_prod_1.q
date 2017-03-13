@@ -29,3 +29,6 @@ explain select * from X as A full outer join X as B on (A.key = B.key or A.value
 
 explain select * from (select X.key, count(*) from X group by X.key) as A, (select X.key, count(*) from X group by X.key) as B;
 select * from (select X.key, count(*) from X group by X.key) as A, (select X.key, count(*) from X group by X.key) as B;
+
+explain select * from (select * from src union all select * from src as y) a join src;
+explain select * from (select * from src union all select * from src as y) a join (select * from src union all select * from src as y) b;

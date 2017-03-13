@@ -187,9 +187,20 @@ public class CrossProductHandler implements PhysicalPlanResolver, Dispatcher {
         if (checkForCrossProduct(rWork.getName(), reducer, rsInfo)
                 && cartesianProductEdgeEnabled && noOuterJoin) {
           List<BaseWork> parents = tezWork.getParents(null == origWrk ? wrk : origWrk);
+
+          boolean hasUnionWorkParent = false;
+          for (BaseWork p : parents) {
+            if (p instanceof UnionWork) {
+              hasUnionWorkParent = true;
+            }
+          }
+
+          if (hasUnionWorkParent) {
+            continue;
+          }
+
           for (BaseWork p: parents) {
             TezEdgeProperty prop = tezWork.getEdgeProperty(p, null == origWrk ? wrk : origWrk);
-            LOG.info("Edge Type: "+prop.getEdgeType());
             if (prop.getEdgeType().equals(EdgeType.SIMPLE_EDGE)) {
               prop.setEdgeType(EdgeType.XPROD_EDGE);
               rWork.setNumReduceTasks(-1);
