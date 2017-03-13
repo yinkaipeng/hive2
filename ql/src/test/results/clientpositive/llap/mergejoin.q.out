@@ -61,11 +61,7 @@ STAGE PLANS:
                       Select Operator
                         expressions: _col0 (type: string)
                         outputColumnNames: _col0
-<<<<<<< HEAD
                         Statistics: Num rows: 25 Data size: 191 Basic stats: COMPLETE Column stats: NONE
-=======
-                        Statistics: Num rows: 25 Data size: 2150 Basic stats: COMPLETE Column stats: COMPLETE
->>>>>>> be47d9e... HIVE-16132: DataSize stats don't seem correct in semijoin opt branch (Deepak Jaiswal via Gunther Hagleitner)
                         Group By Operator
                           aggregations: min(_col0), max(_col0), bloom_filter(_col0, expectedEntries=14)
                           mode: hash
