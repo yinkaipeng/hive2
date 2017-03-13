@@ -20,6 +20,7 @@ package org.apache.hadoop.hive.ql.exec.tez;
 import java.io.IOException;
 import java.util.Collection;
 
+import com.google.common.base.Preconditions;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -33,7 +34,8 @@ public class Utils {
   public static SplitLocationProvider getSplitLocationProvider(Configuration conf, Logger LOG) throws
       IOException {
     boolean useCustomLocations =
-        HiveConf.getBoolVar(conf, HiveConf.ConfVars.LLAP_CLIENT_CONSISTENT_SPLITS);
+        HiveConf.getVar(conf, HiveConf.ConfVars.HIVE_EXECUTION_MODE).equals("llap")
+        && HiveConf.getBoolVar(conf, HiveConf.ConfVars.LLAP_CLIENT_CONSISTENT_SPLITS);
     SplitLocationProvider splitLocationProvider;
     LOG.info("SplitGenerator using llap affinitized locations: " + useCustomLocations);
     if (useCustomLocations) {
@@ -42,6 +44,8 @@ public class Utils {
 
       Collection<ServiceInstance> serviceInstances =
           serviceRegistry.getInstances().getAllInstancesOrdered(true);
+      Preconditions.checkArgument(!serviceInstances.isEmpty(),
+          "No running LLAP daemons! Please check LLAP service status and zookeeper configuration");
       String[] locations = new String[serviceInstances.size()];
       int i = 0;
       for (ServiceInstance serviceInstance : serviceInstances) {
