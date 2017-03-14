@@ -326,8 +326,9 @@ public class TaskRunnerCallable extends CallableWithNdc<TaskRunner2Result> {
     if (!isCompleted.get()) {
       if (!killInvoked.getAndSet(true)) {
         synchronized (this) {
-          LOG.info("Kill task requested for id={}, taskRunnerSetup={}", taskSpec.getTaskAttemptID(),
-              (taskRunner != null));
+          TezTaskAttemptID ta = taskSpec.getTaskAttemptID();
+          LOG.info("Kill task requested for id={}, taskRunnerSetup={}", ta, (taskRunner != null));
+          shouldRunTask = false;
           if (taskRunner != null) {
             killtimerWatch.start();
             LOG.info("Issuing kill to task {}", taskSpec.getTaskAttemptID());
@@ -344,7 +345,6 @@ public class TaskRunnerCallable extends CallableWithNdc<TaskRunner2Result> {
               LOG.info("Kill request for task {} did not complete because the task is already complete",
                   taskSpec.getTaskAttemptID());
             }
-            shouldRunTask = false;
           } else {
             // If the task hasn't started, and it is killed - report back to the AM that the task has been killed.
             LOG.debug("Reporting taskKilled for non-started fragment {}", getRequestId());
