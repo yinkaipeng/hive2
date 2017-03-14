@@ -92,6 +92,7 @@ class LlapRecordReader
   private final int columnCount;
 
   private TypeDescription fileSchema;
+  private final boolean isAcidScan;
 
   public LlapRecordReader(JobConf job, FileSplit split, List<Integer> includedCols,
       String hostName, ColumnVectorProducer cvp, ExecutorService executor,
@@ -139,7 +140,7 @@ class LlapRecordReader
       partitionValues = null;
     }
 
-    boolean isAcidScan = HiveConf.getBoolVar(jobConf, ConfVars.HIVE_TRANSACTIONAL_TABLE_SCAN);
+    isAcidScan = HiveConf.getBoolVar(jobConf, ConfVars.HIVE_TRANSACTIONAL_TABLE_SCAN);
     TypeDescription schema = OrcInputFormat.getDesiredRowTypeDescr(
         job, isAcidScan, Integer.MAX_VALUE);
 
@@ -147,6 +148,8 @@ class LlapRecordReader
     feedback = rp = cvp.createReadPipeline(this, split, columnIds, sarg, columnNames,
         counters, schema, sourceInputFormat, sourceSerDe, reporter, job,
         mapWork.getPathToPartitionInfo());
+    LOG.info("DBG: schema: {} len: {} readerSchema: {} len: {}", schema, schema.getMaximumId(), rp.getReaderSchema(),
+      rp.getReaderSchema().getMaximumId());
     fileSchema = rp.getFileSchema();
     includedColumns = rp.getIncludedColumns();
   }
@@ -168,14 +171,14 @@ class LlapRecordReader
   }
 
   private boolean checkOrcSchemaEvolution() {
-    boolean isAcidScan = HiveConf.getBoolVar(jobConf, ConfVars.HIVE_TRANSACTIONAL_TABLE_SCAN);
-    TypeDescription readerSchema = OrcInputFormat.getDesiredRowTypeDescr(jobConf, isAcidScan,
-        Integer.MAX_VALUE);
-
     SchemaEvolution schemaEvolution = new SchemaEvolution(
-        fileSchema, readerSchema, includedColumns);
+      fileSchema, rp.getReaderSchema(), includedColumns);
     for (int i = 0; i < columnCount; ++i) {
-      if (!schemaEvolution.isPPDSafeConversion(columnIds.get(i))) {
+      int projectedColId = columnIds == null ? i : columnIds.get(i);
+      // Adjust file column index for ORC struct.
+      // LLAP IO does not support ACID. When it supports, this would be auto adjusted.
+      int fileColId =  OrcInputFormat.getRootColumn(!isAcidScan) + projectedColId + 1;
+      if (!schemaEvolution.isPPDSafeConversion(fileColId)) {
         LlapIoImpl.LOG.warn("Unsupported schema evolution! Disabling Llap IO for {}", split);
         return false;
       }

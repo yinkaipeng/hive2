@@ -212,7 +212,7 @@ public class OrcEncodedDataReader extends CallableWithNdc<Void>
     evolution = new SchemaEvolution(fileMetadata.getSchema(), readerSchema, globalIncludes);
     consumer.setFileMetadata(fileMetadata);
     consumer.setIncludedColumns(globalIncludes);
-    consumer.setReaderSchema(readerSchema);
+    consumer.setReaderSchema(evolution.getReaderSchema());
   }
 
   @Override
@@ -280,10 +280,6 @@ public class OrcEncodedDataReader extends CallableWithNdc<Void>
     boolean[] sargColumns = null;
     try {
       if (sarg != null && stride != 0) {
-        // TODO: move this to a common method
-        TypeDescription schema = OrcUtils.convertTypeFromProtobuf(fileMetadata.getTypes(), 0);
-        SchemaEvolution evolution = new SchemaEvolution(schema,
-            null, globalIncludes);
         int[] filterColumns = RecordReaderImpl.mapSargColumnsToOrcInternalColIdx(
           sarg.getLeaves(), evolution);
         // included will not be null, row options will fill the array with trues if null
@@ -704,10 +700,10 @@ public class OrcEncodedDataReader extends CallableWithNdc<Void>
       List<OrcProto.Type> types = fileMetadata.getTypes();
       String[] colNamesForSarg = OrcInputFormat.getSargColumnNames(
           columnNames, types, globalIncludes, fileMetadata.isOriginalFormat());
-      TypeDescription schema = OrcUtils.convertTypeFromProtobuf(types, 0);
-      SchemaEvolution schemaEvolution = new SchemaEvolution(schema, globalIncludes);
+      //TypeDescription schema = OrcUtils.convertTypeFromProtobuf(types, 0);
+      //SchemaEvolution schemaEvolution = new SchemaEvolution(schema, globalIncludes);
       sargApp = new RecordReaderImpl.SargApplier(sarg, colNamesForSarg,
-          rowIndexStride, schemaEvolution);
+          rowIndexStride, evolution);
     }
     boolean hasAnyData = false;
     // readState should have been initialized by this time with an empty array.
