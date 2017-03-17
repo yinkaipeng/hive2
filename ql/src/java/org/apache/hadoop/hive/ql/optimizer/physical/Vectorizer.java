@@ -1770,6 +1770,17 @@ public class Vectorizer implements PhysicalPlanResolver {
     ProcessingMode processingMode =
         VectorGroupByDesc.groupByDescModeToVectorProcessingMode(desc.getMode(), hasKeys);
 
+    if (processingMode == ProcessingMode.MERGE_PARTIAL) {
+      // For now, VectorGroupByOperator ProcessingModeReduceMergePartial cannot handle key
+      // expressions.
+      for (ExprNodeDesc keyExpr : desc.getKeys()) {
+        if (!(keyExpr instanceof ExprNodeColumnDesc)) {
+          LOG.info("Non-column key expressions not supported for MERGEPARTIAL");
+          return false;
+        }
+      }
+    }
+
     Pair<Boolean,Boolean> retPair =
         validateAggregationDescs(desc.getAggregators(), processingMode, hasKeys);
     if (!retPair.left) {
