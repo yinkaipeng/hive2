@@ -97,7 +97,7 @@ import org.apache.tez.common.counters.TezCounters;
 import com.google.common.collect.Lists;
 
 public class SerDeEncodedDataReader extends CallableWithNdc<Void>
-    implements ConsumerFeedback<OrcEncodedColumnBatch> {
+    implements ConsumerFeedback<OrcEncodedColumnBatch>, TezCounterSource {
 
   public static final FixedSizedObjectPool<ColumnStreamData> CSD_POOL =
       new FixedSizedObjectPool<>(8192, new PoolObjectHelper<ColumnStreamData>() {
@@ -1667,6 +1667,7 @@ public class SerDeEncodedDataReader extends CallableWithNdc<Void>
     ECB_POOL.offer(ecb);
   }
 
+  @Override
   public TezCounters getTezCounters() {
     return counters.getTezCounters();
   }

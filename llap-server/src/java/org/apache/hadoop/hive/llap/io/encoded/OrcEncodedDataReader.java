@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.hadoop.hive.llap.counters.LlapIOCounters;
-import org.apache.orc.OrcUtils;
 import org.apache.orc.TypeDescription;
 import org.apache.orc.impl.DataReaderProperties;
 import org.apache.orc.impl.OrcIndex;
@@ -82,6 +81,7 @@ import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hive.common.util.FixedSizedObjectPool;
 import org.apache.orc.OrcProto;
+import org.apache.orc.OrcUtils;
 import org.apache.tez.common.CallableWithNdc;
 
 /**
@@ -91,7 +91,7 @@ import org.apache.tez.common.CallableWithNdc;
  * consumer. It also serves as ConsumerFeedback that receives processed EncodedColumnBatch-es.
  */
 public class OrcEncodedDataReader extends CallableWithNdc<Void>
-    implements ConsumerFeedback<OrcEncodedColumnBatch> {
+    implements ConsumerFeedback<OrcEncodedColumnBatch>, TezCounterSource {
   private static final Logger LOG = LoggerFactory.getLogger(OrcEncodedDataReader.class);
   public static final FixedSizedObjectPool<ColumnStreamData> CSD_POOL =
       new FixedSizedObjectPool<>(8192, new PoolObjectHelper<ColumnStreamData>() {
@@ -925,6 +925,7 @@ public class OrcEncodedDataReader extends CallableWithNdc<Void>
     }
   }
 
+  @Override
   public TezCounters getTezCounters() {
     return counters.getTezCounters();
   }
