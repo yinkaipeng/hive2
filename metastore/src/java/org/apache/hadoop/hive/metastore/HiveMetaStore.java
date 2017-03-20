@@ -226,7 +226,6 @@ public class HiveMetaStore extends ThriftHiveMetastore {
 
   public static class HMSHandler extends FacebookBase implements IHMSHandler, ThreadLocalRawStore {
     public static final Logger LOG = HiveMetaStore.LOG;
-    private String rawStoreClassName;
     private final HiveConf hiveConf; // stores datastore (jpox) properties,
                                      // right now they come from jpox.properties
 
@@ -406,7 +405,6 @@ public class HiveMetaStore extends ThriftHiveMetastore {
 
     @Override
     public void init() throws MetaException {
-      rawStoreClassName = hiveConf.getVar(HiveConf.ConfVars.METASTORE_RAW_STORE_IMPL);
       initListeners = MetaStoreUtils.getMetaStoreListeners(
           MetaStoreInitListener.class, hiveConf,
           hiveConf.getVar(HiveConf.ConfVars.METASTORE_INIT_HOOKS));
@@ -504,7 +502,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       fileMetadataManager = new FileMetadataManager((ThreadLocalRawStore)this, hiveConf);
     }
 
-    private String addPrefix(String s) {
+    private static String addPrefix(String s) {
       return threadLocalId.get() + ": " + s;
     }
 
@@ -579,9 +577,14 @@ public class HiveMetaStore extends ThriftHiveMetastore {
     @InterfaceStability.Evolving
     @Override
     public RawStore getMS() throws MetaException {
+      Configuration conf = getConf();
+      return getMSForConf(conf);
+    }
+
+    public static RawStore getMSForConf(Configuration conf) throws MetaException {
       RawStore ms = threadLocalMS.get();
       if (ms == null) {
-        ms = newRawStore();
+        ms = newRawStoreForConf(conf);
         ms.verifySchema();
         threadLocalMS.set(ms);
         ms = threadLocalMS.get();
@@ -598,24 +601,23 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       return txn;
     }
 
-    private RawStore newRawStore() throws MetaException {
-      LOG.info(addPrefix("Opening raw store with implementation class:"
-          + rawStoreClassName));
-      Configuration conf = getConf();
-
+    private static RawStore newRawStoreForConf(Configuration conf) throws MetaException {
+      HiveConf hiveConf = new HiveConf(conf, HiveConf.class);
+      String rawStoreClassName = hiveConf.getVar(HiveConf.ConfVars.METASTORE_RAW_STORE_IMPL);
+      LOG.info(addPrefix("Opening raw store with implementation class:" + rawStoreClassName));
       if (hiveConf.getBoolVar(ConfVars.METASTORE_FASTPATH)) {
         LOG.info("Fastpath, skipping raw store proxy");
         try {
-          RawStore rs = ((Class<? extends RawStore>) MetaStoreUtils.getClass(
-              rawStoreClassName)).newInstance();
-          rs.setConf(conf);
+          RawStore rs =
+              ((Class<? extends RawStore>) MetaStoreUtils.getClass(rawStoreClassName))
+                  .newInstance();
+          rs.setConf(hiveConf);
           return rs;
         } catch (Exception e) {
           LOG.error("Unable to instantiate raw store directly in fastpath mode", e);
           throw new RuntimeException(e);
         }
       }
-
       return RawStoreProxy.getProxy(hiveConf, conf, rawStoreClassName, threadLocalId.get());
     }
 
