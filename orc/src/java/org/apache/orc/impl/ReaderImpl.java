@@ -350,7 +350,6 @@ public class ReaderImpl implements Reader {
     if (fileMetadata != null) {
       this.compressionKind = fileMetadata.getCompressionKind();
       this.bufferSize = fileMetadata.getCompressionBufferSize();
-      this.codec = PhysicalFsWriter.createCodec(compressionKind);
       this.metadataSize = fileMetadata.getMetadataSize();
       this.stripeStats = fileMetadata.getStripeStats();
       this.versionList = fileMetadata.getVersionList();
@@ -372,7 +371,6 @@ public class ReaderImpl implements Reader {
         tail = orcTail;
       }
       this.compressionKind = tail.getCompressionKind();
-      this.codec = tail.getCompressionCodec();
       this.bufferSize = tail.getCompressionBufferSize();
       this.metadataSize = tail.getMetadataSize();
       this.versionList = tail.getPostScript().getVersionList();
@@ -459,16 +457,21 @@ public class ReaderImpl implements Reader {
     System.arraycopy(buffer.array(), psOffset, psBuffer, 0, psLen);
     OrcProto.PostScript ps = OrcProto.PostScript.parseFrom(psBuffer);
     int footerSize = (int) ps.getFooterLength();
-    CompressionCodec codec = PhysicalFsWriter
-        .createCodec(CompressionKind.valueOf(ps.getCompression().name()));
-    OrcProto.Footer footer = extractFooter(buffer,
-        (int) (buffer.position() + ps.getMetadataLength()),
-        footerSize, codec, (int) ps.getCompressionBlockSize());
-    OrcProto.FileTail.Builder fileTailBuilder = OrcProto.FileTail.newBuilder()
-        .setPostscriptLength(psLen)
-        .setPostscript(ps)
-        .setFooter(footer)
-        .setFileLength(fileLength);
+    CompressionKind kind = CompressionKind.valueOf(ps.getCompression().name());
+    CompressionCodec codec = OrcCodecPool.getCodec(kind);
+    OrcProto.FileTail.Builder fileTailBuilder = null;
+    try {
+      OrcProto.Footer footer = extractFooter(buffer,
+          (int) (buffer.position() + ps.getMetadataLength()),
+          footerSize, codec, (int) ps.getCompressionBlockSize());
+      fileTailBuilder = OrcProto.FileTail.newBuilder()
+          .setPostscriptLength(psLen)
+          .setPostscript(ps)
+          .setFooter(footer)
+          .setFileLength(fileLength);
+    } finally {
+      OrcCodecPool.returnCodec(kind, codec);
+    }
     // clear does not clear the contents but sets position to 0 and limit = capacity
     buffer.clear();
     return new OrcTail(fileTailBuilder.build(), buffer.slice(), modificationTime);
@@ -509,7 +512,7 @@ public class ReaderImpl implements Reader {
       int psOffset = readSize - 1 - psLen;
       ps = extractPostScript(buffer, path, psLen, psOffset);
       bufferSize = (int) ps.getCompressionBlockSize();
-      codec = PhysicalFsWriter.createCodec(CompressionKind.valueOf(ps.getCompression().name()));
+      CompressionKind compressionKind = CompressionKind.valueOf(ps.getCompression().name());
       fileTailBuilder.setPostscriptLength(psLen).setPostscript(ps);
 
       int footerSize = (int) ps.getFooterLength();
@@ -542,8 +545,13 @@ public class ReaderImpl implements Reader {
       buffer.position(footerOffset);
       ByteBuffer footerBuffer = buffer.slice();
       buffer.reset();
-      OrcProto.Footer footer = extractFooter(footerBuffer, 0, footerSize,
-          codec, bufferSize);
+      OrcProto.Footer footer = null;
+      CompressionCodec codec = OrcCodecPool.getCodec(compressionKind);
+      try {
+        footer = extractFooter(footerBuffer, 0, footerSize, codec, bufferSize);
+      } finally {
+        OrcCodecPool.returnCodec(compressionKind, codec);
+      }
       fileTailBuilder.setFooter(footer);
     } finally {
       try {
@@ -725,7 +733,12 @@ public class ReaderImpl implements Reader {
   @Override
   public List<StripeStatistics> getStripeStatistics() throws IOException {
     if (stripeStats == null && metadata == null) {
-      metadata = extractMetadata(tail.getSerializedTail(), 0, metadataSize, codec, bufferSize);
+      CompressionCodec codec = OrcCodecPool.getCodec(compressionKind);
+      try {
+        metadata = extractMetadata(tail.getSerializedTail(), 0, metadataSize, codec, bufferSize);
+      } finally {
+        OrcCodecPool.returnCodec(compressionKind, codec);
+      }
       stripeStats = metadata.getStripeStatsList();
     }
     List<StripeStatistics> result = new ArrayList<>();

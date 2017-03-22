@@ -65,7 +65,7 @@ public class PhysicalFsWriter implements PhysicalWriter {
   private final Path path;
   private final long blockSize;
   private final int bufferSize;
-  private final CompressionCodec codec;
+  private CompressionCodec codec;
   private final double paddingTolerance;
   private final long defaultStripeSize;
   private final CompressionKind compress;
@@ -94,7 +94,7 @@ public class PhysicalFsWriter implements PhysicalWriter {
     }
     this.compress = opts.getCompress();
     this.compressionStrategy = opts.getCompressionStrategy();
-    codec = createCodec(compress);
+    this.codec = OrcCodecPool.getCodec(compress);
     this.paddingTolerance = opts.getPaddingTolerance();
     this.blockSize = opts.getBlockSize();
     LOG.info("ORC writer created for path: {} with stripeSize: {} blockSize: {}" +
@@ -312,6 +312,8 @@ public class PhysicalFsWriter implements PhysicalWriter {
 
   @Override
   public void close() throws IOException {
+    OrcCodecPool.returnCodec(compress, codec);
+    codec = null;
     rawWriter.close();
   }
 
@@ -435,8 +437,10 @@ public class PhysicalFsWriter implements PhysicalWriter {
     BufferedStream result = streams.get(name);
     if (result == null) {
       EnumSet<Modifier> modifiers = createCompressionModifiers(name.getKind());
-      result = new BufferedStream(name.toString(), bufferSize,
-          codec == null ? null : codec.modify(modifiers));
+      // TODO: modify will create a new codec here. We want to end() it when the stream is closed,
+      //       but at this point there's no close() for the stream.
+      CompressionCodec localCodec = codec == null ? null : codec.modify(modifiers);
+      result = new BufferedStream(name.toString(), bufferSize, localCodec);
       streams.put(name, result);
     }
     return result.outStream;

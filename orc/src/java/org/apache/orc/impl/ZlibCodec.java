@@ -26,15 +26,16 @@ import java.util.zip.Inflater;
 
 import javax.annotation.Nullable;
 
-import org.apache.hadoop.io.compress.DirectDecompressor;
 import org.apache.orc.CompressionCodec;
 
 public class ZlibCodec implements CompressionCodec, DirectDecompressionCodec {
   private static final HadoopShims SHIMS = HadoopShims.Factory.get();
+  // Note: shim path does not care about levels and strategies (only used for decompression).
+  private HadoopShims.DirectDecompressor decompressShim = null;
   private Boolean direct = null;
 
-  private final int level;
-  private final int strategy;
+  private int level;
+  private int strategy;
 
   public ZlibCodec() {
     level = Deflater.DEFAULT_COMPRESSION;
@@ -49,29 +50,31 @@ public class ZlibCodec implements CompressionCodec, DirectDecompressionCodec {
   @Override
   public boolean compress(ByteBuffer in, ByteBuffer out,
                           ByteBuffer overflow) throws IOException {
-    Deflater deflater = new Deflater(level, true);
-    deflater.setStrategy(strategy);
     int length = in.remaining();
-    deflater.setInput(in.array(), in.arrayOffset() + in.position(), length);
-    deflater.finish();
     int outSize = 0;
-    int offset = out.arrayOffset() + out.position();
-    while (!deflater.finished() && (length > outSize)) {
-      int size = deflater.deflate(out.array(), offset, out.remaining());
-      out.position(size + out.position());
-      outSize += size;
-      offset += size;
-      // if we run out of space in the out buffer, use the overflow
-      if (out.remaining() == 0) {
-        if (overflow == null) {
-          deflater.end();
-          return false;
+    Deflater deflater = new Deflater(level, true);
+    try {
+      deflater.setStrategy(strategy);
+      deflater.setInput(in.array(), in.arrayOffset() + in.position(), length);
+      deflater.finish();
+      int offset = out.arrayOffset() + out.position();
+      while (!deflater.finished() && (length > outSize)) {
+        int size = deflater.deflate(out.array(), offset, out.remaining());
+        out.position(size + out.position());
+        outSize += size;
+        offset += size;
+        // if we run out of space in the out buffer, use the overflow
+        if (out.remaining() == 0) {
+          if (overflow == null) {
+            return false;
+          }
+          out = overflow;
+          offset = out.arrayOffset() + out.position();
         }
-        out = overflow;
-        offset = out.arrayOffset() + out.position();
       }
+    } finally {
+      deflater.end();
     }
-    deflater.end();
     return length > outSize;
   }
 
@@ -84,21 +87,24 @@ public class ZlibCodec implements CompressionCodec, DirectDecompressionCodec {
     }
 
     Inflater inflater = new Inflater(true);
-    inflater.setInput(in.array(), in.arrayOffset() + in.position(),
-                      in.remaining());
-    while (!(inflater.finished() || inflater.needsDictionary() ||
-             inflater.needsInput())) {
-      try {
-        int count = inflater.inflate(out.array(),
-                                     out.arrayOffset() + out.position(),
-                                     out.remaining());
-        out.position(count + out.position());
-      } catch (DataFormatException dfe) {
-        throw new IOException("Bad compression data", dfe);
+    try {
+      inflater.setInput(in.array(), in.arrayOffset() + in.position(),
+                        in.remaining());
+      while (!(inflater.finished() || inflater.needsDictionary() ||
+               inflater.needsInput())) {
+        try {
+          int count = inflater.inflate(out.array(),
+                                       out.arrayOffset() + out.position(),
+                                       out.remaining());
+          out.position(count + out.position());
+        } catch (DataFormatException dfe) {
+          throw new IOException("Bad compression data", dfe);
+        }
       }
+      out.flip();
+    } finally {
+      inflater.end();
     }
-    out.flip();
-    inflater.end();
     in.position(in.limit());
   }
 
@@ -107,12 +113,8 @@ public class ZlibCodec implements CompressionCodec, DirectDecompressionCodec {
     if (direct == null) {
       // see nowrap option in new Inflater(boolean) which disables zlib headers
       try {
-        if (SHIMS.getDirectDecompressor(
-            HadoopShims.DirectCompressionType.ZLIB_NOHEADER) != null) {
-          direct = Boolean.valueOf(true);
-        } else {
-          direct = Boolean.valueOf(false);
-        }
+        ensureShim();
+        direct = (decompressShim != null);
       } catch (UnsatisfiedLinkError ule) {
         direct = Boolean.valueOf(false);
       }
@@ -121,12 +123,19 @@ public class ZlibCodec implements CompressionCodec, DirectDecompressionCodec {
   }
 
   @Override
-  public void directDecompress(ByteBuffer in, ByteBuffer out)
-      throws IOException {
-    HadoopShims.DirectDecompressor decompressShim =
-        SHIMS.getDirectDecompressor(HadoopShims.DirectCompressionType.ZLIB_NOHEADER);
+  public void directDecompress(ByteBuffer in, ByteBuffer out) throws IOException {
+    ensureShim();
     decompressShim.decompress(in, out);
     out.flip(); // flip for read
+  }
+
+  private void ensureShim() {
+    if (decompressShim == null) {
+      decompressShim = SHIMS.getDirectDecompressor(
+          HadoopShims.DirectCompressionType.ZLIB_NOHEADER);
+    } else {
+      decompressShim.reset();
+    }
   }
 
   @Override
@@ -165,5 +174,21 @@ public class ZlibCodec implements CompressionCodec, DirectDecompressionCodec {
       }
     }
     return new ZlibCodec(l, s);
+  }
+
+  @Override
+  public void reset() {
+    level = Deflater.DEFAULT_COMPRESSION;
+    strategy = Deflater.DEFAULT_STRATEGY;
+    if (decompressShim != null) {
+      decompressShim.reset();
+    }
+  }
+
+  @Override
+  public void close() {
+    if (decompressShim != null) {
+      decompressShim.end();
+    }
   }
 }

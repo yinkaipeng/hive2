@@ -34,6 +34,7 @@ import org.apache.hadoop.hive.common.io.DiskRangeList;
 import org.apache.hadoop.hive.common.io.DiskRangeList.CreateHelper;
 import org.apache.hadoop.hive.common.io.DiskRangeList.MutateHelper;
 import org.apache.orc.CompressionCodec;
+import org.apache.orc.CompressionKind;
 import org.apache.orc.DataReader;
 import org.apache.orc.OrcProto;
 
@@ -53,9 +54,10 @@ public class RecordReaderUtils {
     private final FileSystem fs;
     private final Path path;
     private final boolean useZeroCopy;
-    private final CompressionCodec codec;
+    private CompressionCodec codec;
     private final int bufferSize;
     private final int typeCount;
+    private CompressionKind compressionKind;
 
     private DefaultDataReader(DefaultDataReader other) {
       this.pool = other.pool;
@@ -64,14 +66,16 @@ public class RecordReaderUtils {
       this.fs = other.fs;
       this.path = other.path;
       this.useZeroCopy = other.useZeroCopy;
-      this.codec = other.codec;
+      this.compressionKind = other.compressionKind;
+      this.codec = OrcCodecPool.getCodec(compressionKind);
     }
 
     private DefaultDataReader(DataReaderProperties properties) {
       this.fs = properties.getFileSystem();
       this.path = properties.getPath();
       this.useZeroCopy = properties.getZeroCopy();
-      this.codec = PhysicalFsWriter.createCodec(properties.getCompression());
+      this.compressionKind = properties.getCompression();
+      this.codec = OrcCodecPool.getCodec(compressionKind);
       this.bufferSize = properties.getBufferSize();
       this.typeCount = properties.getTypeCount();
       if (useZeroCopy) {
@@ -177,6 +181,8 @@ public class RecordReaderUtils {
 
     @Override
     public void close() throws IOException {
+      OrcCodecPool.returnCodec(compressionKind, codec);
+      codec = null;
       if (pool != null) {
         pool.clear();
       }

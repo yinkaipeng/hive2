@@ -23,6 +23,7 @@ import java.io.IOException;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.common.io.DataCache;
 import org.apache.orc.DataReader;
+import org.apache.orc.impl.OrcCodecPool;
 import org.apache.hadoop.hive.ql.io.orc.OrcFile.ReaderOptions;
 
 
@@ -35,7 +36,7 @@ class ReaderImpl extends org.apache.hadoop.hive.ql.io.orc.ReaderImpl implements 
   @Override
   public EncodedReader encodedReader(
       Object fileKey, DataCache dataCache, DataReader dataReader, PoolFactory pf) throws IOException {
-    return new EncodedReaderImpl(fileKey, types,
-        codec, bufferSize, rowIndexStride, dataCache, dataReader, pf);
+    return new EncodedReaderImpl(fileKey, types, compressionKind,
+        bufferSize, rowIndexStride, dataCache, dataReader, pf);
   }
 }

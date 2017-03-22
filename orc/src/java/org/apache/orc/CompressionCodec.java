@@ -66,4 +66,9 @@ public interface CompressionCodec {
    */
   CompressionCodec modify(@Nullable EnumSet<Modifier> modifiers);
 
+  /** Resets the codec, preparing it for reuse. */
+  void reset();
+
+  /** Closes the codec, releasing the resources. */
+  void close();
 }

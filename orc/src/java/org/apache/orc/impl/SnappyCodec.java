@@ -29,6 +29,7 @@ public class SnappyCodec implements CompressionCodec, DirectDecompressionCodec {
   private static final HadoopShims SHIMS = HadoopShims.Factory.get();
 
   Boolean direct = null;
+  HadoopShims.DirectDecompressor decompressShim = null;
 
   @Override
   public boolean compress(ByteBuffer in, ByteBuffer out,
@@ -78,12 +79,8 @@ public class SnappyCodec implements CompressionCodec, DirectDecompressionCodec {
   public boolean isAvailable() {
     if (direct == null) {
       try {
-        if (SHIMS.getDirectDecompressor(
-            HadoopShims.DirectCompressionType.SNAPPY) != null) {
-          direct = Boolean.valueOf(true);
-        } else {
-          direct = Boolean.valueOf(false);
-        }
+        ensureShim();
+        direct = (decompressShim != null);
       } catch (UnsatisfiedLinkError ule) {
         direct = Boolean.valueOf(false);
       }
@@ -94,15 +91,36 @@ public class SnappyCodec implements CompressionCodec, DirectDecompressionCodec {
   @Override
   public void directDecompress(ByteBuffer in, ByteBuffer out)
       throws IOException {
-    HadoopShims.DirectDecompressor decompressShim =
-        SHIMS.getDirectDecompressor(HadoopShims.DirectCompressionType.SNAPPY);
+    ensureShim();
     decompressShim.decompress(in, out);
     out.flip(); // flip for read
+  }
+
+  private void ensureShim() {
+    if (decompressShim == null) {
+      decompressShim = SHIMS.getDirectDecompressor(HadoopShims.DirectCompressionType.SNAPPY);
+    } else {
+      decompressShim.reset();
+    }
   }
 
   @Override
   public CompressionCodec modify(EnumSet<Modifier> modifiers) {
     // snappy allows no modifications
     return this;
+  }
+
+  @Override
+  public void reset() {
+    if (decompressShim != null) {
+      decompressShim.reset();
+    }
+  }
+
+  @Override
+  public void close() {
+    if (decompressShim != null) {
+      decompressShim.end();
+    }
   }
 }

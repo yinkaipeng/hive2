@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.orc.BooleanColumnStatistics;
+import org.apache.orc.CompressionKind;
 import org.apache.orc.Reader;
 import org.apache.orc.RecordReader;
 import org.apache.orc.TypeDescription;
@@ -70,7 +71,8 @@ public class RecordReaderImpl implements RecordReader {
       new ArrayList<StripeInformation>();
   private OrcProto.StripeFooter stripeFooter;
   private final long totalRowCount;
-  private final CompressionCodec codec;
+  private CompressionCodec codec;
+  private final CompressionKind compressionKind;
   protected final TypeDescription schema;
   private final List<OrcProto.Type> types;
   private final int bufferSize;
@@ -156,7 +158,8 @@ public class RecordReaderImpl implements RecordReader {
     }
     this.schema = evolution.getReaderSchema();
     this.path = fileReader.path;
-    this.codec = fileReader.codec;
+    this.compressionKind = fileReader.compressionKind;
+    this.codec = OrcCodecPool.getCodec(compressionKind);
     this.types = fileReader.types;
     this.bufferSize = fileReader.bufferSize;
     this.rowIndexStride = fileReader.rowIndexStride;
@@ -1114,6 +1117,8 @@ public class RecordReaderImpl implements RecordReader {
   public void close() throws IOException {
     clearStreams();
     dataReader.close();
+    OrcCodecPool.returnCodec(compressionKind, codec);
+    codec = null;
   }
 
   @Override
