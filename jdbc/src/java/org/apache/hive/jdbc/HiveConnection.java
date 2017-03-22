@@ -40,6 +40,7 @@ import org.apache.hive.service.rpc.thrift.TSessionHandle;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.ServiceUnavailableRetryStrategy;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
@@ -317,8 +318,9 @@ public class HiveConnection implements java.sql.Connection {
        * Add an interceptor to pass username/password in the header.
        * In https mode, the entire information is encrypted
        */
-        requestInterceptor = new HttpBasicAuthInterceptor(getUserName(), getPassword(), cookieStore,
-            cookieName, useSsl, additionalHttpHeaders, customCookies);
+      requestInterceptor = new HttpBasicAuthInterceptor(getUserName(), getPassword(),
+                                                        cookieStore, cookieName, useSsl,
+                                                        additionalHttpHeaders, customCookies);
       }
     }
     // Configure http client for cookie based authentication
@@ -351,6 +353,23 @@ public class HiveConnection implements java.sql.Connection {
     } else {
       httpClientBuilder = HttpClientBuilder.create();
     }
+    // In case the server's idletimeout is set to a lower value, it might close it's side of
+    // connection. However we retry one more time on NoHttpResponseException
+    httpClientBuilder.setRetryHandler(new HttpRequestRetryHandler() {
+      @Override
+      public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
+        if (executionCount > 1) {
+          LOG.info("Retry attempts to connect to server exceeded.");
+          return false;
+        }
+        if (exception instanceof org.apache.http.NoHttpResponseException) {
+          LOG.info("Could not connect to the server. Retrying one more time.");
+          return true;
+        }
+        return false;
+      }
+    });
+
     // Add the request interceptor to the client builder
     httpClientBuilder.addInterceptorFirst(requestInterceptor);
 

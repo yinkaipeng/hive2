@@ -82,6 +82,8 @@ public class TestJdbcWithMiniHS2 {
   private static String dataFileDir;
   private static Path kvDataFilePath;
   private static final String tmpDir = System.getProperty("test.tmp.dir");
+  private static final String testDbName = "testjdbcminihs2";
+
 
   private Connection hs2Conn = null;
 
@@ -1015,6 +1017,46 @@ public class TestJdbcWithMiniHS2 {
     } catch (Exception e) {
       fail("Not expecting exception: " + e);
     }
+  }
+
+  /**
+   * Test for jdbc driver retry on NoHttpResponseException
+   * @throws Exception
+   */
+  @Test
+  public void testHttpRetryOnServerIdleTimeout() throws Exception {
+    // Stop HiveServer2
+    miniHS2.stop();
+
+    Map<String, String> confOverlay = new HashMap<String, String>();
+    confOverlay.put("hive.server2.transport.mode", "http");
+    confOverlay.put("hive.server2.thrift.http.max.idle.time", "5");
+    miniHS2.start(confOverlay);
+    String userName = System.getProperty("user.name");
+    Connection conn = getConnection(miniHS2.getJdbcURL(testDbName), userName, "password");
+    Statement stmt = conn.createStatement();
+    stmt.execute("select from_unixtime(unix_timestamp())");
+    // Sleep for longer than server's idletimeout and execute a query
+    TimeUnit.SECONDS.sleep(10);
+    try {
+      stmt.execute("select from_unixtime(unix_timestamp())");
+    } catch (Exception e) {
+      fail("Not expecting exception: " + e);
+    } finally {
+      if (conn != null) {
+        conn.close();
+      }
+    }
+    // Restore original state
+    restoreMiniHS2();
+  }
+
+  private static void restoreMiniHS2()  throws Exception {
+    // Stop HiveServer2
+    miniHS2.stop();
+    HiveConf conf = new HiveConf();
+    Map<String, String> confOverlay = new HashMap<String, String>();
+    miniHS2.start(confOverlay);
   }
 
   /**
