@@ -121,7 +121,7 @@ public class GenTezUtils {
     tezWork.add(reduceWork);
 
     TezEdgeProperty edgeProp;
-    EdgeType edgeType = determineEdgeType(context.preceedingWork, reduceWork);
+    EdgeType edgeType = determineEdgeType(context.preceedingWork, reduceWork, reduceSink, context.parseContext);
     if (reduceWork.isAutoReduceParallelism()) {
       edgeProp =
           new TezEdgeProperty(context.conf, edgeType, true,
@@ -485,7 +485,7 @@ public class GenTezUtils {
     curr.removeChild(child);
   }
 
-  public static EdgeType determineEdgeType(BaseWork preceedingWork, BaseWork followingWork) {
+  public static EdgeType determineEdgeType(BaseWork preceedingWork, BaseWork followingWork, ReduceSinkOperator parentRS, ParseContext parseCtx) {
     if (followingWork instanceof ReduceWork) {
       // Ideally there should be a better way to determine that the followingWork contains
       // a dynamic partitioned hash join, but in some cases (createReduceWork()) it looks like
@@ -498,6 +498,10 @@ public class GenTezUtils {
           return EdgeType.CUSTOM_SIMPLE_EDGE;
         }
       }
+    }
+    // Also check for semijoin optimization
+    if (parseCtx.getSemijoinInitialRs().contains(parentRS)) {
+      return EdgeType.CUSTOM_SIMPLE_EDGE;
     }
     return EdgeType.SIMPLE_EDGE;
   }

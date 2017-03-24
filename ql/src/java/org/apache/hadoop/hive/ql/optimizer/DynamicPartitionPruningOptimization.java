@@ -664,6 +664,7 @@ public class DynamicPartitionPruningOptimization implements NodeProcessor {
     runtimeValuesInfo.setDynamicValueIDs(dynamicValueIDs);
     runtimeValuesInfo.setColExprs(rsValueCols);
     parseContext.getRsToRuntimeValuesInfoMap().put(rsOpFinal, runtimeValuesInfo);
+    parseContext.getSemijoinInitialRs().add(rsOp);
 
     return true;
   }

@@ -129,6 +129,7 @@ public class ParseContext {
           new HashMap<ReduceSinkOperator, TableScanOperator>();
   private Map<ReduceSinkOperator, RuntimeValuesInfo> rsToRuntimeValuesInfo =
           new HashMap<ReduceSinkOperator, RuntimeValuesInfo>();
+  private Set<ReduceSinkOperator> semijoinInitialRs = new HashSet<ReduceSinkOperator>();
 
   public ParseContext() {
   }
@@ -665,5 +666,13 @@ public class ParseContext {
 
   public Map<ReduceSinkOperator, TableScanOperator> getRsOpToTsOpMap() {
     return rsOpToTsOpMap;
+  }
+
+  public Set<ReduceSinkOperator> getSemijoinInitialRs() {
+    return semijoinInitialRs;
+  }
+
+  public void setSemijoinInitialRs(Set<ReduceSinkOperator> semijoinInitialRs) {
+    this.semijoinInitialRs = semijoinInitialRs;
   }
 }
