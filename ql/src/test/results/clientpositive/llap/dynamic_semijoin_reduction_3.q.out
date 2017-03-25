@@ -990,7 +990,7 @@ POSTHOOK: Input: type2_scd_helper@customer
 #### A masked pattern was here ####
 1	ABC	Abc Co.	OH	true	NULL
 2	DEF	Def Co.	PA	true	NULL
-3	XYZ	Xyz Co.	CA	false	2017-03-23
+3	XYZ	Xyz Co.	CA	false	2017-03-24
 3	XYZ	Xyz Co.	TX	true	NULL
 4	PDQ	Pdq Co.	WI	true	NULL
 PREHOOK: query: drop table customer
