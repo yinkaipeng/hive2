@@ -931,7 +931,7 @@ using (
 on sub.join_key = customer.source_pk
 when matched then update set
   is_current = false,
-  end_date = current_date()
+  end_date = date '2017-03-15'
 when not matched then insert values
   (sub.source_pk, upper(substr(sub.name, 0, 3)), sub.name, sub.state, true, null)
 PREHOOK: type: QUERY
@@ -963,7 +963,7 @@ using (
 on sub.join_key = customer.source_pk
 when matched then update set
   is_current = false,
-  end_date = current_date()
+  end_date = date '2017-03-15'
 when not matched then insert values
   (sub.source_pk, upper(substr(sub.name, 0, 3)), sub.name, sub.state, true, null)
 POSTHOOK: type: QUERY
@@ -990,7 +990,7 @@ POSTHOOK: Input: type2_scd_helper@customer
 #### A masked pattern was here ####
 1	ABC	Abc Co.	OH	true	NULL
 2	DEF	Def Co.	PA	true	NULL
-3	XYZ	Xyz Co.	CA	false	2017-03-26
+3	XYZ	Xyz Co.	CA	false	2017-03-15
 3	XYZ	Xyz Co.	TX	true	NULL
 4	PDQ	Pdq Co.	WI	true	NULL
 PREHOOK: query: drop table customer
