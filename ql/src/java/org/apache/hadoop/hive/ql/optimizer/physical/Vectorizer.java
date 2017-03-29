@@ -2230,7 +2230,7 @@ public class Vectorizer implements PhysicalPlanResolver {
     }
 
     vectorOp = OperatorFactory.getVectorOperator(
-        opClass, op.getCompilationOpContext(), op.getConf(), vContext);
+        opClass, op.getCompilationOpContext(), op.getConf(), vContext, op);
     LOG.info("Vectorizer vectorizeOperator map join class " + vectorOp.getClass().getSimpleName());
 
     boolean minMaxEnabled = HiveConf.getBoolVar(hiveConf,
@@ -2370,7 +2370,7 @@ public class Vectorizer implements PhysicalPlanResolver {
     vectorDesc.setVectorReduceSinkInfo(vectorReduceSinkInfo);
 
     vectorOp = OperatorFactory.getVectorOperator(
-        opClass, op.getCompilationOpContext(), op.getConf(), vContext);
+        opClass, op.getCompilationOpContext(), op.getConf(), vContext, op);
     LOG.info("Vectorizer vectorizeOperator reduce sink class " + vectorOp.getClass().getSimpleName());
 
     return vectorOp;
@@ -2520,7 +2520,7 @@ public class Vectorizer implements PhysicalPlanResolver {
             }
 
             vectorOp = OperatorFactory.getVectorOperator(
-                opClass, op.getCompilationOpContext(), op.getConf(), vContext);
+                opClass, op.getCompilationOpContext(), op.getConf(), vContext, op);
 
           } else {
 
@@ -2542,7 +2542,7 @@ public class Vectorizer implements PhysicalPlanResolver {
           if (!specialize) {
 
             vectorOp = OperatorFactory.getVectorOperator(
-                op.getCompilationOpContext(), op.getConf(), vContext);
+                op.getCompilationOpContext(), op.getConf(), vContext, op);
 
           } else {
 
@@ -2560,7 +2560,7 @@ public class Vectorizer implements PhysicalPlanResolver {
       case EVENT:
       case HASHTABLESINK:
         vectorOp = OperatorFactory.getVectorOperator(
-            op.getCompilationOpContext(), op.getConf(), vContext);
+            op.getCompilationOpContext(), op.getConf(), vContext, op);
         break;
       default:
         vectorOp = op;
