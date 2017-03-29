@@ -351,6 +351,8 @@ public class ReplicationSemanticAnalyzer extends BaseSemanticAnalyzer {
         if (eventTo == null){
           eventTo = db.getMSC().getCurrentNotificationEventId().getEventId();
           LOG.debug("eventTo not specified, using current event id : {}", eventTo);
+        } else if (eventTo < eventFrom) {
+          throw new Exception("Invalid event ID input received in TO clause");
         }
 
         Integer maxRange = Ints.checkedCast(eventTo - eventFrom + 1);
@@ -375,20 +377,20 @@ public class ReplicationSemanticAnalyzer extends BaseSemanticAnalyzer {
         EventUtils.NotificationEventIterator evIter = new EventUtils.NotificationEventIterator(
             evFetcher, eventFrom, maxEventLimit, evFilter);
 
+        lastReplId = eventTo;
         while (evIter.hasNext()){
           NotificationEvent ev = evIter.next();
-          Path evRoot = new Path(dumpRoot, String.valueOf(ev.getEventId()));
+          lastReplId = ev.getEventId();
+          Path evRoot = new Path(dumpRoot, String.valueOf(lastReplId));
           dumpEvent(ev, evRoot);
         }
 
-        LOG.info("Done dumping events, preparing to return {},{}", dumpRoot.toUri(), eventTo);
+        LOG.info("Done dumping events, preparing to return {},{}", dumpRoot.toUri(), lastReplId);
         writeOutput(
-            Arrays.asList("incremental", String.valueOf(eventFrom), String.valueOf(eventTo)),
+            Arrays.asList("incremental", String.valueOf(eventFrom), String.valueOf(lastReplId)),
             dmd.getDumpFilePath());
-        dmd.setDump(DUMPTYPE.INCREMENTAL, eventFrom, eventTo);
+        dmd.setDump(DUMPTYPE.INCREMENTAL, eventFrom, lastReplId);
         dmd.write();
-        // Set the correct last repl id to return to the user
-        lastReplId = eventTo;
       }
       prepareReturnValues(Arrays.asList(dumpRoot.toUri().toString(), String.valueOf(lastReplId)), dumpSchema);
       setFetchTask(createFetchTask(dumpSchema));
