@@ -2844,7 +2844,7 @@ public class HiveConf extends Configuration {
         "requires hive.tez.dynamic.partition.pruning to be enabled."),
     TEZ_MIN_BLOOM_FILTER_ENTRIES("hive.tez.min.bloom.filter.entries", 1000000L,
             "Bloom filter should be of at min certain size to be effective"),
-    TEZ_MAX_BLOOM_FILTER_ENTRIES("hive.tez.max.bloom.filter.entries", 100000000L,
+    TEZ_MAX_BLOOM_FILTER_ENTRIES("hive.tez.max.bloom.filter.entries", 20000000L,
             "Bloom filter should be of at max certain size to be effective"),
     TEZ_BLOOM_FILTER_FACTOR("hive.tez.bloom.filter.factor", (float) 2.0,
             "Bloom filter should be a multiple of this factor with nDV"),
