@@ -539,6 +539,73 @@ Pre-HDP-2.5.4:
     HIVE-15936: ConcurrentModificationException in ATSHook
     HIVE-15930: Fix syntax issue in mysql schema upgrade
     HIVE-15645: Tez session pool may restart sessions in a wrong queue
+    HIVE-14933: include argparse with LLAP scripts to support antique Python versions
+    HIVE-14251: Union All of different types resolves to incorrect data
+    HIVE-14922: Add perf logging for post job completion steps
+    HIVE-14762: Add logging while removing scratch space
+    HIVE-14659: OutputStream won't close if caught exception in funtion unparseExprForValuesClause in SemanticAnalyzer.java
+    HIVE-7239: Fix bug in HiveIndexedInputFormat implementation that causes incorrect query result when input backed by Sequence/RC files
+    HIVE-14519: Multi insert query bug
+    HIVE-14607: ORC split generation failed with exception: java.lang.ArrayIndexOutOfBoundsException: 1
+    HIVE-14595: TimestampWritable::setTimestamp gives wrong result when 2nd VInt exists
+    HIVE-14591: HS2 is shut down unexpectedly during the startup time
+    HIVE-14600: LLAP zookeeper registry failures do not fail the daemon
+    HIVE-14624: LLAP: Use FQDN when submitting work to LLAP
+    HIVE-14656: Clean up driver instance in get_splits
+    HIVE-14697: Can not access kerberized HS2 Web UI
+    HIVE-14655: LLAP input format should escape the query string being passed to getSplits()
+    HIVE-14656: Clean up driver instance in get_splits
+    HIVE-14648: LLAP: Avoid private pages in the SSD cache
+    HIVE-15099: PTFOperator.PTFInvocation didn't properly reset the input partition
+    HIVE-14959: Fix DISTINCT with windowing when CBO is enabled/disabled
+    HIVE-14805: Subquery inside a view will have the object in the subquery as the direct input
+    HIVE-14774: Canceling query using Ctrl-C in beeline might lead to stale locks
+    HIVE-14715: Hive throws NumberFormatException with query with Null value
+    HIVE-13756: Map failure attempts to delete reducer _temporary directory on multi-query pig query
+    HIVE-14457: Partitions in encryption zone are still trashed though an exception is returned
+    HIVE-14690: Query fail when hive.exec.parallel=true, with conflicting session dir
+    HIVE-12077: MSCK Repair table should fix partitions in batches
+    HIVE-14693: Some paritions will be left out when partition number is the multiple of the option hive.msck.repair.batch.size
+    HIVE-14702: LLAPIF: after a long period of inactivity, signing key may be removed from local store
+    HIVE-14621: LLAP: memory.mode = none has NPE
+    HIVE-14773: NPE aggregating column statistics for date column in partitioned table
+    HIVE-15137: metastore add partitions background thread should use current username
+    HIVE-14436: Hive 1.2.1/Hitting "ql.Driver: FAILED: IllegalArgumentException Error: , expected at the end of 'decimal(9'" after enabling hive.optimize.skewjoin and with MR engine
+    HIVE-14439: LlapTaskScheduler should try scheduling tasks when a node is disabled.
+    HIVE-14421: FS.deleteOnExit holds references to _tmp_space.db files.
+    HIVE-14245: NoClassDefFoundError when starting LLAP daemon.
+    HIVE-14403: LLAP node specific preemption will only preempt once on a node per AM.
+    HIVE-14392: llap daemons should try using YARN local dirs, if available
+    HIVE-14364: Update timeouts for llap comparator tests.
+    HIVE-14224: LLAP: Rename query specific log files when a query completes execution.
+    HIVE-14230: Hadoop23Shims.cloneUgi() doesn't add credentials from original UGI
+    HIVE-14180: Disable LlapZookeeperRegistry ZK auth setup for external clients
+    HIVE-14219: LLAP external client on secure cluster: Protocol interface org.apache.hadoop.hive.llap.protocol.LlapTaskUmbilicalProtocol is not known
+    HIVE-14182: Revert HIVE-13084/HIVE-13924/HIVE-14034
+    HIVE-14045: (Vectorization) Add missing case for BINARY in VectorizationContext.getNormalizedName method
+    HIVE-14119: LLAP external recordreader not returning non-ascii string properly
+    HIVE-10815: Let HiveMetaStoreClient Choose MetaStore Randomly
+    HIVE-14080: hive.metastore.schema.verification should check for schema compatiblity
+    HIVE-14072: QueryIds reused across different queries
+    HIVE-14136: LLAP ZK SecretManager should resolve _HOST in principal
+    HIVE-14091: some errors are not propagated to LLAP external clients
+    HIVE-14078: LLAP input split should get task attempt number from conf if available
+    HIVE-14093: LLAP output format connection should wait for all writes to finish before closing channel
+    HIVE-13931: Update connection pool usage from bonecp to hikaricp
+    HIVE-13617: LLAP: support non-vectorized execution in IO
+    HIVE-14023: LLAP: Make the Hive query id available in ContainerRunner.
+    HIVE-13956: LLAP: external client output is writing to channel before it is writable again
+    HIVE-13759: LlapTaskUmbilicalExternalClient should be closed by the record reader
+    HIVE-13771: LLAPIF: generate app ID
+    HIVE-13827: LLAPIF: authentication on the output channel
+    HIVE-13731: LLAP: return LLAP token with the splits
+    HIVE-13443: LLAP: signing for the second state of submit (the event)
+    HIVE-13675: LLAP: add HMAC signatures to LLAPIF splits
+    HIVE-13986: LLAP: kill Tez AM on token errors from plugin
+    HIVE-13391: add an option to LLAP to use keytab to authenticate to read data
+    HIVE-13930: upgrade Hive to latest Hadoop version
+    HIVE-13909: upgrade ACLs in LLAP registry when the cluster is upgraded to secure
+    HIVE-14349: Vectorization: LIKE should anchor the regexes 
     
 INTERNAL FIXES (NO APACHE JIRA)
   HDP-2.6.0:
@@ -601,3 +668,11 @@ INTERNAL FIXES (NO APACHE JIRA)
     BUG-74719: Ensure that SchemaEvolution.getFileIncluded() is never null
     BUG-73029: Problems using except in views
     BUG-74369: TestPerfCliDriver_query16 ut is failing
+    MHIVE-830: dbType "azuredb" not supported in HDP 2.5 hive metastore initSchema
+    CUST-92: change azure db upgrade to 1.2.1000 to use upsert
+    CUST-92: change azure db upgrade to 1.1,1.2 to use upsert
+    MHIVE-753: azure db upgrade failure
+    PROD-1120: Hive metastore fails to start with Invalid object name 'DBS'
+    MHIVE-661: fix NOTIFICATION_SEQUENCE table creation in azuredb.sql
+    HIVE-630: Hive Metastore creation fails in hdp 2.3 with dbType as azuredb
+    MHIVE-535: Add Support for AzureDB in SchemaTool
