@@ -67,9 +67,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.hadoop.hive.ql.exec.vector.VectorReduceSinkOperator;
-import org.apache.hadoop.hive.ql.exec.vector.reducesink.VectorReduceSinkCommonOperator;
-import org.apache.hadoop.hive.ql.plan.ReduceSinkDesc;
 
 /**
  * ExplainTask implementation.
@@ -606,12 +603,9 @@ public class ExplainTask extends Task<ExplainWork> implements Serializable {
           if (jsonOut != null && jsonOut.length() > 0) {
             ((JSONObject) jsonOut.get(JSONObject.getNames(jsonOut)[0])).put("OperatorId:",
                 operator.getOperatorId());
-            if (!this.work.isUserLevelExplain()
-                && this.work.isFormatted()
-                && (operator instanceof ReduceSinkOperator
-                    || operator instanceof VectorReduceSinkOperator || operator instanceof VectorReduceSinkCommonOperator)) {
-              List<String> outputOperators = ((ReduceSinkDesc) operator.getConf())
-                  .getOutputOperators();
+            if (!this.work.isUserLevelExplain() && this.work.isFormatted()
+                && operator instanceof ReduceSinkOperator) {
+              List<String> outputOperators = ((ReduceSinkOperator) operator).getConf().getOutputOperators();
               if (outputOperators != null) {
                 ((JSONObject) jsonOut.get(JSONObject.getNames(jsonOut)[0])).put(OUTPUT_OPERATORS,
                     Arrays.toString(outputOperators.toArray()));

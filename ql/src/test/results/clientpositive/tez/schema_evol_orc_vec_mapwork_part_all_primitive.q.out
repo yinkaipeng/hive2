@@ -118,12 +118,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=285)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=285)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=285)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=285)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11"]
               TableScan [TS_0] (rows=6 width=285)
                 default@part_change_various_various_boolean,part_change_various_various_boolean,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","b"]
@@ -281,12 +281,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=413)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=413)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=413)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=413)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
               TableScan [TS_0] (rows=6 width=413)
                 default@part_change_various_various_tinyint,part_change_various_various_tinyint,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","b"]
@@ -444,12 +444,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=416)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=416)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=416)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=416)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
               TableScan [TS_0] (rows=6 width=416)
                 default@part_change_various_various_smallint,part_change_various_various_smallint,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","b"]
@@ -607,12 +607,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=415)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=415)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=415)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=415)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
               TableScan [TS_0] (rows=6 width=415)
                 default@part_change_various_various_int,part_change_various_various_int,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","b"]
@@ -770,12 +770,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=429)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=429)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=429)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=429)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
               TableScan [TS_0] (rows=6 width=429)
                 default@part_change_various_various_bigint,part_change_various_various_bigint,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","b"]
@@ -933,12 +933,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=416)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=416)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=416)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=416)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
               TableScan [TS_0] (rows=6 width=416)
                 default@part_change_various_various_float,part_change_various_various_float,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","b"]
@@ -1096,12 +1096,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=429)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=429)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=429)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=429)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
               TableScan [TS_0] (rows=6 width=429)
                 default@part_change_various_various_double,part_change_various_various_double,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","b"]
@@ -1259,12 +1259,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=743)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=743)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=743)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=743)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13"]
               TableScan [TS_0] (rows=6 width=743)
                 default@part_change_various_various_decimal,part_change_various_various_decimal,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","b"]
@@ -1428,12 +1428,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=788)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=788)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13","_col14","_col15"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=788)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=788)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13","_col14","_col15"]
               TableScan [TS_0] (rows=6 width=788)
                 default@part_change_various_various_string,part_change_various_various_string,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","c12","c13","b"]
@@ -1597,12 +1597,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=855)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=855)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13","_col14","_col15"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=855)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=855)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13","_col14","_col15"]
               TableScan [TS_0] (rows=6 width=855)
                 default@part_change_various_various_char,part_change_various_various_char,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","c12","c13","b"]
@@ -1766,12 +1766,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=779)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=779)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13","_col14","_col15"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=779)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=779)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13","_col14","_col15"]
               TableScan [TS_0] (rows=6 width=779)
                 default@part_change_various_various_char_trunc,part_change_various_various_char_trunc,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","c12","c13","b"]
@@ -1935,12 +1935,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=788)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=788)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13","_col14","_col15"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=788)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=788)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13","_col14","_col15"]
               TableScan [TS_0] (rows=6 width=788)
                 default@part_change_various_various_varchar,part_change_various_various_varchar,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","c12","c13","b"]
@@ -2104,12 +2104,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=782)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=782)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13","_col14","_col15"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=782)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=782)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13","_col14","_col15"]
               TableScan [TS_0] (rows=6 width=782)
                 default@part_change_various_various_varchar_trunc,part_change_various_various_varchar_trunc,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","c12","c13","b"]
@@ -2270,12 +2270,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=474)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=474)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13","_col14"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=474)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=474)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8","_col9","_col10","_col11","_col12","_col13","_col14"]
               TableScan [TS_0] (rows=6 width=474)
                 default@part_change_various_various_timestamp,part_change_various_various_timestamp,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","c12","b"]
@@ -2412,12 +2412,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=6 width=407)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=6 width=407)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=6 width=407)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=6 width=407)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6"]
               TableScan [TS_0] (rows=6 width=407)
                 default@part_change_various_various_date,part_change_various_various_date,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","b"]
@@ -2649,12 +2649,12 @@ Stage-0
     limit:-1
     Stage-1
       Reducer 2 vectorized
-      File Output Operator [FS_4]
-        Select Operator [SEL_3] (rows=13 width=668)
+      File Output Operator [FS_8]
+        Select Operator [SEL_7] (rows=13 width=668)
           Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8"]
         <-Map 1 [SIMPLE_EDGE] vectorized
-          SHUFFLE [RS_2]
-            Select Operator [SEL_1] (rows=13 width=668)
+          SHUFFLE [RS_6]
+            Select Operator [SEL_5] (rows=13 width=668)
               Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7","_col8"]
               TableScan [TS_0] (rows=13 width=668)
                 default@part_change_same_type_different_params,part_change_same_type_different_params,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","b"]
