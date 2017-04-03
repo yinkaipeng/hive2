@@ -1046,8 +1046,6 @@ public class TestReplicationScenarios {
     assertFalse(EventUtils.andFilter(no, yes, no).accept(dummyEvent));
     assertFalse(EventUtils.andFilter(no, no, yes).accept(dummyEvent));
     assertFalse(EventUtils.andFilter(no, no, no).accept(dummyEvent));
-
-
   }
 
   private NotificationEvent createDummyEvent(String dbname, String tblname, long evid) {
@@ -1078,7 +1076,7 @@ public class TestReplicationScenarios {
     if (tblName != null){
       verifyRun("REPL STATUS " + dbName + "_dupe." + tblName, lastReplDumpId);
     }
-    assertTrue(lastReplDumpId.compareTo(prevReplDumpId) > 0);
+    assertTrue(Long.parseLong(lastReplDumpId) > Long.parseLong(prevReplDumpId));
     return lastReplDumpId;
   }
 
@@ -1093,7 +1091,7 @@ public class TestReplicationScenarios {
     run("REPL LOAD " + dbName + "_dupe." + tblName + " FROM '" + lastDumpLocn + "'");
     verifyRun("REPL STATUS " + dbName + "_dupe", lastDbReplDumpId);
     verifyRun("REPL STATUS " + dbName + "_dupe." + tblName, lastReplDumpId);
-    assertTrue(lastReplDumpId.compareTo(prevReplDumpId) > 0);
+    assertTrue(Long.parseLong(lastReplDumpId) > Long.parseLong(prevReplDumpId));
     return lastReplDumpId;
   }
 
@@ -1187,7 +1185,7 @@ public class TestReplicationScenarios {
     return success;
   }
 
-  public static void createTestDataFile(String filename, String[] lines) throws IOException {
+  private static void createTestDataFile(String filename, String[] lines) throws IOException {
     FileWriter writer = null;
     try {
       File file = new File(filename);
