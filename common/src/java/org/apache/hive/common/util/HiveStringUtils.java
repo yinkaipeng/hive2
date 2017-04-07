@@ -880,6 +880,25 @@ public class HiveStringUtils {
   }
 
   /**
+   * Concatenates strings, using a separator. Empty/blank string or null will be
+   * ignored.
+   *
+   * @param strings Strings to join.
+   * @param separator Separator to join with.
+   */
+  public static String joinIgnoringEmpty(String[] strings, char separator) {
+    ArrayList<String> list = new ArrayList<String>();
+    for(String str : strings) {
+      if (org.apache.commons.lang.StringUtils.isNotBlank(str)) {
+        list.add(str);
+      }
+    }
+
+    return org.apache.commons.lang.StringUtils.join(list, separator);
+  }
+
+
+  /**
    * Convert SOME_STUFF to SomeStuff
    *
    * @param s input string
