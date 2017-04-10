@@ -17,8 +17,6 @@ Example:
   'h'
   > SELECT rpad('hi', 5, '') FROM src LIMIT 1;
   null
-Function class:org.apache.hadoop.hive.ql.udf.generic.GenericUDFRpad
-Function type:BUILTIN
 PREHOOK: query: EXPLAIN SELECT
   rpad('hi', 1, '?'),
   rpad('hi', 5, '.'),

@@ -17,8 +17,6 @@ Example:
   'h'
   > SELECT lpad('hi', 5, '') FROM src LIMIT 1;
   null
-Function class:org.apache.hadoop.hive.ql.udf.generic.GenericUDFLpad
-Function type:BUILTIN
 PREHOOK: query: EXPLAIN SELECT
   lpad('hi', 1, '?'),
   lpad('hi', 5, '.'),
