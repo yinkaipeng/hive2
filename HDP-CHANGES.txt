@@ -2,6 +2,28 @@ Changes only in Hortonworks git repo and not in released hive-2.1.0
 ===================================================================
 
 BUG FIXES
+  HDP-2.5.5:
+
+    HIVE-12664: Bug in reduce deduplication optimization causing ArrayOutOfBoundException
+    HIVE-12968: genNotNullFilterForJoinSourcePlan: needs to merge predicates into the multi-AND
+    HIVE-13423: Handle the overflow case for decimal datatype for sum()
+    HIVE-13527: Using deprecated APIs in HBase client causes zookeeper connection leaks.
+    HIVE-15124: Fix OrcInputFormat to use reader's schema for include boolean array
+    HIVE-15181: buildQueryWithINClause didn't properly handle multiples of ConfVars.METASTORE_DIRECT_SQL_MAX_ELEMENTS_IN_CLAUSE
+    HIVE-15208: Query string should be HTML encoded for Web UI
+    HIVE-15291: Comparison of timestamp fails if only date part is provided. 
+    HIVE-15338: Wrong result from non-vectorized DATEDIFF with scalar parameter of type DATE/TIMESTAMP
+    HIVE-15542: NPE in StatsUtils::getColStatistics when all values in DATE column are NULL
+    HIVE-15588: Vectorization: Fix deallocation of scratch columns in VectorUDFCoalesce, etc to prevent wrong reuse
+    HIVE-15752: MSCK should add output WriteEntity for table in semantic analysis
+    HIVE-15803: msck can hang when nested partitions are present
+    HIVE-15848: count or sum distinct incorrect when hive.optimize.reducededuplication set to true
+    HIVE-15872: The PERCENTILE_APPROX UDAF does not work with empty set
+    HIVE-15901: LLAP: incorrect usage of gap cache
+    HIVE-16050: Regression: Union of null with non-null 
+    HIVE-16090: Addendum to HIVE-16014
+    HIVE-16114: NullPointerException in TezSessionPoolManager when getting the session
+    HIVE-16175: Possible race condition in InstanceCache
     HIVE-14612: org.apache.hive.service.cli.operation.TestOperationLoggingLayout.testSwitchLogLayout failure (Hari Subramaniyan, reviewed by Prasanth Jayachandran)
     HIVE-14432 : LLAP signing unit test may be timing-dependent (Sergey Shelukhin, reviewed by Prasanth Jayachandran)
     HIVE-15783: small glitch in LlapServiceDriver on small VMs
@@ -21,16 +43,17 @@ BUG FIXES
     HIVE-14405. Have tests log to the console along with hive.log. (Siddharth Seth, reviewed by Ashutosh Chauhan)    
     HIVE-14445: upgrade maven surefire to 2.19.1
     HIVE-15437: avro tables join fails when - tbl join tbl_postfix (Yongzhi Chen, reviewed by Chaoyu Tang)
-    : HIVE-15589 : Flaky org.apache.hadoop.hive.ql.lockmgr.TestDbTxnManager.testHeartbeater (Wei Zheng)
+    HIVE-15589 : Flaky org.apache.hadoop.hive.ql.lockmgr.TestDbTxnManager.testHeartbeater (Wei Zheng)
     HIVE-15355: Concurrency issues during parallel moveFile due to HDFSUtils.setFullFileStatus (Vihang Karajgaonkar, reviewed by Sergio Pena and Sahil Takiar)
     HIVE-15178 : ORC stripe merge may produce many MR jobs and no merge if split size is small (Sergey Shelukhin, reviewed by Prasanth Jayachandran)
-    : Backport HIVE-14924: MSCK REPAIR table with single threaded is throwing null pointer exception HIVE-14924: MSCK REPAIR table with single threaded is throwing null pointer exception (Pengcheng Xiong, reviewed by Ashutosh Chauhan)
-    : Backport HIVE-14924: MSCK REPAIR table with single threaded is throwing null pointer exception HIVE-14290: Refactor HIVE-14054 to use Collections#newSetFromMap (Peter Slawski via Ashutosh Chauhan)
+    HIVE-14924: MSCK REPAIR table with single threaded is throwing null pointer exception HIVE-14924: MSCK REPAIR table with single threaded is throwing null pointer exception (Pengcheng Xiong, reviewed by Ashutosh Chauhan)
+    HIVE-14924: MSCK REPAIR table with single threaded is throwing null pointer exception HIVE-14290: Refactor HIVE-14054 to use Collections#newSetFromMap (Peter Slawski via Ashutosh Chauhan)
     HIVE-9941: sql std authorization on partitioned table: truncate and insert (Sushanth Sowmyan via Jason Dere)
     HIVE-14929: Adding JDBC test for query cancellation scenario (Deepak Jaiswal via Jason Dere)
     HIVE-14928 Analyze table no scan mess up schema (Jimmy Xiang, reviewed by Prasanth Jayachandran)
-    /HIVE-13936: Add streaming support for row_number
+    HIVE-13936: Add streaming support for row_number
     HIVE-15002 : HiveSessionImpl#executeStatementInternal may leave locks in an inconsistent state (Zoltan Haindrich via Thejas Nair)
+
   HDP-2.5.3:
     HIVE-14933: include argparse with LLAP scripts to support antique Python versions
     HIVE-14251: Union All of different types resolves to incorrect data
