@@ -80,7 +80,7 @@ public class ATSHook implements ExecuteWithHookContext {
 
   private enum OtherInfoTypes {
     QUERY, STATUS, TEZ, MAPRED, INVOKER_INFO, SESSION_ID, LOG_TRACE_ID, THREAD_NAME, VERSION,
-    CLIENT_IP_ADDRESS, HIVE_ADDRESS, HIVE_INSTANCE_TYPE, CONF, PERF, LLAP_APP_ID
+    CLIENT_IP_ADDRESS, HIVE_ADDRESS, HIVE_INSTANCE_TYPE, CONF, PERF, LLAP_APP_ID, APP_ID, DAG_ID
   };
   private enum ExecutionMode {
     MR, TEZ, LLAP, SPARK, NONE
@@ -303,12 +303,12 @@ public class ATSHook implements ExecuteWithHookContext {
                                           case POST_EXEC_HOOK:
                                                   fireAndForget(createPostHookEvent(queryId,
                                                                   currentTime, user, requestuser, true, opId,
-                                                                  durations, domainId));
+                                                                  durations, domainId, getTezAppID(plan), getTezDagID(plan)));
                                                   break;
                                           case ON_FAILURE_HOOK:
                                                   fireAndForget(createPostHookEvent(queryId,
                                                                   currentTime, user, requestuser, false,
-                                                                  opId, durations, domainId));
+                                                                  opId, durations, domainId, getTezAppID(plan), getTezDagID(plan)));
                                                   break;
                                           default:
                                                   // ignore
@@ -430,7 +430,7 @@ public class ATSHook implements ExecuteWithHookContext {
   }
 
   TimelineEntity createPostHookEvent(String queryId, long stopTime, String user, String requestuser, boolean success,
-      String opId, Map<String, Long> durations, String domainId) throws Exception {
+      String opId, Map<String, Long> durations, String domainId, String tezAppID, String tezDagID) throws Exception {
     LOG.info("Received post-hook notification for :" + queryId);
 
     TimelineEntity atsEntity = new TimelineEntity();
@@ -448,6 +448,12 @@ public class ATSHook implements ExecuteWithHookContext {
     atsEntity.addEvent(stopEvt);
 
     atsEntity.addOtherInfo(OtherInfoTypes.STATUS.name(), success);
+    if (tezAppID != null) {
+      atsEntity.addOtherInfo(OtherInfoTypes.APP_ID.name(), tezAppID);
+    }
+    if (tezDagID != null) {
+      atsEntity.addOtherInfo(OtherInfoTypes.DAG_ID.name(), tezDagID);
+    }
 
     // Perf times
     JSONObject perfObj = new JSONObject(new LinkedHashMap<>());
@@ -471,6 +477,26 @@ public class ATSHook implements ExecuteWithHookContext {
         }
       }
     });
+  }
+
+  private String getTezDagID(QueryPlan plan) {
+    for (TezTask tezTask : Utilities.getTezTasks(plan.getRootTasks())) {
+      String dagID = tezTask.getDagID();
+      if (dagID != null) {
+        return dagID;
+      }
+    }
+    return null;
+  }
+
+  private String getTezAppID(QueryPlan plan) {
+    for (TezTask tezTask : Utilities.getTezTasks(plan.getRootTasks())) {
+      String appID = tezTask.getJobID();
+      if (appID != null) {
+        return appID;
+      }
+    }
+    return null;
   }
 
   private ApplicationId determineLlapId(final HiveConf conf, QueryPlan plan) throws IOException {

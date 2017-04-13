@@ -104,6 +104,8 @@ public class TezTask extends Task<TezWork> {
   Map<BaseWork, Vertex> workToVertex = new HashMap<BaseWork, Vertex>();
   Map<BaseWork, JobConf> workToConf = new HashMap<BaseWork, JobConf>();
 
+  private String dagID;
+
   public TezTask() {
     this(DagUtils.getInstance());
   }
@@ -181,6 +183,8 @@ public class TezTask extends Task<TezWork> {
         // submit will send the job to the cluster and start executing
         dagClient = submit(jobConf, dag, scratchDir, appJarLr, session,
             additionalLr, inputOutputJars, inputOutputLocalResources);
+        jobID = dagClient.getSessionIdentifierString();
+        dagID = dagClient.getDagIdentifierString();
 
         // finally monitor will print progress until the job is done
         TezJobMonitor monitor = new TezJobMonitor(work.getWorkMap(),dagClient, conf, dag, ctx);
@@ -643,13 +647,11 @@ public class TezTask extends Task<TezWork> {
     }
 
     public String getDagIdentifierString() {
-      // TODO: Implement this when tez is upgraded. TEZ-3550
-      return null;
+      return dagClient.getDagIdentifierString();
     }
 
     public String getSessionIdentifierString() {
-      // TODO: Implement this when tez is upgraded. TEZ-3550
-      return null;
+      return dagClient.getSessionIdentifierString();
     }
 
 
@@ -709,5 +711,9 @@ public class TezTask extends Task<TezWork> {
         return dagClient.waitForCompletionWithStatusUpdates(statusGetOpts);
       }
     }
+  }
+
+  public String getDagID() {
+    return dagID;
   }
 }
