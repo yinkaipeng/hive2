@@ -96,6 +96,9 @@ public class ReduceWork extends BaseWork {
 
   private transient TezEdgeProperty edgeProp;
 
+  private String vectorReduceColumnSortOrder;
+  private String vectorReduceColumnNullOrder;
+
   /**
    * If the plan has a reducer and correspondingly a reduce-sink, then store the TableDesc pointing
    * to keySerializeInfo of the ReduceSink
@@ -248,6 +251,22 @@ public class ReduceWork extends BaseWork {
 
   public void setEdgePropRef(TezEdgeProperty edgeProp) {
     this.edgeProp = edgeProp;
+  }
+
+  public void setVectorReduceColumnSortOrder(String vectorReduceColumnSortOrder) {
+    this.vectorReduceColumnSortOrder = vectorReduceColumnSortOrder;
+  }
+
+  public String getVectorReduceColumnSortOrder() {
+    return vectorReduceColumnSortOrder;
+  }
+
+  public void setVectorReduceColumnNullOrder(String vectorReduceColumnNullOrder) {
+    this.vectorReduceColumnNullOrder = vectorReduceColumnNullOrder;
+  }
+
+  public String getVectorReduceColumnNullOrder() {
+    return vectorReduceColumnNullOrder;
   }
 
   public TezEdgeProperty getEdgePropRef() {

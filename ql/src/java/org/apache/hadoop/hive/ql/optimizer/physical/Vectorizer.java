@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.calcite.util.Pair;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -389,6 +390,9 @@ public class Vectorizer implements PhysicalPlanResolver {
 
     TableScanOperator tableScanOperator;
 
+    String reduceColumnSortOrder;
+    String reduceColumnNullOrder;
+
     VectorTaskColumnInfo() {
       partitionColumnCount = 0;
     }
@@ -422,6 +426,14 @@ public class Vectorizer implements PhysicalPlanResolver {
       return nonVectorizedOps;
     }
 
+    public void setReduceColumnSortOrder(String reduceColumnSortOrder) {
+      this.reduceColumnSortOrder = reduceColumnSortOrder;
+    }
+
+    public void setReduceColumnNullOrder(String reduceColumnNullOrder) {
+      this.reduceColumnNullOrder = reduceColumnNullOrder;
+    }
+
     public void transferToBaseWork(BaseWork baseWork) {
 
       String[] allColumnNameArray = allColumnNames.toArray(new String[0]);
@@ -443,6 +455,12 @@ public class Vectorizer implements PhysicalPlanResolver {
       baseWork.setVectorizedRowBatchCtx(vectorizedRowBatchCtx);
 
       baseWork.setUseVectorizedInputFileFormat(useVectorizedInputFileFormat);
+
+      if (baseWork instanceof ReduceWork) {
+        ReduceWork reduceWork = (ReduceWork) baseWork;
+        reduceWork.setVectorReduceColumnSortOrder(reduceColumnSortOrder);
+        reduceWork.setVectorReduceColumnNullOrder(reduceColumnNullOrder);
+      }
     }
   }
 
@@ -954,6 +972,8 @@ public class Vectorizer implements PhysicalPlanResolver {
         return false;
       }
 
+      String columnSortOrder;
+      String columnNullOrder;
       try {
         TableDesc keyTableDesc = reduceWork.getKeyDesc();
         if (LOG.isDebugEnabled()) {
@@ -961,10 +981,11 @@ public class Vectorizer implements PhysicalPlanResolver {
         }
         TableDesc valueTableDesc = reduceWork.getTagToValueDesc().get(reduceWork.getTag());
 
+        Properties keyTableProperties = keyTableDesc.getProperties();
         Deserializer keyDeserializer =
             ReflectionUtils.newInstance(
                 keyTableDesc.getDeserializerClass(), null);
-        SerDeUtils.initializeSerDe(keyDeserializer, null, keyTableDesc.getProperties(), null);
+        SerDeUtils.initializeSerDe(keyDeserializer, null, keyTableProperties, null);
         ObjectInspector keyObjectInspector = keyDeserializer.getObjectInspector();
         if (keyObjectInspector == null) {
           LOG.info("Key object inspector null");
@@ -981,6 +1002,9 @@ public class Vectorizer implements PhysicalPlanResolver {
           reduceColumnNames.add(Utilities.ReduceField.KEY.toString() + "." + field.getFieldName());
           reduceTypeInfos.add(TypeInfoUtils.getTypeInfoFromTypeString(field.getFieldObjectInspector().getTypeName()));
         }
+
+        columnSortOrder = keyTableProperties.getProperty(serdeConstants.SERIALIZATION_SORT_ORDER);
+        columnNullOrder = keyTableProperties.getProperty(serdeConstants.SERIALIZATION_NULL_SORT_ORDER);
 
         Deserializer valueDeserializer =
             ReflectionUtils.newInstance(
@@ -1007,6 +1031,9 @@ public class Vectorizer implements PhysicalPlanResolver {
       vectorTaskColumnInfo.setAllColumnNames(reduceColumnNames);
       vectorTaskColumnInfo.setAllTypeInfos(reduceTypeInfos);
 
+      vectorTaskColumnInfo.setReduceColumnSortOrder(columnSortOrder);
+      vectorTaskColumnInfo.setReduceColumnNullOrder(columnNullOrder);
+      
       return true;
     }
 
