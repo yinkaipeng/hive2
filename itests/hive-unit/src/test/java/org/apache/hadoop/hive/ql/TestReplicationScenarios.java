@@ -37,6 +37,7 @@ import org.apache.hadoop.hive.ql.parse.ReplicationSemanticAnalyzer;
 import org.apache.hadoop.hive.ql.parse.ReplicationSpec.ReplStateMap;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
 import org.apache.hadoop.hive.ql.session.SessionState;
+import org.apache.hadoop.util.Shell;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.AfterClass;
