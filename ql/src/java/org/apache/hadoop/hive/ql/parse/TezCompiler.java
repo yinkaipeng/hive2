@@ -178,6 +178,9 @@ public class TezCompiler extends TaskCompiler {
     TableScanOperator victimTS = null;
     ReduceSinkOperator victimRS = null;
 
+    // If there is a hint and no operator is removed then throw error
+    boolean hasHint = false;
+    boolean removed = false;
     for (Operator<?> o : component) {
       // Look for AppMasterEventOperator or ReduceSinkOperator
       if (o instanceof AppMasterEventOperator) {
@@ -187,10 +190,17 @@ public class TezCompiler extends TaskCompiler {
           victimAM = (AppMasterEventOperator) o;
         }
       } else if (o instanceof ReduceSinkOperator) {
-        TableScanOperator ts = context.parseContext.getRsOpToTsOpMap().get(o);
-        if (ts == null) {
+        SemiJoinBranchInfo sjInfo =
+                context.parseContext.getRsToSemiJoinBranchInfo().get(o);
+        if (sjInfo == null ) continue;
+        if (sjInfo.getIsHint()) {
+          // Skipping because of hint. Mark this info,
+          hasHint = true;
           continue;
         }
+
+        TableScanOperator ts = sjInfo.getTsOp();
+
         // Sanity check
         assert component.contains(ts);
 
@@ -199,11 +209,12 @@ public class TezCompiler extends TaskCompiler {
                 victimTS.getStatistics().getDataSize()) {
             victimRS = (ReduceSinkOperator) o;
             victimTS = ts;
+            removed = true;
           }
         }
       }
 
-    // Always set the min/max optimization as victim.
+    // Always set the semijoin optimization as victim.
     Operator<?> victim = victimRS;
 
     if (victimRS == null && victimAM != null ) {
@@ -212,7 +223,7 @@ public class TezCompiler extends TaskCompiler {
       // do nothing
     } else {
       // Cycle consists of atleast one dynamic partition pruning(DPP)
-      // optimization and atleast one min/max optimization.
+      // optimization and atleast one semijoin optimization.
       // DPP is a better optimization unless it ends up scanning the
       // bigger table for keys instead of the smaller table.
 
@@ -225,6 +236,11 @@ public class TezCompiler extends TaskCompiler {
               victimAM.getStatistics().getDataSize()) {
         victim = victimAM;
       }
+    }
+
+    if (hasHint && !removed) {
+      // There is hint but none of the operators removed. Throw error
+      throw new SemanticException("The user hint is causing an operator cycle. Please fix it and retry");
     }
 
     if (victim == null ||
@@ -287,11 +303,12 @@ public class TezCompiler extends TaskCompiler {
       LOG.debug("Adding special edge: " + o.getName() + " --> " + ts.toString());
       children.add(ts);
     } else if (o instanceof ReduceSinkOperator){
-      // min/max case
+      // semijoin case
       children = new ArrayList<Operator<?>>();
       children.addAll(o.getChildOperators());
-      TableScanOperator ts = parseContext.getRsOpToTsOpMap().get(o);
-      if (ts != null) {
+      SemiJoinBranchInfo sjInfo = parseContext.getRsToSemiJoinBranchInfo().get(o);
+      if (sjInfo != null ) {
+        TableScanOperator ts = sjInfo.getTsOp();
         LOG.debug("Adding special edge: " + o.getName() + " --> " + ts.toString());
         children.add(ts);
       }
@@ -460,7 +477,7 @@ public class TezCompiler extends TaskCompiler {
     if (pCtx.getRsToRuntimeValuesInfoMap().size() > 0) {
       for (ReduceSinkOperator rs : pCtx.getRsToRuntimeValuesInfoMap().keySet()) {
         // Process min/max
-        GenTezUtils.processDynamicMinMaxPushDownOperator(
+        GenTezUtils.processDynamicSemiJoinPushDownOperator(
                 procCtx, pCtx.getRsToRuntimeValuesInfoMap().get(rs), rs);
       }
     }
@@ -617,7 +634,7 @@ public class TezCompiler extends TaskCompiler {
   private static void removeSemijoinOptimizationFromSMBJoins(
           OptimizeTezProcContext procCtx) throws SemanticException {
     if (!procCtx.conf.getBoolVar(ConfVars.TEZ_DYNAMIC_SEMIJOIN_REDUCTION) ||
-            procCtx.parseContext.getRsOpToTsOpMap().size() == 0) {
+            procCtx.parseContext.getRsToSemiJoinBranchInfo().size() == 0) {
       return;
     }
 
@@ -636,9 +653,9 @@ public class TezCompiler extends TaskCompiler {
     GraphWalker ogw = new PreOrderOnceWalker(disp);
     ogw.startWalking(topNodes, null);
 
+    List<TableScanOperator> tsOps = new ArrayList<TableScanOperator>();
     // Iterate over the map and remove semijoin optimizations if needed.
     for (CommonMergeJoinOperator joinOp : ctx.JoinOpToTsOpMap.keySet()) {
-      List<TableScanOperator> tsOps = new ArrayList<TableScanOperator>();
       // Get one top level TS Op directly from the stack
       tsOps.add(ctx.JoinOpToTsOpMap.get(joinOp));
 
@@ -651,7 +668,7 @@ public class TezCompiler extends TaskCompiler {
         }
 
         assert parent instanceof SelectOperator;
-        while(parent != null) {
+        while (parent != null) {
           if (parent instanceof TableScanOperator) {
             tsOps.add((TableScanOperator) parent);
             break;
@@ -659,20 +676,23 @@ public class TezCompiler extends TaskCompiler {
           parent = parent.getParentOperators().get(0);
         }
       }
-
-      // Now the relevant TableScanOperators are known, find if there exists
-      // a semijoin filter on any of them, if so, remove it.
-      ParseContext pctx = procCtx.parseContext;
-      for (TableScanOperator ts : tsOps) {
-        for (ReduceSinkOperator rs : pctx.getRsOpToTsOpMap().keySet()) {
-          if (ts == pctx.getRsOpToTsOpMap().get(rs)) {
-            // match!
-            if (LOG.isDebugEnabled()) {
-              LOG.debug("Semijoin optimization found going to SMB join. Removing semijoin "
-                  + OperatorUtils.getOpNamePretty(rs) + " - " + OperatorUtils.getOpNamePretty(ts));
-            }
-            GenTezUtils.removeBranch(rs);
-            GenTezUtils.removeSemiJoinOperator(pctx, rs, ts);
+    }
+    // Now the relevant TableScanOperators are known, find if there exists
+    // a semijoin filter on any of them, if so, remove it.
+    ParseContext pctx = procCtx.parseContext;
+    for (TableScanOperator ts : tsOps) {
+      for (ReduceSinkOperator rs : pctx.getRsToSemiJoinBranchInfo().keySet()) {
+        SemiJoinBranchInfo sjInfo = pctx.getRsToSemiJoinBranchInfo().get(rs);
+        if (ts == sjInfo.getTsOp()) {
+          // match!
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Semijoin optimization found going to SMB join. Removing semijoin "
+                    + OperatorUtils.getOpNamePretty(rs) + " - " + OperatorUtils.getOpNamePretty(ts));
+          }
+          GenTezUtils.removeBranch(rs);
+          GenTezUtils.removeSemiJoinOperator(pctx, rs, ts);
+          if (sjInfo.getIsHint()) {
+            LOG.debug("Removing hinted semijoin as it is with SMB join " + rs + " : " + ts);
           }
         }
       }
@@ -699,7 +719,7 @@ public class TezCompiler extends TaskCompiler {
   private static void removeSemiJoinCyclesDueToMapsideJoins(
           OptimizeTezProcContext procCtx) throws SemanticException {
     if (!procCtx.conf.getBoolVar(ConfVars.TEZ_DYNAMIC_SEMIJOIN_REDUCTION) ||
-            procCtx.parseContext.getRsOpToTsOpMap().size() == 0) {
+            procCtx.parseContext.getRsToSemiJoinBranchInfo().size() == 0) {
       return;
     }
 
@@ -752,10 +772,11 @@ public class TezCompiler extends TaskCompiler {
         }
 
         ReduceSinkOperator rs = ((ReduceSinkOperator) child);
-        TableScanOperator ts = pCtx.getRsOpToTsOpMap().get(rs);
-        if (ts == null) {
+        SemiJoinBranchInfo sjInfo = pCtx.getRsToSemiJoinBranchInfo().get(rs);
+        if (sjInfo == null) {
           continue;
         }
+        TableScanOperator ts = sjInfo.getTsOp();
         // This is a semijoin branch. Find if this is creating a potential
         // cycle with childJoin.
         for (Operator<?> parent : childJoin.getParentOperators()) {
@@ -776,6 +797,9 @@ public class TezCompiler extends TaskCompiler {
             }
             GenTezUtils.removeBranch(rs);
             GenTezUtils.removeSemiJoinOperator(pCtx, rs, ts);
+            if (sjInfo.getIsHint()) {
+              LOG.debug("Removing hinted semijoin as it is creating cycles with mapside joins " + rs + " : " + ts);
+            }
           }
         }
       }
@@ -790,8 +814,8 @@ public class TezCompiler extends TaskCompiler {
       assert nd instanceof ReduceSinkOperator;
       ReduceSinkOperator rs = (ReduceSinkOperator) nd;
       ParseContext pCtx = ((OptimizeTezProcContext) procCtx).parseContext;
-      TableScanOperator ts = pCtx.getRsOpToTsOpMap().get(rs);
-      if (ts == null) {
+      SemiJoinBranchInfo sjInfo = pCtx.getRsToSemiJoinBranchInfo().get(rs);
+      if (sjInfo == null) {
         // nothing to do here.
         return null;
       }
@@ -802,6 +826,7 @@ public class TezCompiler extends TaskCompiler {
       GroupByDesc gbDesc = gbOp.getConf();
       ArrayList<AggregationDesc> aggregationDescs = gbDesc.getAggregators();
       boolean removeSemiJoin = false;
+      TableScanOperator ts = sjInfo.getTsOp();
       for (AggregationDesc agg : aggregationDescs) {
         if (agg.getGenericUDAFName() != "bloom_filter") {
           continue;
@@ -809,6 +834,9 @@ public class TezCompiler extends TaskCompiler {
 
         GenericUDAFBloomFilterEvaluator udafBloomFilterEvaluator =
                 (GenericUDAFBloomFilterEvaluator) agg.getGenericUDAFEvaluator();
+        if (udafBloomFilterEvaluator.hasHintEntries())
+          return null; // Created using hint, skip it
+
         long expectedEntries = udafBloomFilterEvaluator.getExpectedEntries();
         if (expectedEntries == -1 || expectedEntries >
                 pCtx.getConf().getLongVar(ConfVars.TEZ_MAX_BLOOM_FILTER_ENTRIES)) {
@@ -823,6 +851,7 @@ public class TezCompiler extends TaskCompiler {
         }
       }
 
+      // At this point, hinted semijoin case has been handled already
       // Check if big table is big enough that runtime filtering is
       // worth it.
       if (ts.getStatistics() != null) {
@@ -905,15 +934,24 @@ public class TezCompiler extends TaskCompiler {
           }
 
           ReduceSinkOperator rs = (ReduceSinkOperator) child;
-          TableScanOperator ts = parseContext.getRsOpToTsOpMap().get(rs);
-          if (ts == null || ts != bigTableTS) {
-            // skip, no semijoin or not the one we are looking for.
+          SemiJoinBranchInfo sjInfo = parseContext.getRsToSemiJoinBranchInfo().get(rs);
+          if (sjInfo == null) continue;
+
+          TableScanOperator ts = sjInfo.getTsOp();
+          if (ts != bigTableTS) {
+            // skip, not the one we are looking for.
+            continue;
+          }
+
+          parallelEdges = true;
+
+          if (sjInfo.getIsHint()) {
+            // Created by hint, skip it
             continue;
           }
 
           // Add the semijoin branch to the map
           semijoins.put(rs, ts);
-          parallelEdges = true;
         }
       }
     }
@@ -1141,10 +1179,15 @@ public class TezCompiler extends TaskCompiler {
     }
 
     List<ReduceSinkOperator> semijoinRsToRemove = new ArrayList<ReduceSinkOperator>();
-    Map<ReduceSinkOperator, TableScanOperator> map = procCtx.parseContext.getRsOpToTsOpMap();
+    Map<ReduceSinkOperator, SemiJoinBranchInfo> map = procCtx.parseContext.getRsToSemiJoinBranchInfo();
     double semijoinReductionThreshold = procCtx.conf.getFloatVar(
         HiveConf.ConfVars.TEZ_DYNAMIC_SEMIJOIN_REDUCTION_THRESHOLD);
     for (ReduceSinkOperator rs : map.keySet()) {
+      SemiJoinBranchInfo sjInfo = map.get(rs);
+      if (sjInfo.getIsHint()) {
+        // Semijoin created using hint, skip it
+        continue;
+      }
       // rs is semijoin optimization branch, which should look like <Parent>-SEL-GB1-RS1-GB2-RS2
       // Get to the SelectOperator ancestor
       SelectOperator sel = null;
@@ -1159,7 +1202,7 @@ public class TezCompiler extends TaskCompiler {
       }
 
       // Check the ndv/rows from the SEL vs the destination tablescan the semijoin opt is going to.
-      TableScanOperator ts = map.get(rs);
+      TableScanOperator ts = sjInfo.getTsOp();
       RuntimeValuesInfo rti = procCtx.parseContext.getRsToRuntimeValuesInfoMap().get(rs);
       ExprNodeDesc tsExpr = rti.getTsColExpr();
       // In the SEL operator of the semijoin branch, there should be only one column in the operator
@@ -1179,7 +1222,7 @@ public class TezCompiler extends TaskCompiler {
     }
 
     for (ReduceSinkOperator rs : semijoinRsToRemove) {
-      TableScanOperator ts = map.get(rs);
+      TableScanOperator ts = map.get(rs).getTsOp();
       if (LOG.isDebugEnabled()) {
         LOG.debug("Reduction factor not satisfied for " + OperatorUtils.getOpNamePretty(rs)
             + "-" + OperatorUtils.getOpNamePretty(ts) + ". Removing semijoin optimization.");

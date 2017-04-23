@@ -125,11 +125,11 @@ public class ParseContext {
   private Set<FileSinkDesc> acidFileSinks = Collections.emptySet();
 
   // Map to store mapping between reduce sink Operator and TS Operator for semijoin
-  private Map<ReduceSinkOperator, TableScanOperator> rsOpToTsOpMap =
-          new HashMap<ReduceSinkOperator, TableScanOperator>();
   private Map<ReduceSinkOperator, RuntimeValuesInfo> rsToRuntimeValuesInfo =
           new HashMap<ReduceSinkOperator, RuntimeValuesInfo>();
   private Set<ReduceSinkOperator> semijoinInitialRs = new HashSet<ReduceSinkOperator>();
+  private Map<ReduceSinkOperator, SemiJoinBranchInfo> rsToSemiJoinBranchInfo =
+          new HashMap<>();
 
   public ParseContext() {
   }
@@ -660,19 +660,19 @@ public class ParseContext {
     return rsToRuntimeValuesInfo;
   }
 
-  public void setRsOpToTsOpMap(Map<ReduceSinkOperator, TableScanOperator> rsOpToTsOpMap) {
-    this.rsOpToTsOpMap = rsOpToTsOpMap;
-  }
-
-  public Map<ReduceSinkOperator, TableScanOperator> getRsOpToTsOpMap() {
-    return rsOpToTsOpMap;
-  }
-
   public Set<ReduceSinkOperator> getSemijoinInitialRs() {
     return semijoinInitialRs;
   }
 
   public void setSemijoinInitialRs(Set<ReduceSinkOperator> semijoinInitialRs) {
     this.semijoinInitialRs = semijoinInitialRs;
+  }
+
+  public void setRsToSemiJoinBranchInfo(Map<ReduceSinkOperator, SemiJoinBranchInfo> rsToSemiJoinBranchInfo) {
+    this.rsToSemiJoinBranchInfo = rsToSemiJoinBranchInfo;
+  }
+
+  public Map<ReduceSinkOperator, SemiJoinBranchInfo> getRsToSemiJoinBranchInfo() {
+    return rsToSemiJoinBranchInfo;
   }
 }

@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.antlr.runtime.ClassicToken;
 import org.antlr.runtime.CommonToken;
+import org.antlr.runtime.tree.Tree;
 import org.antlr.runtime.tree.TreeVisitor;
 import org.antlr.runtime.tree.TreeVisitorAction;
 import org.apache.calcite.adapter.druid.DruidQuery;
@@ -331,6 +332,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
       skipCalcitePlan = true;
     } else {
       PreCboCtx cboCtx = (PreCboCtx) plannerCtx;
+      ASTNode oldHints = getQB().getParseInfo().getHints();
 
       // Note: for now, we don't actually pass the queryForCbo to CBO, because
       // it accepts qb, not AST, and can also access all the private stuff in
@@ -381,6 +383,15 @@ public class CalcitePlanner extends SemanticAnalyzer {
                 // CTAS
                 setAST(newAST);
                 newAST = reAnalyzeCtasAfterCbo(newAST);
+              }
+            }
+            if (oldHints != null) {
+              if (getQB().getParseInfo().getHints() != null) {
+                LOG.warn("Hints are not null in the optimized tree; before CBO " + oldHints.dump()
+                        + "; after CBO " + getQB().getParseInfo().getHints().dump());
+              } else {
+                LOG.debug("Propagating hints to QB: " + oldHints);
+                getQB().getParseInfo().setHints(oldHints);
               }
             }
             Phase1Ctx ctx_1 = initPhase1Ctx();
@@ -3374,6 +3385,52 @@ public class CalcitePlanner extends SemanticAnalyzer {
       return selRel;
     }
 
+    private void setQueryHints(QB qb) throws SemanticException {
+      QBParseInfo qbp = getQBParseInfo(qb);
+      String selClauseName = qbp.getClauseNames().iterator().next();
+      Tree selExpr0 = qbp.getSelForClause(selClauseName).getChild(0);
+
+      if (selExpr0.getType() != HiveParser.TOK_HINTLIST) return;
+      try {
+        qbp.setHints((ASTNode) selExpr0);
+      } catch (Exception e) {
+        throw new SemanticException("failed to parse query hint: "+e.getMessage(), e);
+      }
+    }
+
+    private void validateHints(ASTNode hints) throws  SemanticException {
+      if (hints == null) return;
+
+      boolean semijoin = false;
+      boolean otherHints = false;
+      for (Node hintNode : hints.getChildren()) {
+        ASTNode hint = (ASTNode) hintNode;
+        if (hint.getChild(0).getType() == HiveParser.TOK_LEFTSEMIJOIN) {
+          semijoin = true;
+        } else {
+          otherHints = true;
+        }
+      }
+
+      // Mixing semijoin hints with other hints do not work.
+      if (otherHints) {
+        if (semijoin) {
+          String msg = "Query contains a mixture of hints consisting of semijoin and other variants.";
+          LOG.debug(msg);
+          throw new SemanticException(msg);
+        } else {
+          // CBO does not support hints except semijoin hints
+          String hint = ctx.getTokenRewriteStream().toString(
+                  hints.getTokenStartIndex(), hints.getTokenStopIndex());
+          String msg = String.format("Hint specified for %s."
+                  + " Currently we don't support hints in CBO, turn off cbo to use hints.", hint);
+          LOG.debug(msg);
+          throw new CalciteSemanticException(msg, UnsupportedFeature.Hint);
+        }
+      }
+
+    }
+
     /**
      * NOTE: there can only be one select caluse since we don't handle multi
      * destination insert.
@@ -3413,13 +3470,8 @@ public class CalcitePlanner extends SemanticAnalyzer {
       int posn = 0;
       boolean hintPresent = (selExprList.getChild(0).getType() == HiveParser.TOK_HINTLIST);
       if (hintPresent) {
-        String hint = ctx.getTokenRewriteStream().toString(
-            selExprList.getChild(0).getTokenStartIndex(),
-            selExprList.getChild(0).getTokenStopIndex());
-        String msg = String.format("Hint specified for %s."
-            + " Currently we don't support hints in CBO, turn off cbo to use hints.", hint);
-        LOG.debug(msg);
-        throw new CalciteSemanticException(msg, UnsupportedFeature.Hint);
+        validateHints(((ASTNode)selExprList.getChild(0)));
+        posn++;
       }
 
       // 4. Bailout if select involves Transform
@@ -3852,7 +3904,12 @@ public class CalcitePlanner extends SemanticAnalyzer {
         throw new CalciteSemanticException("Unsupported", UnsupportedFeature.Others);
 
       }
+
       // 1.3 process join
+      // 1.3.1 process hints
+      setQueryHints(qb);
+
+      // 1.3.2 process the actual join
       if (qb.getParseInfo().getJoinExpr() != null) {
         srcRel = genJoinLogicalPlan(qb.getParseInfo().getJoinExpr(), aliasToRel);
       } else {

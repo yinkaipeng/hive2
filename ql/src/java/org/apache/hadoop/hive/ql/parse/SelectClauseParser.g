@@ -106,6 +106,7 @@ hintName
 @after { gParent.popMsg(state); }
     :
     KW_MAPJOIN -> TOK_MAPJOIN
+    | KW_SEMI -> TOK_LEFTSEMIJOIN
     | KW_STREAMTABLE -> TOK_STREAMTABLE
     ;
 
@@ -121,6 +122,7 @@ hintArgName
 @after { gParent.popMsg(state); }
     :
     identifier
+    | Number
     ;
 
 selectItem
