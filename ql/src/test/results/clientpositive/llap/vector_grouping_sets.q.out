@@ -202,13 +202,17 @@ POSTHOOK: type: QUERY
 POSTHOOK: Input: default@store
 #### A masked pattern was here ####
 NULL
-AAAAAAAABAAAAAAA
-AAAAAAAACAAAAAAA
 AAAAAAAAEAAAAAAA
 AAAAAAAAHAAAAAAA
 AAAAAAAAIAAAAAAA
 AAAAAAAAKAAAAAAA
+<<<<<<< HEAD
 PREHOOK: query: explain
+=======
+AAAAAAAABAAAAAAA
+AAAAAAAACAAAAAAA
+PREHOOK: query: explain vectorization expression
+>>>>>>> 10bd23eb5c... HIVE-16296 : use LLAP executor count to configure reducer auto-parallelism (Sergey Shelukhin, Gopal Vijayaraghavan, reviewed by Gopal Vijayaraghavan, Sergey Shelukhin, Gunther Hagleitner)
 select s_store_id, GROUPING__ID
  from store
  group by s_store_id with rollup
@@ -290,12 +294,12 @@ POSTHOOK: type: QUERY
 POSTHOOK: Input: default@store
 #### A masked pattern was here ####
 NULL	1
-AAAAAAAABAAAAAAA	0
-AAAAAAAACAAAAAAA	0
 AAAAAAAAEAAAAAAA	0
 AAAAAAAAHAAAAAAA	0
 AAAAAAAAIAAAAAAA	0
 AAAAAAAAKAAAAAAA	0
+AAAAAAAABAAAAAAA	0
+AAAAAAAACAAAAAAA	0
 PREHOOK: query: explain
 select s_store_id, GROUPING__ID
  from store

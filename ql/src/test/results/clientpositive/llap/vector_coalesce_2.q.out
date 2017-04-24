@@ -104,9 +104,13 @@ GROUP BY str2
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@str_str_orc
 #### A masked pattern was here ####
-X	0.02
 y	0.0
+<<<<<<< HEAD
 PREHOOK: query: EXPLAIN
+=======
+X	0.02
+PREHOOK: query: EXPLAIN VECTORIZATION EXPRESSION
+>>>>>>> 10bd23eb5c... HIVE-16296 : use LLAP executor count to configure reducer auto-parallelism (Sergey Shelukhin, Gopal Vijayaraghavan, reviewed by Gopal Vijayaraghavan, Sergey Shelukhin, Gunther Hagleitner)
 SELECT COALESCE(str1, 0) as result
 from str_str_orc
 PREHOOK: type: QUERY
@@ -250,9 +254,13 @@ GROUP BY str2
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@str_str_orc
 #### A masked pattern was here ####
-X	0.02
 y	0.0
+<<<<<<< HEAD
 PREHOOK: query: EXPLAIN
+=======
+X	0.02
+PREHOOK: query: EXPLAIN VECTORIZATION EXPRESSION
+>>>>>>> 10bd23eb5c... HIVE-16296 : use LLAP executor count to configure reducer auto-parallelism (Sergey Shelukhin, Gopal Vijayaraghavan, reviewed by Gopal Vijayaraghavan, Sergey Shelukhin, Gunther Hagleitner)
 SELECT COALESCE(str1, 0) as result
 from str_str_orc
 PREHOOK: type: QUERY

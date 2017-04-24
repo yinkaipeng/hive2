@@ -228,15 +228,15 @@ POSTHOOK: Input: default@flights_tiny_orc
 #### A masked pattern was here ####
 2010-10-20	11
 2010-10-21	12
-2010-10-22	11
+2010-10-26	13
+2010-10-30	11
 2010-10-23	12
 2010-10-24	12
 2010-10-25	12
-2010-10-26	13
-2010-10-27	11
+2010-10-22	11
 2010-10-28	12
 2010-10-29	12
-2010-10-30	11
+2010-10-27	11
 2010-10-31	8
 PREHOOK: query: explain
 select * from flights_tiny_orc sort by fl_num, fl_date limit 25
@@ -415,15 +415,15 @@ POSTHOOK: Input: default@flights_tiny_orc
 #### A masked pattern was here ####
 2010-10-20	11
 2010-10-21	12
-2010-10-22	11
+2010-10-26	13
+2010-10-30	11
 2010-10-23	12
 2010-10-24	12
 2010-10-25	12
-2010-10-26	13
-2010-10-27	11
+2010-10-22	11
 2010-10-28	12
 2010-10-29	12
-2010-10-30	11
+2010-10-27	11
 2010-10-31	8
 PREHOOK: query: CREATE TABLE flights_tiny_orc_partitioned_date (
   origin_city_name STRING,
@@ -794,15 +794,15 @@ POSTHOOK: Input: default@flights_tiny_orc_partitioned_date@fl_date=2010-10-31
 #### A masked pattern was here ####
 2010-10-20	11
 2010-10-21	12
-2010-10-22	11
+2010-10-26	13
+2010-10-30	11
 2010-10-23	12
 2010-10-24	12
 2010-10-25	12
-2010-10-26	13
-2010-10-27	11
+2010-10-22	11
 2010-10-28	12
 2010-10-29	12
-2010-10-30	11
+2010-10-27	11
 2010-10-31	8
 PREHOOK: query: explain
 select * from flights_tiny_orc_partitioned_date
@@ -1219,15 +1219,15 @@ POSTHOOK: Input: default@flights_tiny_orc_partitioned_date@fl_date=2010-10-31
 #### A masked pattern was here ####
 2010-10-20	11
 2010-10-21	12
-2010-10-22	11
+2010-10-26	13
+2010-10-30	11
 2010-10-23	12
 2010-10-24	12
 2010-10-25	12
-2010-10-26	13
-2010-10-27	11
+2010-10-22	11
 2010-10-28	12
 2010-10-29	12
-2010-10-30	11
+2010-10-27	11
 2010-10-31	8
 PREHOOK: query: CREATE TABLE flights_tiny_orc_partitioned_timestamp (
   origin_city_name STRING,
@@ -1597,18 +1597,23 @@ POSTHOOK: Input: default@flights_tiny_orc_partitioned_timestamp@fl_time=2010-10-
 POSTHOOK: Input: default@flights_tiny_orc_partitioned_timestamp@fl_time=2010-10-31 07%3A00%3A00
 #### A masked pattern was here ####
 2010-10-20 07:00:00	11
-2010-10-21 07:00:00	12
-2010-10-22 07:00:00	11
 2010-10-23 07:00:00	12
-2010-10-24 07:00:00	12
 2010-10-25 07:00:00	12
+2010-10-22 07:00:00	11
 2010-10-26 07:00:00	13
+2010-10-29 07:00:00	12
+2010-10-31 07:00:00	8
+2010-10-21 07:00:00	12
+2010-10-24 07:00:00	12
 2010-10-27 07:00:00	11
 2010-10-28 07:00:00	12
-2010-10-29 07:00:00	12
 2010-10-30 07:00:00	11
+<<<<<<< HEAD
 2010-10-31 07:00:00	8
 PREHOOK: query: explain
+=======
+PREHOOK: query: explain vectorization expression
+>>>>>>> 10bd23eb5c... HIVE-16296 : use LLAP executor count to configure reducer auto-parallelism (Sergey Shelukhin, Gopal Vijayaraghavan, reviewed by Gopal Vijayaraghavan, Sergey Shelukhin, Gunther Hagleitner)
 select * from flights_tiny_orc_partitioned_timestamp
 PREHOOK: type: QUERY
 POSTHOOK: query: explain
@@ -2022,14 +2027,14 @@ POSTHOOK: Input: default@flights_tiny_orc_partitioned_timestamp@fl_time=2010-10-
 POSTHOOK: Input: default@flights_tiny_orc_partitioned_timestamp@fl_time=2010-10-31 07%3A00%3A00
 #### A masked pattern was here ####
 2010-10-20 07:00:00	11
-2010-10-21 07:00:00	12
-2010-10-22 07:00:00	11
 2010-10-23 07:00:00	12
-2010-10-24 07:00:00	12
 2010-10-25 07:00:00	12
+2010-10-22 07:00:00	11
 2010-10-26 07:00:00	13
+2010-10-29 07:00:00	12
+2010-10-31 07:00:00	8
+2010-10-21 07:00:00	12
+2010-10-24 07:00:00	12
 2010-10-27 07:00:00	11
 2010-10-28 07:00:00	12
-2010-10-29 07:00:00	12
 2010-10-30 07:00:00	11
-2010-10-31 07:00:00	8
