@@ -96,20 +96,23 @@ POSTHOOK: Lineage: hundredorc.si SIMPLE [(over1k)over1k.FieldSchema(name:si, typ
 POSTHOOK: Lineage: hundredorc.t SIMPLE [(over1k)over1k.FieldSchema(name:t, type:tinyint, comment:null), ]
 POSTHOOK: Lineage: hundredorc.ts SIMPLE [(over1k)over1k.FieldSchema(name:ts, type:timestamp, comment:null), ]
 PREHOOK: query: EXPLAIN 
-SELECT sum(hash(*))
+SELECT sum(hash(*)) k
 FROM hundredorc t1 JOIN hundredorc t2 ON t1.bin = t2.bin
+order by k
 PREHOOK: type: QUERY
 POSTHOOK: query: EXPLAIN 
-SELECT sum(hash(*))
+SELECT sum(hash(*)) k
 FROM hundredorc t1 JOIN hundredorc t2 ON t1.bin = t2.bin
+order by k
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
-  Stage-5 is a root stage
-  Stage-2 depends on stages: Stage-5
-  Stage-0 depends on stages: Stage-2
+  Stage-6 is a root stage
+  Stage-2 depends on stages: Stage-6
+  Stage-3 depends on stages: Stage-2
+  Stage-0 depends on stages: Stage-3
 
 STAGE PLANS:
-  Stage: Stage-5
+  Stage: Stage-6
     Map Reduce Local Work
       Alias -> Map Local Tables:
         $hdt$_0:$hdt$_0:t1 
@@ -177,6 +180,26 @@ STAGE PLANS:
           Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: NONE
           File Output Operator
             compressed: false
+            table:
+                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                serde: org.apache.hadoop.hive.serde2.lazybinary.LazyBinarySerDe
+
+  Stage: Stage-3
+    Map Reduce
+      Map Operator Tree:
+          TableScan
+            Reduce Output Operator
+              key expressions: _col0 (type: bigint)
+              sort order: +
+              Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: NONE
+      Reduce Operator Tree:
+        Select Operator
+          expressions: KEY.reducesinkkey0 (type: bigint)
+          outputColumnNames: _col0
+          Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: NONE
+          File Output Operator
+            compressed: false
             Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: NONE
             table:
                 input format: org.apache.hadoop.mapred.SequenceFileInputFormat
@@ -189,13 +212,15 @@ STAGE PLANS:
       Processor Tree:
         ListSink
 
-PREHOOK: query: SELECT sum(hash(*))
+PREHOOK: query: SELECT sum(hash(*)) k
 FROM hundredorc t1 JOIN hundredorc t2 ON t1.bin = t2.bin
+order by k
 PREHOOK: type: QUERY
 PREHOOK: Input: default@hundredorc
 #### A masked pattern was here ####
-POSTHOOK: query: SELECT sum(hash(*))
+POSTHOOK: query: SELECT sum(hash(*)) k
 FROM hundredorc t1 JOIN hundredorc t2 ON t1.bin = t2.bin
+order by k
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@hundredorc
 #### A masked pattern was here ####
@@ -204,15 +229,18 @@ PREHOOK: query: EXPLAIN
 SELECT count(*), bin
 FROM hundredorc
 GROUP BY bin
+order by bin
 PREHOOK: type: QUERY
 POSTHOOK: query: EXPLAIN 
 SELECT count(*), bin
 FROM hundredorc
 GROUP BY bin
+order by bin
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
   Stage-1 is a root stage
-  Stage-0 depends on stages: Stage-1
+  Stage-2 depends on stages: Stage-1
+  Stage-0 depends on stages: Stage-2
 
 STAGE PLANS:
   Stage: Stage-1
@@ -251,11 +279,32 @@ STAGE PLANS:
             Statistics: Num rows: 50 Data size: 14819 Basic stats: COMPLETE Column stats: NONE
             File Output Operator
               compressed: false
-              Statistics: Num rows: 50 Data size: 14819 Basic stats: COMPLETE Column stats: NONE
               table:
                   input format: org.apache.hadoop.mapred.SequenceFileInputFormat
                   output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
-                  serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
+                  serde: org.apache.hadoop.hive.serde2.lazybinary.LazyBinarySerDe
+
+  Stage: Stage-2
+    Map Reduce
+      Map Operator Tree:
+          TableScan
+            Reduce Output Operator
+              key expressions: _col1 (type: binary)
+              sort order: +
+              Statistics: Num rows: 50 Data size: 14819 Basic stats: COMPLETE Column stats: NONE
+              value expressions: _col0 (type: bigint)
+      Reduce Operator Tree:
+        Select Operator
+          expressions: VALUE._col0 (type: bigint), KEY.reducesinkkey0 (type: binary)
+          outputColumnNames: _col0, _col1
+          Statistics: Num rows: 50 Data size: 14819 Basic stats: COMPLETE Column stats: NONE
+          File Output Operator
+            compressed: false
+            Statistics: Num rows: 50 Data size: 14819 Basic stats: COMPLETE Column stats: NONE
+            table:
+                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
   Stage: Stage-0
     Fetch Operator
@@ -266,12 +315,14 @@ STAGE PLANS:
 PREHOOK: query: SELECT count(*), bin
 FROM hundredorc
 GROUP BY bin
+order by bin
 PREHOOK: type: QUERY
 PREHOOK: Input: default@hundredorc
 #### A masked pattern was here ####
 POSTHOOK: query: SELECT count(*), bin
 FROM hundredorc
 GROUP BY bin
+order by bin
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@hundredorc
 #### A masked pattern was here ####
