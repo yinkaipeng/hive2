@@ -44,8 +44,10 @@ set hive.cbo.returnpath.hiveop=true;
 
 create table srccc as select * from src;
 
+-- Skip semijoin by using keyword "None" as argument
+explain select /*+ semi(None)*/ count(*) from srcpart_date k join srcpart_small v on (k.str = v.key1);
 
-EXPLAIN select  /*+ semi(k, str, 5000)*/ count(*) from srcpart_date k join srcpart_small v on (k.str = v.key1) join alltypesorc_int i on (k.value = i.cstring);
+EXPLAIN select  /*+ semi(srcpart_date, str, 5000)*/ count(*) from srcpart_date join srcpart_small v on (srcpart_date.str = v.key1) join alltypesorc_int i on (srcpart_date.value = i.cstring);
 EXPLAIN select  /*+ semi(i, 3000)*/ count(*) from srcpart_date k join srcpart_small v on (k.str = v.key1) join alltypesorc_int i on (v.key1 = i.cstring);
 
 explain select /*+ semi(k, str, 5000)*/ count(*) from srcpart_date k join srcpart_small v on (k.str = v.key1);

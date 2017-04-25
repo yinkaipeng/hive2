@@ -123,6 +123,7 @@ hintArgName
     :
     identifier
     | Number
+    | KW_NONE
     ;
 
 selectItem

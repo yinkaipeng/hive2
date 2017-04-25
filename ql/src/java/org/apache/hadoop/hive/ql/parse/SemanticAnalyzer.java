@@ -8947,6 +8947,13 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       String alias = null;
       String colName = null;
       Tree args = hint.getChild(1);
+      if (args.getChildCount() == 1) {
+        String text = args.getChild(0).getText();
+        if (text.equalsIgnoreCase("None")) {
+          // Hint to disable semijoins.
+          return result;
+        }
+      }
       for (int i = 0; i < args.getChildCount(); i++) {
         // We can have table names, column names or sizes here (or incorrect hint if the user is so inclined).
         String text = args.getChild(i).getText();
