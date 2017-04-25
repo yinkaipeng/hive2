@@ -33,17 +33,7 @@ import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.ql.Context;
 import org.apache.hadoop.hive.ql.QueryProperties;
 import org.apache.hadoop.hive.ql.QueryState;
-import org.apache.hadoop.hive.ql.exec.AbstractMapJoinOperator;
-import org.apache.hadoop.hive.ql.exec.FetchTask;
-import org.apache.hadoop.hive.ql.exec.JoinOperator;
-import org.apache.hadoop.hive.ql.exec.ListSinkOperator;
-import org.apache.hadoop.hive.ql.exec.MapJoinOperator;
-import org.apache.hadoop.hive.ql.exec.Operator;
-import org.apache.hadoop.hive.ql.exec.ReduceSinkOperator;
-import org.apache.hadoop.hive.ql.exec.SMBMapJoinOperator;
-import org.apache.hadoop.hive.ql.exec.SelectOperator;
-import org.apache.hadoop.hive.ql.exec.TableScanOperator;
-import org.apache.hadoop.hive.ql.exec.Task;
+import org.apache.hadoop.hive.ql.exec.*;
 import org.apache.hadoop.hive.ql.hooks.LineageInfo;
 import org.apache.hadoop.hive.ql.hooks.ReadEntity;
 import org.apache.hadoop.hive.ql.metadata.Table;
@@ -129,6 +119,8 @@ public class ParseContext {
           new HashMap<ReduceSinkOperator, RuntimeValuesInfo>();
   private Set<ReduceSinkOperator> semijoinInitialRs = new HashSet<ReduceSinkOperator>();
   private Map<ReduceSinkOperator, SemiJoinBranchInfo> rsToSemiJoinBranchInfo =
+          new HashMap<>();
+  private Map<ExprNodeDesc, GroupByOperator> colExprToGBMap =
           new HashMap<>();
 
   public ParseContext() {
@@ -674,5 +666,13 @@ public class ParseContext {
 
   public Map<ReduceSinkOperator, SemiJoinBranchInfo> getRsToSemiJoinBranchInfo() {
     return rsToSemiJoinBranchInfo;
+  }
+
+  public void setColExprToGBMap(Map<ExprNodeDesc, GroupByOperator> colExprToGBMap) {
+    this.colExprToGBMap = colExprToGBMap;
+  }
+
+  public Map<ExprNodeDesc, GroupByOperator> getColExprToGBMap() {
+    return colExprToGBMap;
   }
 }
