@@ -354,13 +354,13 @@ STAGE PLANS:
       Map Operator Tree:
           TableScan
             alias: druid_table_1
-            filterExpr: ((__time) IN ('2010-01-01 00:00:00', '2011-01-01 00:00:00') or (robot = 'user1')) (type: boolean)
+            filterExpr: ((__time) IN (2010-01-01 00:00:00.0, 2011-01-01 00:00:00.0) or (robot = 'user1')) (type: boolean)
             properties:
               druid.query.json {"queryType":"select","dataSource":"wikipedia","descending":false,"intervals":["1900-01-01T00:00:00.000/3000-01-01T00:00:00.000"],"dimensions":["robot","namespace","anonymous","unpatrolled","page","language","newpage","user"],"metrics":["count","added","delta","variation","deleted"],"granularity":"all","pagingSpec":{"threshold":16384,"fromNext":true},"context":{"druid.query.fetch":false}}
               druid.query.type select
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             Filter Operator
-              predicate: ((__time) IN ('2010-01-01 00:00:00', '2011-01-01 00:00:00') or (robot = 'user1')) (type: boolean)
+              predicate: ((__time) IN (2010-01-01 00:00:00.0, 2011-01-01 00:00:00.0) or (robot = 'user1')) (type: boolean)
               Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
               Select Operator
                 expressions: __time (type: timestamp), robot (type: string)
