@@ -85,6 +85,11 @@ public class VectorHashKeyWrapperBatch extends VectorColumnSetInfo {
    * @throws HiveException
    */
   public void evaluateBatch(VectorizedRowBatch batch) throws HiveException {
+    if (keyCount == 0) {
+      // all keywrappers must be EmptyVectorHashKeyWrapper
+      return;
+    }
+
     for(int i = 0; i < keyExpressions.length; ++i) {
       keyExpressions[i].evaluate(batch);
     }

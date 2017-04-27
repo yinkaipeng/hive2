@@ -117,7 +117,7 @@ public class VectorColumnSetInfo {
    */
   protected KeyLookupHelper[] indexLookup;
 
-  private int keyCount;
+  protected int keyCount;
   private int addIndex;
 
   protected int longIndicesIndex;
