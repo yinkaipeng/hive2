@@ -59,6 +59,11 @@ public class VectorHashKeyWrapperBatch extends VectorColumnSetInfo {
    */
   private int keysFixedSize;
 
+  /**
+   * Shared hashcontext for all keys in this batch
+   */
+  private final VectorHashKeyWrapper.HashContext hashCtx = new VectorHashKeyWrapper.HashContext();
+
    /**
    * Returns the compiled fixed size for the key wrappers.
    * @return
@@ -749,7 +754,7 @@ public class VectorHashKeyWrapperBatch extends VectorColumnSetInfo {
   }
 
   public VectorHashKeyWrapper allocateKeyWrapper() {
-    return new VectorHashKeyWrapper(longIndices.length, doubleIndices.length,
+    return new VectorHashKeyWrapper(hashCtx, longIndices.length, doubleIndices.length,
         stringIndices.length, decimalIndices.length, timestampIndices.length,
         intervalDayTimeIndices.length);
   }
