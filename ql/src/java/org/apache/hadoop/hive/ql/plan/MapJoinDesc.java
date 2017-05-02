@@ -106,8 +106,9 @@ public class MapJoinDesc extends JoinDesc implements Serializable {
       final TableDesc keyTblDesc, final Map<Byte, List<ExprNodeDesc>> values,
       final List<TableDesc> valueTblDescs,final List<TableDesc> valueFilteredTblDescs,  List<String> outputColumnNames,
       final int posBigTable, final JoinCondDesc[] conds,
-      final Map<Byte, List<ExprNodeDesc>> filters, boolean noOuterJoin, String dumpFilePrefix) {
-    super(values, outputColumnNames, noOuterJoin, conds, filters, null);
+      final Map<Byte, List<ExprNodeDesc>> filters, boolean noOuterJoin, String dumpFilePrefix,
+      final long noConditionalTaskSize) {
+    super(values, outputColumnNames, noOuterJoin, conds, filters, null, noConditionalTaskSize);
     vectorDesc = new VectorMapJoinDesc();
     this.keys = keys;
     this.keyTblDesc = keyTblDesc;

@@ -57,7 +57,7 @@ import org.apache.hadoop.hive.ql.exec.SerializationUtilities;
 import org.apache.hadoop.hive.ql.exec.TableScanOperator;
 import org.apache.hadoop.hive.ql.exec.Task;
 import org.apache.hadoop.hive.ql.exec.Utilities;
-import org.apache.hadoop.hive.ql.exec.mapjoin.MapJoinMemoryExhaustionException;
+import org.apache.hadoop.hive.ql.exec.mapjoin.MapJoinMemoryExhaustionError;
 import org.apache.hadoop.hive.ql.io.AcidUtils;
 import org.apache.hadoop.hive.ql.io.HiveInputFormat;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
@@ -387,7 +387,7 @@ public class MapredLocalTask extends Task<MapredLocalWork> implements Serializab
           + Utilities.showTime(elapsed) + " sec.");
     } catch (Throwable throwable) {
       if (throwable instanceof OutOfMemoryError
-          || (throwable instanceof MapJoinMemoryExhaustionException)) {
+          || (throwable instanceof MapJoinMemoryExhaustionError)) {
         l4j.error("Hive Runtime Error: Map local work exhausted memory", throwable);
         return 3;
       } else {

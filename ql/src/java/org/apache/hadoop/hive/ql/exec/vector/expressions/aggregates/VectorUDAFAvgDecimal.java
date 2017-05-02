@@ -486,7 +486,7 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
   }
 
   @Override
-  public int getAggregationBufferFixedSize() {
+  public long getAggregationBufferFixedSize() {
     JavaDataModel model = JavaDataModel.get();
     return JavaDataModel.alignUp(
       model.object() +

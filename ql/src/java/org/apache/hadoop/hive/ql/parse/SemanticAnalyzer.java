@@ -8029,7 +8029,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     }
 
     JoinDesc desc = new JoinDesc(exprMap, outputColumnNames,
-        join.getNoOuterJoin(), joinCondns, filterMap, joinKeys);
+        join.getNoOuterJoin(), joinCondns, filterMap, joinKeys, 0);
     desc.setSemiJoinHints(join.getSemiJoinHint());
     desc.setReversedExprs(reversedExprs);
     desc.setFilterMap(join.getFilterMap());
