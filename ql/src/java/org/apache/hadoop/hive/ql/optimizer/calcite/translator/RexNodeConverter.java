@@ -76,8 +76,10 @@ import org.apache.hadoop.hive.ql.plan.ExprNodeSubQueryDesc;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFBaseBinary;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFBaseCompare;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDFBetween;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFCase;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDFIn;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFTimestamp;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFToBinary;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFToChar;
@@ -248,7 +250,8 @@ public class RexNodeConverter {
     boolean isWhenCase = tgtUdf instanceof GenericUDFWhen || tgtUdf instanceof GenericUDFCase;
     boolean isTransformableTimeStamp = func.getGenericUDF() instanceof GenericUDFUnixTimeStamp &&
             func.getChildren().size() != 0;
-
+    boolean isBetween = !isNumeric && tgtUdf instanceof GenericUDFBetween;
+    boolean isIN = !isNumeric && tgtUdf instanceof GenericUDFIn;
     if (isNumeric) {
       tgtDT = func.getTypeInfo();
 
@@ -266,22 +269,42 @@ public class RexNodeConverter {
     } else if (isTransformableTimeStamp) {
       // unix_timestamp(args) -> to_unix_timestamp(args)
       func = ExprNodeGenericFuncDesc.newInstance(new GenericUDFToUnixTimeStamp(), func.getChildren());
+    } else if (isBetween) {
+      assert func.getChildren().size() == 4;
+      // We skip first child as is not involved (is the revert boolean)
+      // The target type needs to account for all 3 operands
+      tgtDT = FunctionRegistry.getCommonClassForComparison(
+              func.getChildren().get(1).getTypeInfo(),
+              FunctionRegistry.getCommonClassForComparison(
+                      func.getChildren().get(2).getTypeInfo(),
+                      func.getChildren().get(3).getTypeInfo()
+              )
+      );
+    } else if (isIN) {
+      // We're only considering the first element of the IN list for the type
+      assert func.getChildren().size() > 1;
+      tgtDT = FunctionRegistry.getCommonClassForComparison(func.getChildren().get(0)
+              .getTypeInfo(), func.getChildren().get(1).getTypeInfo());
     }
 
-    for (ExprNodeDesc childExpr : func.getChildren()) {
+    for (int i =0; i < func.getChildren().size(); ++i) {
+      ExprNodeDesc childExpr = func.getChildren().get(i);
       tmpExprNode = childExpr;
       if (tgtDT != null
           && TypeInfoUtils.isConversionRequiredForComparison(tgtDT, childExpr.getTypeInfo())) {
-        if (isCompare) {
+        if (isCompare || isBetween || isIN) {
           // For compare, we will convert requisite children
-          tmpExprNode = ParseUtils.createConversionCast(childExpr, (PrimitiveTypeInfo) tgtDT);
+          // For BETWEEN skip the first child (the revert boolean)
+          if (!isBetween || i > 0) {
+            tmpExprNode = ParseUtils.createConversionCast(childExpr, (PrimitiveTypeInfo) tgtDT);
+          }
         } else if (isNumeric) {
           // For numeric, we'll do minimum necessary cast - if we cast to the type
           // of expression, bad things will happen.
           PrimitiveTypeInfo minArgType = ExprNodeDescUtils.deriveMinArgumentCast(childExpr, tgtDT);
           tmpExprNode = ParseUtils.createConversionCast(childExpr, minArgType);
         } else {
-          throw new AssertionError("Unexpected " + tgtDT + " - not a numeric op or compare");
+          throw new AssertionError("Unexpected test" + tgtDT + " - not a numeric op or compare");
         }
       }
 
