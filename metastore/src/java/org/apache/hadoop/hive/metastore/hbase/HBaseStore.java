@@ -2707,4 +2707,11 @@ public class HBaseStore implements RawStore {
     throws InvalidObjectException, MetaException {
     // TODO: WTF?
   }
+
+  @Override
+  public Map<String, ColumnStatisticsObj> getAggrColStatsForTablePartitions(String dbName,
+      String tableName) throws MetaException, NoSuchObjectException {
+    // TODO: see if it makes sense to implement this here
+    return null;
+  }
 }
