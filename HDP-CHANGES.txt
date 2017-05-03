@@ -121,6 +121,7 @@ NEW FEATURES & BUG FIXES
     HIVE-15969: Failures in TestRemoteHiveMetaStore, TestSetUGIOnOnlyServer
     HIVE-15877: Upload dependency jars for druid storage handler
     HIVE-15971: LLAP: logs urls should use daemon container id instead of fake container id
+    HIVE-16044: LLAP: Shuffle Handler keep-alive connections are closed from the server side
       
 Pre-HDP-2.5.4:
     HIVE-14428: HadoopMetrics2Reporter leaks memory if the metrics sink is not configured correctly
