@@ -500,6 +500,7 @@ public abstract class TaskCompiler {
     clone.setSemijoinInitialRs(pCtx.getSemijoinInitialRs());
     clone.setRsToSemiJoinBranchInfo(pCtx.getRsToSemiJoinBranchInfo());
     clone.setColExprToGBMap(pCtx.getColExprToGBMap());
+    clone.setSemiJoinHints(pCtx.getSemiJoinHints());
 
     return clone;
   }

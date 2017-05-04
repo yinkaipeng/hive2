@@ -220,8 +220,10 @@ public class DynamicPartitionPruningOptimization implements NodeProcessor {
             }
             String tableAlias = (op == null ? "" : ((TableScanOperator) op).getConf().getAlias());
             keyBaseAlias = ctx.generator.getOperatorId() + "_" + tableAlias + "_" + column;
-            Map<String, SemiJoinHint> hints = ctx.desc.getHints();
+            Map<String, SemiJoinHint> hints = parseContext.getSemiJoinHints();
             if (hints != null) {
+              // If hints map has no entry that would imply that user enforced
+              // no runtime filtering.
               if (hints.size() > 0) {
                 SemiJoinHint sjHint = hints.get(tableAlias);
 
