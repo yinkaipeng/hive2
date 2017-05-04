@@ -58,7 +58,7 @@ STAGE PLANS:
             alias: orc_decimal
             Statistics: Num rows: 4 Data size: 448 Basic stats: COMPLETE Column stats: NONE
             Filter Operator
-              predicate: (id) IN ('100000000', '200000000') (type: boolean)
+              predicate: (id) IN (100000000, 200000000) (type: boolean)
               Statistics: Num rows: 2 Data size: 224 Basic stats: COMPLETE Column stats: NONE
               Select Operator
                 expressions: id (type: decimal(18,0))
@@ -71,6 +71,7 @@ STAGE PLANS:
                       input format: org.apache.hadoop.mapred.SequenceFileInputFormat
                       output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
                       serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
+      Execution mode: vectorized
 
   Stage: Stage-0
     Fetch Operator
