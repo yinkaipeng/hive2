@@ -94,6 +94,7 @@ public class TestDbTxnManager2 {
     } catch (SQLException e) {
       if (!("X0Y32".equals(e.getSQLState()) && 30000 == e.getErrorCode())) {
         throw e;
+      }
     }
     SessionState ss = SessionState.get();
     ss.initTxnMgr(conf);
