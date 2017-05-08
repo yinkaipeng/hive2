@@ -202,6 +202,58 @@ public class TestReplicationScenarios {
   }
 
   @Test
+  public void testBootstrapLoadOnExistingDb() throws IOException {
+    String testName = "bootstrapLoadOnExistingDb";
+    LOG.info("Testing "+testName);
+    String dbName = testName + "_" + tid;
+
+    run("CREATE DATABASE " + dbName);
+    run("CREATE TABLE " + dbName + ".unptned(a string) STORED AS TEXTFILE");
+
+    String[] unptn_data = new String[]{ "eleven" , "twelve" };
+    String unptn_locn = new Path(TEST_PATH , testName + "_unptn").toUri().getPath();
+    createTestDataFile(unptn_locn, unptn_data);
+
+    run("LOAD DATA LOCAL INPATH '" + unptn_locn + "' OVERWRITE INTO TABLE " + dbName + ".unptned");
+    verifySetup("SELECT * from " + dbName + ".unptned ORDER BY a", unptn_data);
+
+    // Create an empty database to load
+    run("CREATE DATABASE " + dbName + "_empty");
+
+    advanceDumpDir();
+    run("REPL DUMP " + dbName);
+    String replDumpLocn = getResult(0,0);
+    String replDumpId = getResult(0,1,true);
+    // Load to an empty database
+    run("REPL LOAD " + dbName + "_empty FROM '" + replDumpLocn + "'");
+
+    // REPL STATUS should return same repl ID as dump
+    verifyRun("REPL STATUS " + dbName + "_empty", replDumpId);
+    verifyRun("SELECT * from " + dbName + "_empty.unptned", unptn_data);
+
+    String[] nullReplId = new String[]{ "NULL" };
+
+    // Create a database with a table
+    run("CREATE DATABASE " + dbName + "_withtable");
+    run("CREATE TABLE " + dbName + "_withtable.unptned(a string) STORED AS TEXTFILE");
+    // Load using same dump to a DB with table. It should fail as DB is not empty.
+    verifyFail("REPL LOAD " + dbName + "_withtable FROM '" + replDumpLocn + "'");
+
+    // REPL STATUS should return NULL
+    verifyRun("REPL STATUS " + dbName + "_withtable", nullReplId);
+
+    // Create a database with a view
+    run("CREATE DATABASE " + dbName + "_withview");
+    run("CREATE TABLE " + dbName + "_withview.unptned(a string) STORED AS TEXTFILE");
+    run("CREATE VIEW " + dbName + "_withview.view AS SELECT * FROM " + dbName + "_withview.unptned");
+    // Load using same dump to a DB with view. It should fail as DB is not empty.
+    verifyFail("REPL LOAD " + dbName + "_withview FROM '" + replDumpLocn + "'");
+
+    // REPL STATUS should return NULL
+    verifyRun("REPL STATUS " + dbName + "_withview", nullReplId);
+  }
+
+  @Test
   public void testIncrementalAdds() throws IOException {
     String testName = "incrementalAdds";
     LOG.info("Testing "+testName);
@@ -1531,6 +1583,18 @@ public class TestReplicationScenarios {
   private void verifyRun(String cmd, String[] data) throws IOException {
     run(cmd);
     verifyResults(data);
+  }
+
+  private void verifyFail(String cmd) throws RuntimeException {
+    boolean success = false;
+    try {
+      success = run(cmd,false);
+    } catch (AssertionError ae){
+      LOG.warn("AssertionError:",ae);
+      throw new RuntimeException(ae);
+    }
+
+    assertFalse(success);
   }
 
   private static void run(String cmd) throws RuntimeException {
