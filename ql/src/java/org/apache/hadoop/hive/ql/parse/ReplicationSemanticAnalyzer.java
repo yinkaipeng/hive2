@@ -1212,7 +1212,7 @@ public class ReplicationSemanticAnalyzer extends BaseSemanticAnalyzer {
 
   // Use for specifying object state as well as event state
   private ReplicationSpec getNewReplicationSpec(String evState, String objState) throws SemanticException {
-    return new ReplicationSpec(true, false, evState, objState, false, true, false);
+    return new ReplicationSpec(true, false, evState, objState, false, true, true);
   }
 
   // Use for replication states focused on event only, where the obj state will be the event state

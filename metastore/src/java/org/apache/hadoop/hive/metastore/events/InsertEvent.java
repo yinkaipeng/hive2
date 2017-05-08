@@ -36,6 +36,7 @@ public class InsertEvent extends ListenerEvent {
   private final String db;
   private final String table;
   private final Map<String, String> keyValues;
+  private final boolean replace;
   private final List<String> files;
   private List<String> fileChecksums = new ArrayList<String>();
 
@@ -54,6 +55,9 @@ public class InsertEvent extends ListenerEvent {
     super(status, handler);
     this.db = db;
     this.table = table;
+
+    // If replace flag is not set by caller, then by default set it to true to maintain backward compatibility
+    this.replace = (insertData.isSetReplace() ? insertData.isReplace() : true);
     this.files = insertData.getFilesAdded();
     Table t = handler.get_table(db,table);
     keyValues = new LinkedHashMap<String, String>();
@@ -70,6 +74,7 @@ public class InsertEvent extends ListenerEvent {
   public String getDb() {
     return db;
   }
+
   /**
    * @return The table.
    */
@@ -82,6 +87,13 @@ public class InsertEvent extends ListenerEvent {
    */
   public Map<String, String> getPartitionKeyValues() {
     return keyValues;
+  }
+
+  /**
+   * @return The replace flag.
+   */
+  public boolean isReplace() {
+    return replace;
   }
 
   /**
