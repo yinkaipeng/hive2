@@ -31,6 +31,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.common.FileUtils;
@@ -47,6 +48,7 @@ import org.apache.hadoop.hive.common.metrics.common.MetricsFactory;
 import org.apache.hadoop.hive.common.metrics.common.MetricsVariable;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
+import org.apache.hadoop.hive.io.HdfsUtils;
 import org.apache.hadoop.hive.metastore.api.*;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.metastore.events.AddIndexEvent;
@@ -1887,6 +1889,163 @@ public class HiveMetaStore extends ThriftHiveMetastore {
 
     }
 
+    private void updateStatsForTruncate(Map<String,String> props, EnvironmentContext environmentContext) {
+      if (null == props) {
+        return;
+      }
+      for (String stat : StatsSetupConst.supportedStats) {
+        String statVal = props.get(stat);
+        if (statVal != null) {
+          //In the case of truncate table, we set the stats to be 0.
+          props.put(stat, "0");
+        }
+      }
+      //first set basic stats to true
+      StatsSetupConst.setBasicStatsState(props, StatsSetupConst.TRUE);
+      environmentContext.putToProperties(StatsSetupConst.STATS_GENERATED, StatsSetupConst.TASK);
+      //then invalidate column stats
+      StatsSetupConst.clearColumnStatsState(props);
+      return;
+    }
+
+    private void alterPartitionForTruncate(final RawStore ms,
+                                           final String dbName,
+                                           final String tableName,
+                                           final Table table,
+                                           final Partition partition) throws Exception {
+      EnvironmentContext environmentContext = new EnvironmentContext();
+      updateStatsForTruncate(partition.getParameters(), environmentContext);
+
+      if (!transactionalListeners.isEmpty()) {
+        for (MetaStoreEventListener listener : transactionalListeners) {
+          AlterPartitionEvent alterPartitionEvent =
+                  new AlterPartitionEvent(partition, partition, table, true, true, this);
+          alterPartitionEvent.setEnvironmentContext(environmentContext);
+          listener.onAlterPartition(alterPartitionEvent);
+        }
+      }
+
+      if (!listeners.isEmpty()) {
+        for (MetaStoreEventListener listener : listeners) {
+          AlterPartitionEvent alterPartitionEvent =
+                  new AlterPartitionEvent(partition, partition, table, true, true, this);
+          alterPartitionEvent.setEnvironmentContext(environmentContext);
+          listener.onAlterPartition(alterPartitionEvent);
+        }
+      }
+
+      alterHandler.alterPartition(ms, wh, dbName, tableName, null, partition, environmentContext, this);
+    }
+
+    private void alterTableStatsForTruncate(final RawStore ms,
+                                            final String dbName,
+                                            final String tableName,
+                                            final Table table,
+                                            final List<String> partNames) throws Exception {
+      if (partNames == null) {
+        if (0 != table.getPartitionKeysSize()) {
+          for (Partition partition : ms.getPartitions(dbName, tableName, Integer.MAX_VALUE)) {
+            alterPartitionForTruncate(ms, dbName, tableName, table, partition);
+          }
+        } else {
+          EnvironmentContext environmentContext = new EnvironmentContext();
+          updateStatsForTruncate(table.getParameters(), environmentContext);
+
+          if (!transactionalListeners.isEmpty()) {
+            for (MetaStoreEventListener listener : transactionalListeners) {
+              AlterTableEvent alterTableEvent =
+                      new AlterTableEvent(table, table, true, true, this);
+              alterTableEvent.setEnvironmentContext(environmentContext);
+              listener.onAlterTable(alterTableEvent);
+            }
+          }
+
+          if (!listeners.isEmpty()) {
+            for (MetaStoreEventListener listener : listeners) {
+              AlterTableEvent alterTableEvent =
+                      new AlterTableEvent(table, table, true, true, this);
+              alterTableEvent.setEnvironmentContext(environmentContext);
+              listener.onAlterTable(alterTableEvent);
+            }
+          }
+
+          alterHandler.alterTable(ms, wh, dbName, tableName, table, environmentContext, this);
+        }
+      } else {
+        for (Partition partition : ms.getPartitionsByNames(dbName, tableName, partNames)) {
+          alterPartitionForTruncate(ms, dbName, tableName, table, partition);
+        }
+      }
+      return;
+    }
+
+    private List<Path> getLocationsForTruncate(final RawStore ms,
+                                               final String dbName,
+                                               final String tableName,
+                                               final Table table,
+                                               final List<String> partNames) throws Exception {
+      List<Path> locations = new ArrayList<Path>();
+      if (partNames == null) {
+        if (0 != table.getPartitionKeysSize()) {
+          for (Partition partition : ms.getPartitions(dbName, tableName, Integer.MAX_VALUE)) {
+            locations.add(new Path(partition.getSd().getLocation()));
+          }
+        } else {
+          locations.add(new Path(table.getSd().getLocation()));
+        }
+      } else {
+        for (Partition partition : ms.getPartitionsByNames(dbName, tableName, partNames)) {
+          locations.add(new Path(partition.getSd().getLocation()));
+        }
+      }
+      return locations;
+    }
+
+    @Override
+    public void truncate_table(final String dbName, final String tableName, List<String> partNames)
+      throws NoSuchObjectException, MetaException {
+      try {
+        Table tbl = get_table_core(dbName, tableName);
+        boolean isAutopurge = (tbl.isSetParameters() && "true".equalsIgnoreCase(tbl.getParameters().get("auto.purge")));
+
+        // This is not transactional
+        for (Path location : getLocationsForTruncate(getMS(), dbName, tableName, tbl, partNames)) {
+          FileSystem fs = location.getFileSystem(getHiveConf());
+          HadoopShims.HdfsEncryptionShim shim
+                  = ShimLoader.getHadoopShims().createHdfsEncryptionShim(fs, getHiveConf());
+          if (!shim.isPathEncrypted(location)) {
+            HdfsUtils.HadoopFileStatus status = new HdfsUtils.HadoopFileStatus(getHiveConf(), fs, location);
+            FileStatus targetStatus = fs.getFileStatus(location);
+            String targetGroup = targetStatus == null ? null : targetStatus.getGroup();
+            wh.deleteDir(location, true, isAutopurge);
+            fs.mkdirs(location);
+            HdfsUtils.setFullFileStatus(getHiveConf(), status, targetGroup, fs, location, false);
+          } else {
+            FileStatus[] statuses = fs.listStatus(location, FileUtils.HIDDEN_FILES_PATH_FILTER);
+            if (statuses == null || statuses.length == 0) {
+              continue;
+            }
+            for (final FileStatus status : statuses) {
+              wh.deleteDir(status.getPath(), true, isAutopurge);
+            }
+          }
+        }
+
+        // Alter the table/partition stats and also notify truncate table event
+        alterTableStatsForTruncate(getMS(), dbName, tableName, tbl, partNames);
+      } catch (IOException e) {
+        throw new MetaException(e.getMessage());
+      } catch (Exception e) {
+        if (e instanceof MetaException) {
+          throw (MetaException) e;
+        } else if (e instanceof NoSuchObjectException) {
+          throw (NoSuchObjectException) e;
+        } else {
+          throw newMetaException(e);
+        }
+      }
+    }
+
     /**
      * Is this an external table?
      *
@@ -3602,7 +3761,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
             table = getMS().getTable(db_name, tbl_name);
           }
           AlterPartitionEvent alterPartitionEvent =
-              new AlterPartitionEvent(oldPart, new_part, table, true, this);
+              new AlterPartitionEvent(oldPart, new_part, table, false, true, this);
           alterPartitionEvent.setEnvironmentContext(envContext);
           listener.onAlterPartition(alterPartitionEvent);
         }
@@ -3673,7 +3832,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
               table = getMS().getTable(db_name, tbl_name);
             }
             AlterPartitionEvent alterPartitionEvent =
-                new AlterPartitionEvent(oldTmpPart, tmpPart, table, true, this);
+                new AlterPartitionEvent(oldTmpPart, tmpPart, table, false, true, this);
             listener.onAlterPartition(alterPartitionEvent);
           }
         }
@@ -3814,7 +3973,7 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         success = true;
         for (MetaStoreEventListener listener : listeners) {
           AlterTableEvent alterTableEvent =
-              new AlterTableEvent(oldt, newTable, success, this);
+              new AlterTableEvent(oldt, newTable, false, success, this);
           alterTableEvent.setEnvironmentContext(envContext);
           listener.onAlterTable(alterTableEvent);
         }

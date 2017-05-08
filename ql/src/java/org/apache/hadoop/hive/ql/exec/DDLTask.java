@@ -4458,23 +4458,8 @@ public class DDLTask extends Task<DDLWork> implements Serializable {
     String tableName = truncateTableDesc.getTableName();
     Map<String, String> partSpec = truncateTableDesc.getPartSpec();
 
-    Table table = db.getTable(tableName, true);
-
     try {
-      // this is not transactional
-      for (Path location : getLocations(db, table, partSpec)) {
-        FileSystem fs = location.getFileSystem(conf);
-        HdfsUtils.HadoopFileStatus status = new HdfsUtils.HadoopFileStatus(conf, fs, location);
-        FileStatus targetStatus = fs.getFileStatus(location);
-        String targetGroup = targetStatus == null ? null : targetStatus.getGroup();
-        fs.delete(location, true);
-        fs.mkdirs(location);
-        try {
-          HdfsUtils.setFullFileStatus(conf, status, targetGroup, fs, location, false);
-        } catch (Exception e) {
-          LOG.warn("Error setting permissions of " + location, e);
-        }
-      }
+      db.truncateTable(tableName, partSpec);
     } catch (Exception e) {
       throw new HiveException(e, ErrorMsg.GENERIC_ERROR);
     }
@@ -4487,74 +4472,22 @@ public class DDLTask extends Task<DDLWork> implements Serializable {
     Table destTable = exchangePartition.getDestinationTable();
     Table sourceTable = exchangePartition.getSourceTable();
     List<Partition> partitions =
-        db.exchangeTablePartitions(partitionSpecs, sourceTable.getDbName(),
-        sourceTable.getTableName(),destTable.getDbName(),
-        destTable.getTableName());
+            db.exchangeTablePartitions(partitionSpecs, sourceTable.getDbName(),
+                    sourceTable.getTableName(), destTable.getDbName(),
+                    destTable.getTableName());
 
-    for(Partition partition : partitions) {
+    for (Partition partition : partitions) {
       // Reuse the partition specs from dest partition since they should be the same
       work.getInputs().add(new ReadEntity(new Partition(sourceTable, partition.getSpec(), null)));
 
       addIfAbsentByName(new WriteEntity(new Partition(sourceTable, partition.getSpec(), null),
-          WriteEntity.WriteType.DELETE));
+              WriteEntity.WriteType.DELETE));
 
       addIfAbsentByName(new WriteEntity(new Partition(destTable, partition.getSpec(), null),
-          WriteEntity.WriteType.INSERT));
+              WriteEntity.WriteType.INSERT));
     }
 
     return 0;
-  }
-
-  private List<Path> getLocations(Hive db, Table table, Map<String, String> partSpec)
-      throws HiveException, InvalidOperationException {
-    List<Path> locations = new ArrayList<Path>();
-    if (partSpec == null) {
-      if (table.isPartitioned()) {
-        for (Partition partition : db.getPartitions(table)) {
-          locations.add(partition.getDataLocation());
-          EnvironmentContext environmentContext = new EnvironmentContext();
-          if (needToUpdateStats(partition.getParameters(), environmentContext)) {
-            db.alterPartition(table.getDbName(), table.getTableName(), partition, environmentContext);
-          }
-        }
-      } else {
-        locations.add(table.getPath());
-        EnvironmentContext environmentContext = new EnvironmentContext();
-        if (needToUpdateStats(table.getParameters(), environmentContext)) {
-          db.alterTable(table.getDbName()+"."+table.getTableName(), table, environmentContext);
-        }
-      }
-    } else {
-      for (Partition partition : db.getPartitionsByNames(table, partSpec)) {
-        locations.add(partition.getDataLocation());
-        EnvironmentContext environmentContext = new EnvironmentContext();
-        if (needToUpdateStats(partition.getParameters(), environmentContext)) {
-          db.alterPartition(table.getDbName(), table.getTableName(), partition, environmentContext);
-        }
-      }
-    }
-    return locations;
-  }
-
-  private boolean needToUpdateStats(Map<String,String> props, EnvironmentContext environmentContext) {
-    if (null == props) {
-      return false;
-    }
-    boolean statsPresent = false;
-    for (String stat : StatsSetupConst.supportedStats) {
-      String statVal = props.get(stat);
-      if (statVal != null && Long.parseLong(statVal) > 0) {
-        statsPresent = true;
-        //In the case of truncate table, we set the stats to be 0.
-        props.put(stat, "0");
-      }
-    }
-    //first set basic stats to true
-    StatsSetupConst.setBasicStatsState(props, StatsSetupConst.TRUE);
-    environmentContext.putToProperties(StatsSetupConst.STATS_GENERATED, StatsSetupConst.TASK);
-    //then invalidate column stats
-    StatsSetupConst.clearColumnStatsState(props);
-    return statsPresent;
   }
 
   private String escapeHiveCommand(String str) {

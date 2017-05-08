@@ -151,7 +151,6 @@ enum EventRequestType {
     DELETE = 3,
 }
 
-
 struct HiveObjectRef{
   1: HiveObjectType objectType,
   2: string dbName,
@@ -303,7 +302,7 @@ struct Table {
   9: map<string, string> parameters,   // to store comments or any other user level parameters
   10: string viewOriginalText,         // original view text, null for non-view
   11: string viewExpandedText,         // expanded view text, null for non-view
-  12: string tableType,                 // table type enum, e.g. EXTERNAL_TABLE
+  12: string tableType,                // table type enum, e.g. EXTERNAL_TABLE
   13: optional PrincipalPrivilegeSet privileges,
   14: optional bool temporary=false
 }
@@ -1043,6 +1042,8 @@ service ThriftHiveMetastore extends fb303.FacebookService
   void drop_table_with_environment_context(1:string dbname, 2:string name, 3:bool deleteData,
       4:EnvironmentContext environment_context)
                        throws(1:NoSuchObjectException o1, 2:MetaException o3)
+  void truncate_table(1:string dbName, 2:string tableName, 3:list<string> partNames)
+                          throws(1:MetaException o1)
   list<string> get_tables(1: string db_name, 2: string pattern) throws (1: MetaException o1)
   list<TableMeta> get_table_meta(1: string db_patterns, 2: string tbl_patterns, 3: list<string> tbl_types)
                        throws (1: MetaException o1)
