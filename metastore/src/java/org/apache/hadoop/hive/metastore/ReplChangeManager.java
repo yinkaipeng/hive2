@@ -179,6 +179,10 @@ public class ReplChangeManager {
     return checksumString;
   }
 
+  static public void setCmRoot(Path cmRoot) {
+    ReplChangeManager.cmroot = cmRoot;
+  }
+
   /***
    * Convert a path of file inside a partition or table (if non-partitioned)
    *   to a deterministic location of cmroot. So user can retrieve the file back
