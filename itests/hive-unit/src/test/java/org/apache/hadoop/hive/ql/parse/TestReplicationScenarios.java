@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hadoop.hive.ql;
+package org.apache.hadoop.hive.ql.parse;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -28,12 +28,14 @@ import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.NotificationEvent;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.metastore.messaging.MessageFactory;
 import org.apache.hadoop.hive.metastore.messaging.event.filters.AndFilter;
 import org.apache.hadoop.hive.metastore.messaging.event.filters.DatabaseAndTableFilter;
 import org.apache.hadoop.hive.metastore.messaging.event.filters.EventBoundaryFilter;
 import org.apache.hadoop.hive.metastore.messaging.event.filters.MessageFormatFilter;
-import org.apache.hadoop.hive.metastore.messaging.MessageFactory;
-import org.apache.hadoop.hive.ql.parse.ReplicationSemanticAnalyzer;
+import org.apache.hadoop.hive.ql.CommandNeedRetryException;
+import org.apache.hadoop.hive.ql.Driver;
+import org.apache.hadoop.hive.ql.WindowsPathUtil;
 import org.apache.hadoop.hive.ql.parse.ReplicationSpec.ReplStateMap;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
 import org.apache.hadoop.hive.ql.session.SessionState;
@@ -57,8 +59,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -150,21 +152,17 @@ public class TestReplicationScenarios {
     ReplicationSemanticAnalyzer.injectNextDumpDirForTest(String.valueOf(next));
   }
 
-  //@Test
-  //This testcase is commented as it uses UDF library on java 1.8 which is not supported.
-  //Another JIRA BUG-80469 will track this.
-  public void testFunctionReplicationAsPartOfBootstrap() throws IOException {
-    String dbName = createDB(testName.getMethodName());
-    run("CREATE FUNCTION " + dbName
-        + ".testFunction as 'com.yahoo.sketches.hive.theta.DataToSketchUDAF' "
-        + "using jar  'ivy://com.yahoo.datasketches:sketches-hive:0.8.2'");
+  static class Tuple {
+    final String replicatedDbName;
+    final String lastReplicationId;
 
-    String replicatedDbName = loadAndVerify(dbName);
-    run("SHOW FUNCTIONS LIKE '" + replicatedDbName + "*'");
-    verifyResults(new String[] { replicatedDbName + ".testFunction" });
+    Tuple(String replicatedDbName, String lastReplicationId) {
+      this.replicatedDbName = replicatedDbName;
+      this.lastReplicationId = lastReplicationId;
+    }
   }
 
-  private String loadAndVerify(String dbName) throws IOException {
+  private Tuple loadAndVerify(String dbName) throws IOException {
     advanceDumpDir();
     run("REPL DUMP " + dbName);
     String dumpLocation = getResult(0, 0);
@@ -174,9 +172,8 @@ public class TestReplicationScenarios {
     printOutput();
     run("REPL LOAD " + replicatedDbName + " FROM '" + dumpLocation + "'");
     verifyRun("REPL STATUS " + replicatedDbName, lastReplicationId);
-    return replicatedDbName;
+    return new Tuple(replicatedDbName, lastReplicationId);
   }
-
 
   /**
    * Tests basic operation - creates a db, with 4 tables, 2 ptned and 2 unptned.
@@ -215,7 +212,7 @@ public class TestReplicationScenarios {
     verifySetup("SELECT a from " + dbName + ".ptned_empty", empty);
     verifySetup("SELECT * from " + dbName + ".unptned_empty", empty);
 
-    String replicatedDbName = loadAndVerify(dbName);
+    String replicatedDbName = loadAndVerify(dbName).replicatedDbName;
 
     verifyRun("SELECT * from " + replicatedDbName + ".unptned", unptn_data);
     verifyRun("SELECT a from " + replicatedDbName + ".ptned WHERE b=1", ptn_data_1);

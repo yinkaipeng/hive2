@@ -25,11 +25,10 @@ import org.apache.hadoop.hive.ql.plan.DDLWork;
 import org.apache.hadoop.hive.ql.plan.TruncateTableDesc;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-class TruncateTableHandler extends AbstractMessageHandler {
+public class TruncateTableHandler extends AbstractMessageHandler {
   @Override
   public List<Task<? extends Serializable>> handle(Context context) throws SemanticException {
     AlterTableMessage msg = deserializer.getAlterTableMessage(context.dmd.getPayload());
@@ -46,8 +45,6 @@ class TruncateTableHandler extends AbstractMessageHandler {
     context.log.debug("Added truncate tbl task : {}:{}", truncateTableTask.getId(),
         truncateTableDesc.getTableName());
     databasesUpdated.put(actualDbName, context.dmd.getEventTo());
-    List<Task<? extends Serializable>> tasks = new ArrayList<Task<? extends Serializable>>();
-    tasks.add(truncateTableTask);
-    return tasks;
+    return Collections.<Task<? extends Serializable>>singletonList(truncateTableTask);
   }
 }

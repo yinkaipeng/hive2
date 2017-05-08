@@ -26,9 +26,13 @@ import org.apache.hadoop.hive.ql.plan.DDLWork;
 import org.apache.hadoop.hive.ql.plan.TruncateTableDesc;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-class TruncatePartitionHandler extends AbstractMessageHandler {
+public class TruncatePartitionHandler extends AbstractMessageHandler {
   @Override
   public List<Task<? extends Serializable>> handle(Context context) throws SemanticException {
     AlterPartitionMessage msg = deserializer.getAlterPartitionMessage(context.dmd.getPayload());
@@ -60,8 +64,6 @@ class TruncatePartitionHandler extends AbstractMessageHandler {
     context.log.debug("Added truncate ptn task : {}:{}", truncatePtnTask.getId(),
         truncateTableDesc.getTableName());
     databasesUpdated.put(actualDbName, context.dmd.getEventTo());
-    List<Task<? extends Serializable>> tasks = new ArrayList<Task<? extends Serializable>>();
-    tasks.add(truncatePtnTask);
-    return tasks;
+    return Collections.<Task<? extends Serializable>>singletonList(truncatePtnTask);
   }
 }

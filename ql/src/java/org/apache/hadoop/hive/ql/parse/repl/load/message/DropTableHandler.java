@@ -25,11 +25,10 @@ import org.apache.hadoop.hive.ql.plan.DDLWork;
 import org.apache.hadoop.hive.ql.plan.DropTableDesc;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-class DropTableHandler extends AbstractMessageHandler {
+public class DropTableHandler extends AbstractMessageHandler {
   @Override
   public List<Task<? extends Serializable>> handle(Context context)
       throws SemanticException {
@@ -47,8 +46,6 @@ class DropTableHandler extends AbstractMessageHandler {
     context.log
         .debug("Added drop tbl task : {}:{}", dropTableTask.getId(), dropTableDesc.getTableName());
     databasesUpdated.put(actualDbName, context.dmd.getEventTo());
-    List<Task<? extends Serializable>> tasks = new ArrayList<Task<? extends Serializable>>();
-    tasks.add(dropTableTask);
-    return tasks;
+    return Collections.<Task<? extends Serializable>>singletonList(dropTableTask);
   }
 }

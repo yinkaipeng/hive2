@@ -27,9 +27,13 @@ import org.apache.hadoop.hive.ql.plan.DDLWork;
 import org.apache.hadoop.hive.ql.plan.RenamePartitionDesc;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-class RenamePartitionHandler extends AbstractMessageHandler {
+public class RenamePartitionHandler extends AbstractMessageHandler {
   @Override
   public List<Task<? extends Serializable>> handle(Context context)
       throws SemanticException {
@@ -65,8 +69,6 @@ class RenamePartitionHandler extends AbstractMessageHandler {
             newPartSpec);
     databasesUpdated.put(actualDbName, context.dmd.getEventTo());
     tablesUpdated.put(tableName, context.dmd.getEventTo());
-    List<Task<? extends Serializable>> tasks = new ArrayList<Task<? extends Serializable>>();
-    tasks.add(renamePtnTask);
-    return tasks;
+    return Collections.<Task<? extends Serializable>>singletonList(renamePtnTask);
   }
 }

@@ -38,7 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class DropPartitionHandler extends AbstractMessageHandler {
+public class DropPartitionHandler extends AbstractMessageHandler {
   @Override
   public List<Task<? extends Serializable>> handle(Context context)
       throws SemanticException {
@@ -60,9 +60,7 @@ class DropPartitionHandler extends AbstractMessageHandler {
             dropPtnDesc.getTableName(), msg.getPartitions());
         databasesUpdated.put(actualDbName, context.dmd.getEventTo());
         tablesUpdated.put(actualDbName + "." + actualTblName, context.dmd.getEventTo());
-        List<Task<? extends Serializable>> tasks = new ArrayList<Task<? extends Serializable>>();
-        tasks.add(dropPtnTask);
-        return tasks;
+        return Collections.<Task<? extends Serializable>>singletonList(dropPtnTask);
       } else {
         throw new SemanticException(
             "DROP PARTITION EVENT does not return any part descs for event message :"

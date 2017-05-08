@@ -25,11 +25,10 @@ import org.apache.hadoop.hive.ql.plan.AlterTableDesc;
 import org.apache.hadoop.hive.ql.plan.DDLWork;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-class RenameTableHandler extends AbstractMessageHandler {
+public class RenameTableHandler extends AbstractMessageHandler {
   @Override
   public List<Task<? extends Serializable>> handle(Context context)
       throws SemanticException {
@@ -72,9 +71,7 @@ class RenameTableHandler extends AbstractMessageHandler {
       // Note : edge-case here in interaction with table-level REPL LOAD, where that nukes out tablesUpdated
       // However, we explicitly don't support repl of that sort, and error out above if so. If that should
       // ever change, this will need reworking.
-      List<Task<? extends Serializable>> tasks = new ArrayList<Task<? extends Serializable>>();
-      tasks.add(renameTableTask);
-      return tasks;
+      return Collections.<Task<? extends Serializable>>singletonList(renameTableTask);
     } catch (Exception e) {
       throw (e instanceof SemanticException)
           ? (SemanticException) e
