@@ -45,6 +45,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -85,7 +86,15 @@ public class TestDbTxnManager2 {
     driver = new Driver(conf);
     driver.init();
     TxnDbUtil.cleanDb();
-    TxnDbUtil.prepDb();
+    // Due to Derby's flakiness, a table that should have been dropped via previous cleanDb(),
+    // sometimes still seems existing. This try/catch block is to ignore such case, i.e.
+    // Table/View 'TXNS' already exists in Schema 'APP'
+    try {
+      TxnDbUtil.prepDb();
+    } catch (SQLException e) {
+      if (!("X0Y32".equals(e.getSQLState()) && 30000 == e.getErrorCode())) {
+        throw e;
+    }
     SessionState ss = SessionState.get();
     ss.initTxnMgr(conf);
     txnMgr = ss.getTxnMgr();
