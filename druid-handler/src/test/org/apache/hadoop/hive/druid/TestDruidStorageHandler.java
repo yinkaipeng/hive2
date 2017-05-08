@@ -86,8 +86,7 @@ public class TestDruidStorageHandler {
     DruidStorageHandler druidStorageHandler = new DruidStorageHandler(
             derbyConnectorRule.getConnector(),
             new SQLMetadataStorageUpdaterJobHandler(derbyConnectorRule.getConnector()),
-            derbyConnectorRule.metadataTablesConfigSupplier().get(),
-            null
+            derbyConnectorRule.metadataTablesConfigSupplier().get()
     );
 
     try (Handle handle = derbyConnectorRule.getConnector().getDBI().open()) {
@@ -115,8 +114,7 @@ public class TestDruidStorageHandler {
     DruidStorageHandler druidStorageHandler = new DruidStorageHandler(
             derbyConnectorRule.getConnector(),
             new SQLMetadataStorageUpdaterJobHandler(derbyConnectorRule.getConnector()),
-            derbyConnectorRule.metadataTablesConfigSupplier().get(),
-            null
+            derbyConnectorRule.metadataTablesConfigSupplier().get()
     );
     druidStorageHandler.preCreateTable(tableMock);
   }
@@ -127,8 +125,7 @@ public class TestDruidStorageHandler {
     DruidStorageHandler druidStorageHandler = new DruidStorageHandler(
             derbyConnectorRule.getConnector(),
             new SQLMetadataStorageUpdaterJobHandler(derbyConnectorRule.getConnector()),
-            derbyConnectorRule.metadataTablesConfigSupplier().get(),
-            null
+            derbyConnectorRule.metadataTablesConfigSupplier().get()
     );
     druidStorageHandler.preCreateTable(tableMock);
     Configuration config = new Configuration();
@@ -159,8 +156,7 @@ public class TestDruidStorageHandler {
     DruidStorageHandler druidStorageHandler = new DruidStorageHandler(
             derbyConnectorRule.getConnector(),
             new SQLMetadataStorageUpdaterJobHandler(derbyConnectorRule.getConnector()),
-            derbyConnectorRule.metadataTablesConfigSupplier().get(),
-            null
+            derbyConnectorRule.metadataTablesConfigSupplier().get()
     );
     druidStorageHandler.preCreateTable(tableMock);
     Configuration config = new Configuration();
@@ -185,8 +181,7 @@ public class TestDruidStorageHandler {
     DruidStorageHandler druidStorageHandler = new DruidStorageHandler(
             derbyConnectorRule.getConnector(),
             new SQLMetadataStorageUpdaterJobHandler(derbyConnectorRule.getConnector()),
-            derbyConnectorRule.metadataTablesConfigSupplier().get(),
-            null
+            derbyConnectorRule.metadataTablesConfigSupplier().get()
     );
 
     String segmentRootPath = temporaryFolder.newFolder().getAbsolutePath();
