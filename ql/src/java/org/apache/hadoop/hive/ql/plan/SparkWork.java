@@ -19,7 +19,6 @@
 package org.apache.hadoop.hive.ql.plan;
 
 import java.io.Serializable;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,6 +33,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.hadoop.hive.ql.plan.Explain.Level;
 
 import com.google.common.base.Preconditions;
 
@@ -43,7 +43,7 @@ import com.google.common.base.Preconditions;
  * roots and and ReduceWork at all other nodes.
  */
 @SuppressWarnings("serial")
-@Explain(displayName = "Spark")
+@Explain(displayName = "Spark", explainLevels = { Level.USER, Level.DEFAULT, Level.EXTENDED })
 public class SparkWork extends AbstractOperatorDesc {
   private static int counter;
   private final String name;
@@ -76,7 +76,7 @@ public class SparkWork extends AbstractOperatorDesc {
   /**
    * @return a map of "vertex name" to BaseWork
    */
-  @Explain(displayName = "Vertices")
+  @Explain(displayName = "Vertices", explainLevels = { Explain.Level.USER, Explain.Level.DEFAULT, Explain.Level.EXTENDED })
   public Map<String, BaseWork> getWorkMap() {
     Map<String, BaseWork> result = new LinkedHashMap<String, BaseWork>();
     for (BaseWork w: getAllWork()) {
@@ -378,7 +378,7 @@ public class SparkWork extends AbstractOperatorDesc {
     }
    }
 
-  @Explain(displayName = "Edges")
+  @Explain(displayName = "Edges", explainLevels = { Explain.Level.USER, Explain.Level.DEFAULT, Explain.Level.EXTENDED })
   public Map<ComparableName, List<Dependency>> getDependencyMap() {
     Map<String, String> allDependencies = new HashMap<String, String>();
     Map<ComparableName, List<Dependency>> result =

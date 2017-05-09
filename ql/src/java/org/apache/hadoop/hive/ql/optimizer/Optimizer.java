@@ -210,7 +210,7 @@ public class Optimizer {
     if(HiveConf.getBoolVar(hiveConf, HiveConf.ConfVars.HIVEOPTCORRELATION) &&
         !HiveConf.getBoolVar(hiveConf, HiveConf.ConfVars.HIVEGROUPBYSKEW) &&
         !HiveConf.getBoolVar(hiveConf, HiveConf.ConfVars.HIVE_OPTIMIZE_SKEWJOIN_COMPILETIME) &&
-        !isTezExecEngine) {
+        !isTezExecEngine && !isSparkExecEngine) {
       transformations.add(new CorrelationOptimizer());
     }
     if (HiveConf.getFloatVar(hiveConf, HiveConf.ConfVars.HIVELIMITPUSHDOWNMEMORYUSAGE) > 0) {
@@ -232,10 +232,6 @@ public class Optimizer {
       transformations.add(new SimpleFetchAggregation());
     }
 
-    if (pctx.getContext().getExplainConfig() != null
-        && pctx.getContext().getExplainConfig().isFormatted()) {
-      transformations.add(new AnnotateReduceSinkOutputOperator());
-    }
   }
 
   /**

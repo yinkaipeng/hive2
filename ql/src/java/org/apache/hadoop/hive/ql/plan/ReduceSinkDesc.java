@@ -73,12 +73,6 @@ public class ReduceSinkDesc extends AbstractOperatorDesc {
   private String outputName;
 
   /**
-   * Holds the name of the output operators
-   * that this reduce sink is outputing to.
-   */
-  private List<String> outputOperators;
-
-  /**
    * The partition columns (CLUSTER BY or DISTRIBUTE BY in Hive language).
    * Partition columns decide the reducer that the current row goes to.
    * Partition columns are not passed to reducer.
@@ -191,6 +185,7 @@ public class ReduceSinkDesc extends AbstractOperatorDesc {
       throw new RuntimeException("Clone with vectorization desc not supported");
     }
     desc.vectorDesc = null;
+    desc.outputName = outputName;
     return desc;
   }
 
@@ -506,11 +501,4 @@ public class ReduceSinkDesc extends AbstractOperatorDesc {
     this.hasOrderBy = hasOrderBy;
   }
 
-  public List<String> getOutputOperators() {
-	return outputOperators;
-  }
-
-  public void setOutputOperators(List<String> outputOperators) {
-	this.outputOperators = outputOperators;
-  }
 }
