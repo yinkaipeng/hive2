@@ -149,15 +149,15 @@ public class TestReplChangeManager {
     Partition part3 = createPartition(dbName, tblName, columns, values, serdeInfo);
     client.add_partition(part3);
 
-    Path part1Path = new Path(warehouse.getPartitionPath(db, tblName, ImmutableMap.of("dt", "20160101")), "part");
+    Path part1Path = new Path(warehouse.getDefaultPartitionPath(db, tblName, ImmutableMap.of("dt", "20160101")), "part");
     createFile(part1Path, "p1");
     String path1Chksum = ReplChangeManager.getCksumString(part1Path, hiveConf);
 
-    Path part2Path = new Path(warehouse.getPartitionPath(db, tblName, ImmutableMap.of("dt", "20160102")), "part");
+    Path part2Path = new Path(warehouse.getDefaultPartitionPath(db, tblName, ImmutableMap.of("dt", "20160102")), "part");
     createFile(part2Path, "p2");
     String path2Chksum = ReplChangeManager.getCksumString(part2Path, hiveConf);
 
-    Path part3Path = new Path(warehouse.getPartitionPath(db, tblName, ImmutableMap.of("dt", "20160103")), "part");
+    Path part3Path = new Path(warehouse.getDefaultPartitionPath(db, tblName, ImmutableMap.of("dt", "20160103")), "part");
     createFile(part3Path, "p3");
     String path3Chksum = ReplChangeManager.getCksumString(part3Path, hiveConf);
 
@@ -219,15 +219,15 @@ public class TestReplChangeManager {
 
     client.createTable(tbl);
 
-    Path filePath1 = new Path(warehouse.getTablePath(db, tblName), "part1");
+    Path filePath1 = new Path(warehouse.getDefaultTablePath(db, tblName), "part1");
     createFile(filePath1, "f1");
     String fileChksum1 = ReplChangeManager.getCksumString(filePath1, hiveConf);
 
-    Path filePath2 = new Path(warehouse.getTablePath(db, tblName), "part2");
+    Path filePath2 = new Path(warehouse.getDefaultTablePath(db, tblName), "part2");
     createFile(filePath2, "f2");
     String fileChksum2 = ReplChangeManager.getCksumString(filePath2, hiveConf);
 
-    Path filePath3 = new Path(warehouse.getTablePath(db, tblName), "part3");
+    Path filePath3 = new Path(warehouse.getDefaultTablePath(db, tblName), "part3");
     createFile(filePath3, "f3");
     String fileChksum3 = ReplChangeManager.getCksumString(filePath3, hiveConf);
 
