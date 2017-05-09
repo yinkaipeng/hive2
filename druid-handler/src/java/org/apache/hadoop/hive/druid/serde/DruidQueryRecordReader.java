@@ -25,7 +25,6 @@ import com.metamx.http.client.HttpClientInit;
 import io.druid.query.BaseQuery;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.druid.DruidStorageHandler;
 import org.apache.hadoop.hive.druid.DruidStorageHandlerUtils;
 import org.apache.hadoop.hive.druid.io.HiveDruidSplit;
 import org.apache.hadoop.io.NullWritable;
@@ -82,11 +81,26 @@ public abstract class DruidQueryRecordReader<T extends BaseQuery<R>, R extends C
       LOG.info("Retrieving from druid using query:\n " + query);
     }
 
+    final Lifecycle lifecycle = new Lifecycle();
+    final int numConnection = HiveConf
+            .getIntVar(conf, HiveConf.ConfVars.HIVE_DRUID_NUM_HTTP_CONNECTION);
+    final Period readTimeout = new Period(
+            HiveConf.getVar(conf, HiveConf.ConfVars.HIVE_DRUID_HTTP_READ_TIMEOUT));
+
+    HttpClient client = HttpClientInit.createClient(
+            HttpClientConfig.builder().withReadTimeout(readTimeout.toStandardDuration())
+                    .withNumConnections(numConnection).build(), lifecycle);
+    try {
+      lifecycle.start();
+    } catch (Exception e) {
+      LOG.error("Issues with lifecycle start", e);
+    }
     InputStream response;
     try {
-      response = DruidStorageHandlerUtils.submitRequest(DruidStorageHandler.getHttpClient(),
+      response = DruidStorageHandlerUtils.submitRequest(client,
               DruidStorageHandlerUtils.createRequest(hiveDruidSplit.getLocations()[0], query));
     } catch (Exception e) {
+      lifecycle.stop();
       throw new IOException(org.apache.hadoop.util.StringUtils.stringifyException(e));
     }
 
@@ -97,6 +111,8 @@ public abstract class DruidQueryRecordReader<T extends BaseQuery<R>, R extends C
     } catch (IOException e) {
       response.close();
       throw e;
+    } finally {
+      lifecycle.stop();
     }
     if (resultsList == null || resultsList.isEmpty()) {
       return;
