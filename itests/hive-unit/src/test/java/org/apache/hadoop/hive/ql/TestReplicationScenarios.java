@@ -150,7 +150,9 @@ public class TestReplicationScenarios {
     ReplicationSemanticAnalyzer.injectNextDumpDirForTest(String.valueOf(next));
   }
 
-  @Test
+  //@Test
+  //This testcase is commented as it uses UDF library on java 1.8 which is not supported.
+  //Another JIRA BUG-80469 will track this.
   public void testFunctionReplicationAsPartOfBootstrap() throws IOException {
     String dbName = createDB(testName.getMethodName());
     run("CREATE FUNCTION " + dbName
