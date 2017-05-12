@@ -439,7 +439,8 @@ public class TestBeeLineWithArgs {
     final String SCRIPT_TEXT = "CREATE\tTABLE IF NOT EXISTS testTabInScriptFile\n(id\tint);\nSHOW TABLES;"
         + "\ndrop table testTabInScriptFile";
     final String EXPECTED_PATTERN = "testTabInScriptFile";
-    testScriptFile(SCRIPT_TEXT, argList, EXPECTED_PATTERN, true);
+    testScriptFile(SCRIPT_TEXT, argList, OutStream.ERR, EXPECTED_PATTERN, true);
+    testScriptFile(SCRIPT_TEXT, argList, OutStream.OUT, EXPECTED_PATTERN, false);
   }
 
   @Test
@@ -481,7 +482,7 @@ public class TestBeeLineWithArgs {
   public void testGetVariableValue() throws Throwable {
     final String SCRIPT_TEXT = "set env:TERM;";
     final String EXPECTED_PATTERN = "env:TERM";
-    testScriptFile(SCRIPT_TEXT, getBaseArgs(miniHS2.getBaseJdbcURL()), EXPECTED_PATTERN, true);
+    testScriptFile(SCRIPT_TEXT, getBaseArgs(miniHS2.getBaseJdbcURL()), OutStream.ERR, EXPECTED_PATTERN, true);
   }
 
   /**
@@ -952,7 +953,7 @@ public class TestBeeLineWithArgs {
     };
     BeeLineOpts.setEnv(newEnv);
 
-    testScriptFile(SCRIPT_TEXT, argList, OutStream.OUT,
+    testScriptFile(SCRIPT_TEXT, argList, OutStream.ERR,
         Collections.singletonList(new Tuple<>(EXPECTED_PATTERN, true)),
         Collections.singletonList(Modes.SCRIPT));
   }
