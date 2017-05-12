@@ -735,7 +735,7 @@ STAGE PLANS:
 #### A masked pattern was here ####
       Edges:
         Map 1 <- Map 3 (CUSTOM_EDGE)
-        Reducer 2 <- Map 1 (SIMPLE_EDGE), Map 4 (CUSTOM_SIMPLE_EDGE)
+        Reducer 2 <- Map 1 (SIMPLE_EDGE), Map 3 (CUSTOM_SIMPLE_EDGE)
 #### A masked pattern was here ####
       Vertices:
         Map 1 
@@ -795,11 +795,6 @@ STAGE PLANS:
                         Map-reduce partition columns: _col0 (type: int)
                         Statistics: Num rows: 242 Data size: 2566 Basic stats: COMPLETE Column stats: NONE
                         value expressions: _col1 (type: string)
-        Map 4 
-            Map Operator Tree:
-                TableScan
-                  alias: b
-                  Statistics: Num rows: 242 Data size: 2566 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
                     predicate: key is not null (type: boolean)
                     Statistics: Num rows: 242 Data size: 2566 Basic stats: COMPLETE Column stats: NONE
@@ -833,7 +828,7 @@ STAGE PLANS:
                       1 _col0 (type: int)
                     outputColumnNames: _col0, _col1, _col3
                     input vertices:
-                      1 Map 4
+                      1 Map 3
                     Statistics: Num rows: 302 Data size: 3213 Basic stats: COMPLETE Column stats: NONE
                     HybridGraceHashJoin: true
                     Select Operator
