@@ -64,7 +64,6 @@ import org.apache.hadoop.hive.llap.metrics.MetricsUtils;
 import org.apache.hadoop.hive.llap.registry.ServiceInstance;
 import org.apache.hadoop.hive.llap.registry.ServiceInstanceSet;
 import org.apache.hadoop.hive.llap.registry.ServiceInstanceStateChangeListener;
-import org.apache.hadoop.hive.llap.registry.ServiceRegistry;
 import org.apache.hadoop.hive.llap.registry.impl.InactiveServiceInstance;
 import org.apache.hadoop.hive.llap.registry.impl.LlapRegistryService;
 import org.apache.hadoop.hive.llap.tezplugins.helpers.MonotonicClock;
@@ -92,6 +91,7 @@ import org.apache.tez.common.TezUtils;
 import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.serviceplugins.api.DagInfo;
 import org.apache.tez.serviceplugins.api.ServicePluginErrorDefaults;
+import org.apache.tez.serviceplugins.api.ServicePluginException;
 import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.serviceplugins.api.TaskScheduler;
 import org.apache.tez.serviceplugins.api.TaskSchedulerContext;
@@ -102,7 +102,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
 
   private static final Logger LOG = LoggerFactory.getLogger(LlapTaskSchedulerService.class);
 
-  private static final TaskStartComparator TASK_INFO_COMPARATOR = new TaskStartComparator();
+  private static final TaskAssignTimeComparator TASK_INFO_COMPARATOR = new TaskAssignTimeComparator();
 
   private final Configuration conf;
 
@@ -129,8 +129,8 @@ public class LlapTaskSchedulerService extends TaskScheduler {
 
   // Tracks running and queued tasks. Cleared after a task completes.
   private final ConcurrentMap<Object, TaskInfo> knownTasks = new ConcurrentHashMap<>();
-  // Tracks tasks which are running. Useful for selecting a task to preempt based on when it started.
-  private final TreeMap<Integer, TreeSet<TaskInfo>> runningTasks = new TreeMap<>();
+  // Tracks tasks which are assigned. Useful for selecting a task to preempt based on when it started.
+  private final TreeMap<Integer, TreeSet<TaskInfo>> assignedTasks = new TreeMap<>();
 
 
   // Queue for disabled nodes. Nodes make it out of this queue when their expiration timeout is hit.
@@ -554,7 +554,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
         }
       }
       int runningCount = 0;
-      for (Entry<Integer, TreeSet<TaskInfo>> entry : runningTasks.entrySet()) {
+      for (Entry<Integer, TreeSet<TaskInfo>> entry : assignedTasks.entrySet()) {
         if (entry.getValue() != null) {
           runningCount += entry.getValue().size();
         }
@@ -643,7 +643,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
         return false;
       }
       if (taskInfo.containerId == null) {
-        if (taskInfo.getState() == TaskInfo.State.ASSIGNED) {
+        if (taskInfo.isAssigned()) {
           LOG.error("Task: "
               + task
               + " assigned, but could not find the corresponding containerId."
@@ -719,6 +719,19 @@ public class LlapTaskSchedulerService extends TaskScheduler {
     getContext().containerCompleted(taskInfo.task, ContainerStatus.newInstance(taskInfo.containerId,
         ContainerState.COMPLETE, "", 0));
     return true;
+  }
+
+  @Override
+  public void taskStateUpdated(Object task, SchedulerTaskState state) {
+    if (state == SchedulerTaskState.STARTED) {
+      writeLock.lock();
+      try {
+        TaskInfo taskInfo = knownTasks.get(task);
+        taskInfo.setRunning(clock.getTime());
+      } finally {
+        writeLock.unlock();
+      }
+    }
   }
 
   @Override
@@ -1053,15 +1066,15 @@ public class LlapTaskSchedulerService extends TaskScheduler {
     }
   }
 
-  /* Register a running task into the runningTasks structure */
-  private void registerRunningTask(TaskInfo taskInfo) {
+  /* Register a running task into the assignedTasks structure */
+  private void registerTaskAssignment(TaskInfo taskInfo) {
     writeLock.lock();
     try {
       int priority = taskInfo.priority.getPriority();
-      TreeSet<TaskInfo> tasksAtpriority = runningTasks.get(priority);
+      TreeSet<TaskInfo> tasksAtpriority = assignedTasks.get(priority);
       if (tasksAtpriority == null) {
         tasksAtpriority = new TreeSet<>(TASK_INFO_COMPARATOR);
-        runningTasks.put(priority, tasksAtpriority);
+        assignedTasks.put(priority, tasksAtpriority);
       }
       tasksAtpriority.add(taskInfo);
       if (metrics != null) {
@@ -1078,15 +1091,15 @@ public class LlapTaskSchedulerService extends TaskScheduler {
     try {
       TaskInfo taskInfo = knownTasks.remove(task);
       if (taskInfo != null) {
-        if (taskInfo.getState() == TaskInfo.State.ASSIGNED) {
+        if (taskInfo.isAssigned()) {
           // Remove from the running list.
           int priority = taskInfo.priority.getPriority();
-          Set<TaskInfo> tasksAtPriority = runningTasks.get(priority);
+          Set<TaskInfo> tasksAtPriority = assignedTasks.get(priority);
           Preconditions.checkState(tasksAtPriority != null,
-              "runningTasks should contain an entry if the task was in running state. Caused by task: {}", task);
+              "assignedTasks should contain an entry if the task was in running state. Caused by task: {}", task);
           tasksAtPriority.remove(taskInfo);
           if (tasksAtPriority.isEmpty()) {
-            runningTasks.remove(priority);
+            assignedTasks.remove(priority);
           }
         }
       } else {
@@ -1293,7 +1306,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
         dagStats.registerTaskAllocated(taskInfo.requestedHosts, taskInfo.requestedRacks,
             nodeInfo.getHost());
         taskInfo.setAssignmentInfo(nodeInfo, container.getId(), clock.getTime());
-        registerRunningTask(taskInfo);
+        registerTaskAssignment(taskInfo);
         nodeInfo.registerTaskScheduled();
       } finally {
         writeLock.unlock();
@@ -1311,7 +1324,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
     writeLock.lock();
     List<TaskInfo> preemptedTaskList = null;
     try {
-      NavigableMap<Integer, TreeSet<TaskInfo>> orderedMap = runningTasks.descendingMap();
+      NavigableMap<Integer, TreeSet<TaskInfo>> orderedMap = assignedTasks.descendingMap();
       Iterator<Entry<Integer, TreeSet<TaskInfo>>> iterator = orderedMap.entrySet().iterator();
       int preemptedCount = 0;
       while (iterator.hasNext() && preemptedCount < numTasksToPreempt) {
@@ -1323,6 +1336,9 @@ public class LlapTaskSchedulerService extends TaskScheduler {
           Iterator<TaskInfo> taskInfoIterator = entryAtPriority.getValue().iterator();
           while (taskInfoIterator.hasNext() && preemptedCount < numTasksToPreempt) {
             TaskInfo taskInfo = taskInfoIterator.next();
+            if (!taskInfo.isRunning()) {
+              continue;
+            }
             if (preemptHosts == null || preemptHosts.contains(taskInfo.assignedNode.getHost())) {
               // Candidate for preemption.
               preemptedCount++;
@@ -1457,7 +1473,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
     }
 
     public boolean shouldScheduleTask(TaskInfo taskInfo) {
-      return taskInfo.getState() == TaskInfo.State.PENDING;
+      return taskInfo.isPending();
     }
   }
 
@@ -1929,7 +1945,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
   static class TaskInfo implements Delayed {
 
     enum State {
-      PENDING, ASSIGNED, PREEMPTED
+      PENDING, ASSIGNED, RUNNING, PREEMPTED
     }
 
     // IDs used to ensure two TaskInfos are different without using the underlying task instance.
@@ -1946,6 +1962,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
     final String[] requestedRacks;
     final long requestTime;
     final long localityDelayTimeout;
+    long assignedTime;
     long startTime;
     long preemptTime;
     ContainerId containerId;
@@ -1978,16 +1995,21 @@ public class LlapTaskSchedulerService extends TaskScheduler {
       this.uniqueId = ID_GEN.getAndIncrement();
     }
 
-    synchronized void setAssignmentInfo(NodeInfo nodeInfo, ContainerId containerId, long startTime) {
+    synchronized void setAssignmentInfo(NodeInfo nodeInfo, ContainerId containerId, long assignedTime) {
       this.assignedNode = nodeInfo;
       this.containerId = containerId;
-      this.startTime = startTime;
+      this.assignedTime = assignedTime;
       this.state = State.ASSIGNED;
     }
 
     synchronized void setPreemptedInfo(long preemptTime) {
       this.state = State.PREEMPTED;
       this.preemptTime = preemptTime;
+    }
+
+    synchronized void setRunning(long startTime) {
+      this.state = State.RUNNING;
+      this.startTime = startTime;
     }
 
     synchronized void setInDelayedQueue(boolean val) {
@@ -2023,6 +2045,18 @@ public class LlapTaskSchedulerService extends TaskScheduler {
       return localityDelayTimeout;
     }
 
+    boolean isPending() {
+      return state == State.PENDING;
+    }
+
+    boolean isRunning() {
+      return state == State.RUNNING;
+    }
+
+    boolean isAssigned() {
+      return state == State.RUNNING || state == State.ASSIGNED;
+    }
+
     @Override
     public boolean equals(Object o) {
       if (this == o) {
@@ -2053,6 +2087,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
       return "TaskInfo{" +
           "task=" + task +
           ", priority=" + priority +
+          ", assignedTime=" + assignedTime +
           ", startTime=" + startTime +
           ", containerId=" + containerId +
           (assignedNode != null ? "assignedNode=" + assignedNode.toShortString() : "") +
@@ -2080,13 +2115,13 @@ public class LlapTaskSchedulerService extends TaskScheduler {
   }
 
   // Newer tasks first.
-  private static class TaskStartComparator implements Comparator<TaskInfo> {
+  private static class TaskAssignTimeComparator implements Comparator<TaskInfo> {
 
     @Override
     public int compare(TaskInfo o1, TaskInfo o2) {
-      if (o1.startTime > o2.startTime) {
+      if (o1.assignedTime > o2.assignedTime) {
         return -1;
-      } else if (o1.startTime < o2.startTime) {
+      } else if (o1.assignedTime < o2.assignedTime) {
         return 1;
       } else {
         // Comparing on time is not sufficient since two may be created at the same time,

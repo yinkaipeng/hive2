@@ -57,6 +57,7 @@ import org.apache.hadoop.yarn.util.Clock;
 import org.apache.tez.common.TezUtils;
 import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
+import org.apache.tez.serviceplugins.api.TaskScheduler;
 import org.apache.tez.serviceplugins.api.TaskSchedulerContext;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -118,6 +119,67 @@ public class TestLlapTaskSchedulerService {
     }
   }
 
+  @Test(timeout = 10000)
+  public void testPreemption_StartedAttemptsOnly() throws InterruptedException, IOException {
+    Priority priority1 = Priority.newInstance(1);
+    Priority priority2 = Priority.newInstance(2);
+    Priority priority3 = Priority.newInstance(3);
+    String [] hosts = new String[] {HOST1};
+    TestTaskSchedulerServiceWrapper tsWrapper = new TestTaskSchedulerServiceWrapper(2000, hosts, 2, 0);
+    try {
+
+      Object task1 = "task1";
+      Object clientCookie1 = "cookie1";
+      Object task2 = "task2";
+      Object clientCookie2 = "cookie2";
+      Object task3 = "task3";
+      Object clientCookie3 = "cookie3";
+
+      tsWrapper.controlScheduler(true);
+      tsWrapper.allocateTask(task1, hosts, priority2, clientCookie1);
+      tsWrapper.allocateTask(task2, hosts, priority3, clientCookie2);
+      while (true) {
+        tsWrapper.signalSchedulerRun();
+        tsWrapper.awaitSchedulerRun();
+        if (tsWrapper.ts.dagStats.numLocalAllocations == 2) {
+          break;
+        }
+      }
+      ArgumentCaptor<Object> taskCapture = ArgumentCaptor.forClass(Object.class);
+      ArgumentCaptor<Container> containerCaptor = ArgumentCaptor.forClass(Container.class);
+      verify(tsWrapper.mockAppCallback, times(2))
+          .taskAllocated(taskCapture.capture(), any(Object.class), containerCaptor.capture());
+      assertEquals(task1, taskCapture.getAllValues().get(0));
+      assertEquals(task2, taskCapture.getAllValues().get(1));
+
+      verify(tsWrapper.mockAppCallback, times(2)).taskAllocated(any(Object.class),
+          any(Object.class), any(Container.class));
+      assertEquals(2, tsWrapper.ts.dagStats.numLocalAllocations);
+      assertEquals(0, tsWrapper.ts.dagStats.numAllocationsNoLocalityRequest);
+
+      // Now start the higher priority task ("nice" priority levels)
+      tsWrapper.taskStarted(task1);
+
+      reset(tsWrapper.mockAppCallback);
+
+      tsWrapper.allocateTask(task3, hosts, priority1, clientCookie3);
+      while (true) {
+        tsWrapper.signalSchedulerRun();
+        tsWrapper.awaitSchedulerRun();
+        if (tsWrapper.ts.dagStats.numPreemptedTasks == 1) {
+          break;
+        }
+      }
+
+      ArgumentCaptor<ContainerId> containerIdArgumentCaptor = ArgumentCaptor.forClass(ContainerId.class);
+      // Verify that task1 (higher priority than task2) got preempted, since task2 had not yet started.
+      verify(tsWrapper.mockAppCallback).preemptContainer(containerIdArgumentCaptor.capture());
+      assertEquals(containerCaptor.getAllValues().get(0).getId(), containerIdArgumentCaptor.getValue());
+
+    } finally {
+      tsWrapper.shutdown();
+    }
+  }
 
   @Test(timeout = 10000)
   public void testPreemption() throws InterruptedException, IOException {
@@ -152,6 +214,9 @@ public class TestLlapTaskSchedulerService {
           any(Object.class), any(Container.class));
       assertEquals(2, tsWrapper.ts.dagStats.numLocalAllocations);
       assertEquals(0, tsWrapper.ts.dagStats.numAllocationsNoLocalityRequest);
+
+      tsWrapper.taskStarted(task1);
+      tsWrapper.taskStarted(task2);
 
       reset(tsWrapper.mockAppCallback);
 
@@ -681,6 +746,8 @@ public class TestLlapTaskSchedulerService {
       assertEquals(2, argumentCaptor.getAllValues().size());
       assertEquals(task1, argumentCaptor.getAllValues().get(0));
       assertEquals(task2, argumentCaptor.getAllValues().get(1));
+      tsWrapper.taskStarted(task1);
+      tsWrapper.taskStarted(task2);
 
       reset(tsWrapper.mockAppCallback);
       // Allocate t4 at higher priority. t3 should not be allocated,
@@ -741,6 +808,8 @@ public class TestLlapTaskSchedulerService {
           .taskAllocated(argumentCaptor.capture(), any(Object.class), cArgCaptor.capture());
       ContainerId t1Cid = cArgCaptor.getValue().getId();
 
+      tsWrapper.taskStarted(task1);
+
       reset(tsWrapper.mockAppCallback);
       // Move clock backwards (so that t1 allocation is after t2 allocation)
       // Request task2 (task1 already started at previously set time)
@@ -750,6 +819,7 @@ public class TestLlapTaskSchedulerService {
       verify(tsWrapper.mockAppCallback, times(1))
           .taskAllocated(argumentCaptor.capture(), any(Object.class), cArgCaptor.capture());
 
+      tsWrapper.taskStarted(task2);
 
       reset(tsWrapper.mockAppCallback);
       // Move clock forward, and request a task at p=1
@@ -819,6 +889,9 @@ public class TestLlapTaskSchedulerService {
       assertEquals(task2, argumentCaptor.getAllValues().get(1));
       assertEquals(2, cArgCaptor.getAllValues().size());
       ContainerId t1CId = cArgCaptor.getAllValues().get(0).getId();
+
+      tsWrapper.taskStarted(task1);
+      tsWrapper.taskStarted(task2);
 
       reset(tsWrapper.mockAppCallback);
       // At this point. 2 tasks running - both at priority 2.
@@ -922,6 +995,9 @@ public class TestLlapTaskSchedulerService {
       assertEquals(task2, argumentCaptor.getAllValues().get(1));
       assertEquals(2, cArgCaptor.getAllValues().size());
       ContainerId t1CId = cArgCaptor.getAllValues().get(0).getId();
+
+      tsWrapper.taskStarted(task1);
+      tsWrapper.taskStarted(task2);
 
       reset(tsWrapper.mockAppCallback);
       // At this point. 2 tasks running - both at priority 2.
@@ -1582,6 +1658,9 @@ public class TestLlapTaskSchedulerService {
       ts.allocateTask(task, resource, hosts, null, priority, null, clientCookie);
     }
 
+    void taskStarted(Object task) {
+      ts.taskStateUpdated(task, TaskScheduler.SchedulerTaskState.STARTED);
+    }
 
 
     void deallocateTask(Object task, boolean succeeded, TaskAttemptEndReason endReason) {

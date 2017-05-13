@@ -64,6 +64,7 @@ import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RemoteException;
 import org.apache.hadoop.ipc.RetriableException;
+import org.apache.hadoop.mapreduce.v2.api.records.TaskAttemptId;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -123,6 +124,8 @@ public class LlapTaskCommunicator extends TezTaskCommunicatorImpl {
   // Primarily for debugging purposes a.t.m, since there's some unexplained TASK_TIMEOUTS which are currently being observed.
   private final ConcurrentMap<LlapNodeId, Long> knownNodeMap = new ConcurrentHashMap<>();
   private final ConcurrentMap<LlapNodeId, PingingNodeInfo> pingedNodeMap = new ConcurrentHashMap<>();
+
+  private final ConcurrentMap<TezTaskAttemptID, Boolean> attemptStartSent = new ConcurrentHashMap<>();
 
   private final LlapRegistryService serviceRegistry;
 
@@ -335,7 +338,7 @@ public class LlapTaskCommunicator extends TezTaskCommunicatorImpl {
 
     // Have to register this up front right now. Otherwise, it's possible for the task to start
     // sending out status/DONE/KILLED/FAILED messages before TAImpl knows how to handle them.
-    getContext().taskStartedRemotely(taskSpec.getTaskAttemptID(), containerId);
+    getContext().taskSubmitted(taskSpec.getTaskAttemptID(), containerId);
     communicator.sendSubmitWork(requestProto, host, port,
         new LlapProtocolClientProxy.ExecuteRequestCallback<SubmitWorkResponseProto>() {
           @Override
@@ -649,6 +652,10 @@ public class LlapTaskCommunicator extends TezTaskCommunicatorImpl {
           // However, the next heartbeat(s) should get the value eventually and mark task as alive.
           // Also, we prefer a missed heartbeat over a stuck query in case of discrepancy in ET.
           if (taskNodeId != null && taskNodeId.equals(uniqueId)) {
+            // Note: This is not ideal, and there's still going to be unnecessary kills for
+            // fragments which are known to the TaskCommunicator when this heartbeat is received,
+            // but may not have actually been accepted.
+            maybeSendFragmentStart(entry.getValue());
             getContext().taskAlive(entry.getValue());
             getContext().containerAlive(entry.getKey());
           }
@@ -673,6 +680,7 @@ public class LlapTaskCommunicator extends TezTaskCommunicatorImpl {
     currentHiveQueryId = hiveQueryId;
     sourceStateTracker.resetState(currentQueryIdentifierProto);
     nodesForQuery.clear();
+    attemptStartSent.clear();
     LOG.info("CurrentDagId set to: " + newDagId + ", name=" +
         getContext().getCurrentDagInfo().getName() + ", queryId=" + hiveQueryId);
     // TODO Is it possible for heartbeats to come in from lost tasks - those should be told to die, which
@@ -722,6 +730,13 @@ public class LlapTaskCommunicator extends TezTaskCommunicatorImpl {
     return ByteBuffer.wrap(containerTokens_dob.getData(), 0, containerTokens_dob.getLength());
   }
 
+  private void maybeSendFragmentStart(TezTaskAttemptID fragmentId) {
+    if (fragmentId != null) {
+      if (attemptStartSent.putIfAbsent(fragmentId, Boolean.TRUE) == null) {
+        getContext().taskStartedRemotely(fragmentId);
+      }
+    }
+  }
 
 
   protected class LlapTaskUmbilicalProtocolImpl implements LlapTaskUmbilicalProtocol {
@@ -740,6 +755,7 @@ public class LlapTaskCommunicator extends TezTaskCommunicatorImpl {
     @Override
     public TezHeartbeatResponse heartbeat(TezHeartbeatRequest request) throws IOException,
         TezException {
+      maybeSendFragmentStart(request.getCurrentTaskAttemptID());
       return tezUmbilical.heartbeat(request);
     }
 
