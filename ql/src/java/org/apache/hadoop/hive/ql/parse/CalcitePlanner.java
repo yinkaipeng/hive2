@@ -1275,6 +1275,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
     // this is to keep track if a subquery is correlated and contains aggregate
     // since this is special cased when it is rewritten in SubqueryRemoveRule
     Set<RelNode> corrScalarRexSQWithAgg = new HashSet<RelNode>();
+    Set<RelNode> scalarAggNoGbyNoWin = new HashSet<RelNode>();
 
     // TODO: Do we need to keep track of RR, ColNameToPosMap for every op or
     // just last one.
@@ -1304,7 +1305,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
       HiveRulesRegistry registry = new HiveRulesRegistry();
       CalciteConnectionConfig calciteConfig = new CalciteConnectionConfigImpl(new Properties());
       HivePlannerContext confContext = new HivePlannerContext(algorithmsConf, registry, calciteConfig,
-              corrScalarRexSQWithAgg);
+              corrScalarRexSQWithAgg, scalarAggNoGbyNoWin);
       RelOptPlanner planner = HiveVolcanoPlanner.createPlanner(confContext);
       final RelOptQuery query = new RelOptQuery(planner);
       final RexBuilder rexBuilder = cluster.getRexBuilder();
@@ -2326,7 +2327,8 @@ public class CalcitePlanner extends SemanticAnalyzer {
 
     private void subqueryRestrictionCheck(QB qb, ASTNode searchCond, RelNode srcRel,
                                          boolean forHavingClause, Map<String, RelNode> aliasToRel,
-                                          Set<ASTNode> corrScalarQueries) throws SemanticException {
+                                          Set<ASTNode> corrScalarQueries,
+					  Set<ASTNode> scalarQueriesWithAggNoWinNoGby) throws SemanticException {
         List<ASTNode> subQueriesInOriginalTree = SubQueryUtils.findSubQueries(searchCond);
 
         ASTNode clonedSearchCond = (ASTNode) SubQueryUtils.adaptor.dupTree(searchCond);
@@ -2357,19 +2359,28 @@ public class CalcitePlanner extends SemanticAnalyzer {
             aliasToRel.put(havingInputAlias, srcRel);
           }
 
-          boolean isCorrScalarWithAgg = subQuery.subqueryRestrictionsCheck(inputRR, forHavingClause, havingInputAlias);
-          if(isCorrScalarWithAgg) {
+          boolean [] subqueryConfig = {false, false};
+          subQuery.subqueryRestrictionsCheck(inputRR, forHavingClause,
+              havingInputAlias, subqueryConfig);
+          if(subqueryConfig[0]) {
             corrScalarQueries.add(originalSubQueryAST);
           }
-      }
+          if(subqueryConfig[1]) {
+            scalarQueriesWithAggNoWinNoGby.add(originalSubQueryAST);
+          }
+
+        }
     }
     private boolean genSubQueryRelNode(QB qb, ASTNode node, RelNode srcRel, boolean forHavingClause,
                                        Map<ASTNode, RelNode> subQueryToRelNode,
                                        Map<String, RelNode> aliasToRel) throws SemanticException {
 
         Set<ASTNode> corrScalarQueriesWithAgg = new HashSet<ASTNode>();
-        //disallow subqueries which HIVE doesn't currently support
-        subqueryRestrictionCheck(qb, node, srcRel, forHavingClause, aliasToRel, corrScalarQueriesWithAgg);
+        Set<ASTNode> scalarQueriesWithAggNoWinNoGby= new HashSet<ASTNode>();
+
+      //disallow subqueries which HIVE doesn't currently support
+        subqueryRestrictionCheck(qb, node, srcRel, forHavingClause, aliasToRel,
+            corrScalarQueriesWithAgg, scalarQueriesWithAggNoWinNoGby);
         Deque<ASTNode> stack = new ArrayDeque<ASTNode>();
         stack.push(node);
 
@@ -2402,6 +2413,10 @@ public class CalcitePlanner extends SemanticAnalyzer {
               if(corrScalarQueriesWithAgg.contains(next)) {
                   corrScalarRexSQWithAgg.add(subQueryRelNode);
               }
+              if(scalarQueriesWithAggNoWinNoGby.contains(next)) {
+                scalarAggNoGbyNoWin.add(subQueryRelNode);
+              }
+
               isSubQuery = true;
               break;
             default:
