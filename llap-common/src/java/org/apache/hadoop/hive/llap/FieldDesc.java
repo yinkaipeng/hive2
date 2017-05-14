@@ -21,45 +21,43 @@ package org.apache.hadoop.hive.llap;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
-import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.io.Writable;
 
 public class FieldDesc implements Writable {
   private String name;
-  private TypeInfo typeInfo;
+  private TypeDesc typeDesc;
 
   public FieldDesc() {
+    typeDesc = new TypeDesc();
   }
 
-  public FieldDesc(String name, TypeInfo typeInfo) {
+  public FieldDesc(String name, TypeDesc typeDesc) {
     this.name = name;
-    this.typeInfo = typeInfo;
+    this.typeDesc = typeDesc;
   }
 
   public String getName() {
     return name;
   }
 
-  public TypeInfo getTypeInfo() {
-    return typeInfo;
+  public TypeDesc getTypeDesc() {
+    return typeDesc;
   }
 
   @Override
   public String toString() {
-    return getName() + ":" + getTypeInfo().toString();
+    return getName() + ":" + getTypeDesc().toString();
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
     out.writeUTF(name);
-    out.writeUTF(typeInfo.toString());
+    typeDesc.write(out);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     name = in.readUTF();
-    typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(in.readUTF());
+    typeDesc.readFields(in);
   }
 }
