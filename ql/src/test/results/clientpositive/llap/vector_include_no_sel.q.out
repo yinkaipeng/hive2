@@ -162,7 +162,7 @@ POSTHOOK: Lineage: customer_demographics.cd_education_status SIMPLE [(customer_d
 POSTHOOK: Lineage: customer_demographics.cd_gender SIMPLE [(customer_demographics_txt)customer_demographics_txt.FieldSchema(name:cd_gender, type:string, comment:null), ]
 POSTHOOK: Lineage: customer_demographics.cd_marital_status SIMPLE [(customer_demographics_txt)customer_demographics_txt.FieldSchema(name:cd_marital_status, type:string, comment:null), ]
 POSTHOOK: Lineage: customer_demographics.cd_purchase_estimate SIMPLE [(customer_demographics_txt)customer_demographics_txt.FieldSchema(name:cd_purchase_estimate, type:int, comment:null), ]
-Warning: Map Join MAPJOIN[13][bigTable=store_sales] in task 'Map 2' is a cross product
+Warning: Shuffle Join MERGEJOIN[13][tables = [customer_demographics, store_sales]] in Stage 'Reducer 2' is a cross product
 PREHOOK: query: explain
 select count(1) from customer_demographics,store_sales
 where ((customer_demographics.cd_demo_sk = store_sales.ss_cdemo_sk and customer_demographics.cd_marital_status = 'M') or
@@ -182,8 +182,8 @@ STAGE PLANS:
     Tez
 #### A masked pattern was here ####
       Edges:
-        Map 2 <- Map 1 (BROADCAST_EDGE)
-        Reducer 3 <- Map 2 (SIMPLE_EDGE)
+        Reducer 2 <- Map 1 (XPROD_EDGE), Map 4 (XPROD_EDGE)
+        Reducer 3 <- Reducer 2 (SIMPLE_EDGE)
 #### A masked pattern was here ####
       Vertices:
         Map 1 
@@ -197,37 +197,42 @@ STAGE PLANS:
                     value expressions: cd_demo_sk (type: int), cd_marital_status (type: string)
             Execution mode: vectorized, llap
             LLAP IO: all inputs
-        Map 2 
+        Map 4 
             Map Operator Tree:
                 TableScan
                   alias: store_sales
                   Statistics: Num rows: 1000 Data size: 88276 Basic stats: COMPLETE Column stats: NONE
-                  Map Join Operator
-                    condition map:
-                         Inner Join 0 to 1
-                    keys:
-                      0 
-                      1 
-                    outputColumnNames: _col0, _col2, _col16
-                    input vertices:
-                      0 Map 1
-                    Statistics: Num rows: 200000 Data size: 92055200 Basic stats: COMPLETE Column stats: NONE
-                    Filter Operator
-                      predicate: (((_col0 = _col16) and (_col2 = 'M')) or ((_col0 = _col16) and (_col2 = 'U'))) (type: boolean)
-                      Statistics: Num rows: 100000 Data size: 46027600 Basic stats: COMPLETE Column stats: NONE
-                      Select Operator
-                        Statistics: Num rows: 100000 Data size: 46027600 Basic stats: COMPLETE Column stats: NONE
-                        Group By Operator
-                          aggregations: count(1)
-                          mode: hash
-                          outputColumnNames: _col0
-                          Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: NONE
-                          Reduce Output Operator
-                            sort order: 
-                            Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: NONE
-                            value expressions: _col0 (type: bigint)
+                  Reduce Output Operator
+                    sort order: 
+                    Statistics: Num rows: 1000 Data size: 88276 Basic stats: COMPLETE Column stats: NONE
+                    value expressions: ss_cdemo_sk (type: int)
             Execution mode: vectorized, llap
             LLAP IO: all inputs
+        Reducer 2 
+            Execution mode: llap
+            Reduce Operator Tree:
+              Merge Join Operator
+                condition map:
+                     Inner Join 0 to 1
+                keys:
+                  0 
+                  1 
+                outputColumnNames: _col0, _col2, _col16
+                Statistics: Num rows: 200000 Data size: 92055200 Basic stats: COMPLETE Column stats: NONE
+                Filter Operator
+                  predicate: (((_col0 = _col16) and (_col2 = 'M')) or ((_col0 = _col16) and (_col2 = 'U'))) (type: boolean)
+                  Statistics: Num rows: 100000 Data size: 46027600 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    Statistics: Num rows: 100000 Data size: 46027600 Basic stats: COMPLETE Column stats: NONE
+                    Group By Operator
+                      aggregations: count(1)
+                      mode: hash
+                      outputColumnNames: _col0
+                      Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: NONE
+                      Reduce Output Operator
+                        sort order: 
+                        Statistics: Num rows: 1 Data size: 8 Basic stats: COMPLETE Column stats: NONE
+                        value expressions: _col0 (type: bigint)
         Reducer 3 
             Execution mode: vectorized, llap
             Reduce Operator Tree:
@@ -250,7 +255,7 @@ STAGE PLANS:
       Processor Tree:
         ListSink
 
-Warning: Map Join MAPJOIN[13][bigTable=store_sales] in task 'Map 2' is a cross product
+Warning: Shuffle Join MERGEJOIN[13][tables = [customer_demographics, store_sales]] in Stage 'Reducer 2' is a cross product
 PREHOOK: query: select count(1) from customer_demographics,store_sales
 where ((customer_demographics.cd_demo_sk = store_sales.ss_cdemo_sk and customer_demographics.cd_marital_status = 'M') or
        (customer_demographics.cd_demo_sk = store_sales.ss_cdemo_sk and customer_demographics.cd_marital_status = 'U'))

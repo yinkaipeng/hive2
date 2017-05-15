@@ -135,13 +135,13 @@ STAGE PLANS:
       Processor Tree:
         ListSink
 
-Warning: Shuffle Join MERGEJOIN[21][tables = [$hdt$_1, $hdt$_2]] in Stage 'Reducer 2' is a cross product
-PREHOOK: query: select * from Y, (select * from X as A, X as B) as C where Y.key=C.key
+Warning: Shuffle Join MERGEJOIN[25][tables = [$hdt$_1, $hdt$_2]] in Stage 'Reducer 3' is a cross product
+PREHOOK: query: select * from Y, (select * from X as A, X as B order by A.key, B.key) as C where Y.key=C.key
 PREHOOK: type: QUERY
 PREHOOK: Input: default@x
 PREHOOK: Input: default@y
 #### A masked pattern was here ####
-POSTHOOK: query: select * from Y, (select * from X as A, X as B) as C where Y.key=C.key
+POSTHOOK: query: select * from Y, (select * from X as A, X as B order by A.key, B.key) as C where Y.key=C.key
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@x
 POSTHOOK: Input: default@y

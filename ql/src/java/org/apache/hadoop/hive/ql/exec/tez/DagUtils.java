@@ -45,6 +45,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tez.runtime.library.cartesianproduct.CartesianProductConfig;
 import org.apache.tez.runtime.library.cartesianproduct.CartesianProductEdgeManager;
+import org.apache.tez.runtime.library.partitioner.RoundRobinPartitioner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -297,7 +298,8 @@ public class DagUtils {
       break;
 
     case XPROD_EDGE:
-      // fall through
+      mergeInputClass = ConcatenatedMergedKeyValueInput.class;
+      break;
 
     case SIMPLE_EDGE:
       setupAutoReducerParallelism(edgeProp, w);
@@ -419,9 +421,10 @@ public class DagUtils {
         }
       }
       CartesianProductConfig cpConfig = new CartesianProductConfig(crossProductSources);
-      edgeManagerDescriptor.setUserPayload(cpConfig.toUserPayload(null));
-      UnorderedKVEdgeConfig cpEdgeConf =
-        UnorderedKVEdgeConfig.newBuilder(keyClass, valClass).build();
+      edgeManagerDescriptor.setUserPayload(cpConfig.toUserPayload(new TezConfiguration(conf)));
+      UnorderedPartitionedKVEdgeConfig cpEdgeConf =
+        UnorderedPartitionedKVEdgeConfig.newBuilder(keyClass, valClass,
+          RoundRobinPartitioner.class.getName()).build();
       return cpEdgeConf.createDefaultCustomEdgeProperty(edgeManagerDescriptor);
     case SIMPLE_EDGE:
       // fallthrough
@@ -1199,7 +1202,7 @@ public class DagUtils {
         CartesianProductConfig cpConfig = new CartesianProductConfig(crossProductSources);
         v.setVertexManagerPlugin(
           VertexManagerPluginDescriptor.create(CartesianProductVertexManager.class.getName())
-            .setUserPayload(cpConfig.toUserPayload(null)));
+            .setUserPayload(cpConfig.toUserPayload(new TezConfiguration(conf))));
         // parallelism shouldn't be set for cartesian product vertex
       }
     } else {

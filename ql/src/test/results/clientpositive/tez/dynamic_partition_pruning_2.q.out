@@ -552,15 +552,15 @@ POSTHOOK: Input: default@agg_01@dim_shops_id=2
 POSTHOOK: Input: default@agg_01@dim_shops_id=3
 POSTHOOK: Input: default@dim_shops
 #### A masked pattern was here ####
-foo
-foo
-foo
 bar
 bar
 bar
 baz
 baz
 baz
+foo
+foo
+foo
 Warning: Map Join MAPJOIN[13][bigTable=?] in task 'Map 1' is a cross product
 PREHOOK: query: EXPLAIN SELECT agg.amount
 FROM agg_01 agg,
@@ -634,12 +634,12 @@ STAGE PLANS:
       Processor Tree:
         ListSink
 
-Warning: Map Join MAPJOIN[13][bigTable=?] in task 'Map 1' is a cross product
+Warning: Map Join MAPJOIN[15][bigTable=?] in task 'Map 1' is a cross product
 PREHOOK: query: SELECT agg.amount
 FROM agg_01 agg,
 dim_shops d1
 WHERE agg.dim_shops_id = d1.id
-and agg.dim_shops_id = 1
+and agg.dim_shops_id = 1 order by agg.amount
 PREHOOK: type: QUERY
 PREHOOK: Input: default@agg_01
 PREHOOK: Input: default@agg_01@dim_shops_id=1
@@ -649,7 +649,7 @@ POSTHOOK: query: SELECT agg.amount
 FROM agg_01 agg,
 dim_shops d1
 WHERE agg.dim_shops_id = d1.id
-and agg.dim_shops_id = 1
+and agg.dim_shops_id = 1 order by agg.amount
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@agg_01
 POSTHOOK: Input: default@agg_01@dim_shops_id=1

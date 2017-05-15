@@ -12,4 +12,4 @@ select * from src order by key limit 1;
 set hive.auto.convert.join.noconditionaltask.size=12;
 
 explain select * from Y, (select * from X as A, X as B) as C where Y.key=C.key;
-select * from Y, (select * from X as A, X as B) as C where Y.key=C.key;
+select * from Y, (select * from X as A, X as B order by A.key, B.key) as C where Y.key=C.key;
