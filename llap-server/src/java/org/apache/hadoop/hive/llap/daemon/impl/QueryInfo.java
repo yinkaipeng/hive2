@@ -61,6 +61,7 @@ public class QueryInfo {
   private final LlapNodeId amNodeId;
   private final String appTokenIdentifier;
   private final Token<JobTokenIdentifier> appToken;
+  private final boolean isExternalQuery;
   // Map of states for different vertices.
 
   private final Set<QueryFragmentInfo> knownFragments =
@@ -78,7 +79,8 @@ public class QueryInfo {
     String[] localDirsBase, FileSystem localFs, String tokenUserName,
     String tokenAppId, final LlapNodeId amNodeId,
     String tokenIdentifier,
-    Token<JobTokenIdentifier> appToken) {
+    Token<JobTokenIdentifier> appToken,
+    boolean isExternalQuery) {
     this.queryIdentifier = queryIdentifier;
     this.appIdString = appIdString;
     this.dagIdString = dagIdString;
@@ -94,6 +96,7 @@ public class QueryInfo {
     this.amNodeId = amNodeId;
     this.appTokenIdentifier = tokenIdentifier;
     this.appToken = appToken;
+    this.isExternalQuery = isExternalQuery;
     final InetSocketAddress address =
         NetUtils.createSocketAddrForHost(amNodeId.getHostname(), amNodeId.getPort());
     SecurityUtil.setTokenService(appToken, address);
@@ -145,6 +148,10 @@ public class QueryInfo {
 
   public List<QueryFragmentInfo> getRegisteredFragments() {
     return Lists.newArrayList(knownFragments);
+  }
+
+  public boolean isExternalQuery() {
+    return isExternalQuery;
   }
 
   private synchronized void createLocalDirs() throws IOException {
