@@ -145,8 +145,9 @@ public class SharedScanOptimizer extends Transform {
             // If partitions do not match, we currently do not merge
             PrunedPartitionList prevTsOpPPList = pctx.getPrunedPartitions(prevTsOp);
             PrunedPartitionList tsOpPPList = pctx.getPrunedPartitions(tsOp);
-            if (!prevTsOpPPList.getPartitions().equals(tsOpPPList.getPartitions())
-                || prevTsOpPPList.hasUnknownPartitions() != tsOpPPList.hasUnknownPartitions()) {
+            if (prevTsOpPPList.hasUnknownPartitions()
+                || tsOpPPList.hasUnknownPartitions()
+                || !prevTsOpPPList.getPartitions().equals(tsOpPPList.getPartitions())) {
               // Skip
               continue;
             }
