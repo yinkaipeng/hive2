@@ -1877,4 +1877,13 @@ public class MetaStoreUtils {
     }
     csNew.setStatsObj(list);
   }
+  
+  public static List<String> getColumnNamesForTable(Table table) {
+    List<String> colNames = new ArrayList<String>();
+    Iterator<FieldSchema> colsIterator = table.getSd().getColsIterator();
+    while (colsIterator.hasNext()) {
+      colNames.add(colsIterator.next().getName());
+    }
+    return colNames;
+  }
 }
