@@ -128,11 +128,11 @@ STAGE PLANS:
       Processor Tree:
         ListSink
 
-PREHOOK: query: SELECT x.* FROM src_null x ORDER BY a asc
+PREHOOK: query: SELECT x.* FROM src_null x ORDER BY a asc, b asc
 PREHOOK: type: QUERY
 PREHOOK: Input: default@src_null
 #### A masked pattern was here ####
-POSTHOOK: query: SELECT x.* FROM src_null x ORDER BY a asc
+POSTHOOK: query: SELECT x.* FROM src_null x ORDER BY a asc, b asc
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@src_null
 #### A masked pattern was here ####
@@ -199,11 +199,11 @@ STAGE PLANS:
       Processor Tree:
         ListSink
 
-PREHOOK: query: SELECT x.* FROM src_null x ORDER BY a desc
+PREHOOK: query: SELECT x.* FROM src_null x ORDER BY a desc, b asc
 PREHOOK: type: QUERY
 PREHOOK: Input: default@src_null
 #### A masked pattern was here ####
-POSTHOOK: query: SELECT x.* FROM src_null x ORDER BY a desc
+POSTHOOK: query: SELECT x.* FROM src_null x ORDER BY a desc, b asc
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@src_null
 #### A masked pattern was here ####
@@ -410,11 +410,11 @@ STAGE PLANS:
       Processor Tree:
         ListSink
 
-PREHOOK: query: SELECT x.* FROM src_null x ORDER BY a asc nulls first
+PREHOOK: query: SELECT x.* FROM src_null x ORDER BY a asc nulls first, b asc
 PREHOOK: type: QUERY
 PREHOOK: Input: default@src_null
 #### A masked pattern was here ####
-POSTHOOK: query: SELECT x.* FROM src_null x ORDER BY a asc nulls first
+POSTHOOK: query: SELECT x.* FROM src_null x ORDER BY a asc nulls first, b asc
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@src_null
 #### A masked pattern was here ####
@@ -481,11 +481,11 @@ STAGE PLANS:
       Processor Tree:
         ListSink
 
-PREHOOK: query: SELECT x.* FROM src_null x ORDER BY a desc nulls first
+PREHOOK: query: SELECT x.* FROM src_null x ORDER BY a desc nulls first, b asc
 PREHOOK: type: QUERY
 PREHOOK: Input: default@src_null
 #### A masked pattern was here ####
-POSTHOOK: query: SELECT x.* FROM src_null x ORDER BY a desc nulls first
+POSTHOOK: query: SELECT x.* FROM src_null x ORDER BY a desc nulls first, b asc
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@src_null
 #### A masked pattern was here ####
