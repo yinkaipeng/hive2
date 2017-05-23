@@ -685,6 +685,10 @@ public class HiveConf extends Configuration {
         "Setting it to true will break compatibility with older clients running TBinaryProtocol."),
     METASTORE_TOKEN_SIGNATURE("hive.metastore.token.signature", "",
         "The delegation token service name to match when selecting a token from the current user's tokens."),
+    METASTORE_MAX_TYPENAME_LENGTH("hive.metastore.max.typename.length", 2000,
+        "Max length allowed in metastore type name, as number of unicode characters. Setting it " +
+        "to a value higher than the backend DB supports will result either in DB errors or the " +
+        "values being silently truncated"),
     METASTORE_CLUSTER_DELEGATION_TOKEN_STORE_CLS("hive.cluster.delegation.token.store.class",
         "org.apache.hadoop.hive.thrift.MemoryTokenStore",
         "The delegation token store implementation. Set to org.apache.hadoop.hive.thrift.ZooKeeperTokenStore for load-balanced cluster."),
