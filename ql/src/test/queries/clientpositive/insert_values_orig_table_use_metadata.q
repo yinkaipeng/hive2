@@ -31,10 +31,6 @@ insert into table acid_ivot values
         (1, 2, 3, 4, 3.14, 2.34, 'fred', 'bob', '2014-09-01 10:34:23.111', '1944-06-06 06:00:00', true, true),
         (111, 222, 3333, 444, 13.14, 10239302.34239320, 'fred', 'bob', '2014-09-01 10:34:23.111', '1944-06-06 06:00:00', true, true);
 
-desc formatted acid_ivot;
-
-explain select count(*) from acid_ivot;
-
 select count(*) from acid_ivot;
 
 drop table acid_ivot;
@@ -57,27 +53,17 @@ insert into table acid_ivot values
         (1, 2, 3, 4, 3.14, 2.34, 'fred', 'bob', '2014-09-01 10:34:23.111', '1944-06-06 06:00:00', true, true),
         (111, 222, 3333, 444, 13.14, 10239302.34239320, 'fred', 'bob', '2014-09-01 10:34:23.111', '1944-06-06 06:00:00', true, true);
 
-desc formatted acid_ivot;
-
-explain select count(*) from acid_ivot;
-
 select count(*) from acid_ivot;
 
 insert into table acid_ivot values
         (1, 2, 3, 4, 3.14, 2.34, 'fred', 'bob', '2014-09-01 10:34:23.111', '1944-06-06 06:00:00', true, true),
         (111, 222, 3333, 444, 13.14, 10239302.34239320, 'fred', 'bob', '2014-09-01 10:34:23.111', '1944-06-06 06:00:00', true, true);
 
-desc formatted acid_ivot;
-
-explain select count(*) from acid_ivot;
-
 select count(*) from acid_ivot;
 
 LOAD DATA LOCAL INPATH "../../data/files/alltypesorc" into table acid_ivot;
 
-desc formatted acid_ivot;
-
-explain select count(*) from acid_ivot;
+select count(*) from acid_ivot;
 
 drop table acid_ivot;
 
@@ -116,6 +102,4 @@ analyze table sp PARTITION (ds="2008-04-08", hr="11") compute statistics;
 desc formatted sp PARTITION (ds="2008-04-08", hr="11");
 
 explain select count(*) from sp where ds="2008-04-08" and hr="11";
-
 select count(*) from sp where ds="2008-04-08" and hr="11";
-
