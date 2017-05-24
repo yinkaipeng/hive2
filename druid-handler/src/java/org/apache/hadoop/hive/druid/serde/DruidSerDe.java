@@ -374,22 +374,8 @@ public class DruidSerDe extends AbstractSerDe {
     columnTypes.add(TypeInfoFactory.timestampTypeInfo);
     // Dimension columns
     for (DimensionSpec ds : query.getDimensions()) {
-      if (ds instanceof ExtractionDimensionSpec) {
-        ExtractionDimensionSpec eds = (ExtractionDimensionSpec) ds;
-        TimeFormatExtractionFn tfe = (TimeFormatExtractionFn) eds.getExtractionFn();
-        if (tfe.getFormat() == null || tfe.getFormat().equals(DruidSerDeUtils.ISO_TIME_FORMAT)) {
-          // Timestamp (null or default used by FLOOR)
-          columnNames.add(ds.getOutputName());
-          columnTypes.add(TypeInfoFactory.timestampTypeInfo);
-        } else {
-          // EXTRACT from timestamp
-          columnNames.add(ds.getOutputName());
-          columnTypes.add(TypeInfoFactory.intTypeInfo);
-        }
-      } else {
-        columnNames.add(ds.getOutputName());
-        columnTypes.add(TypeInfoFactory.stringTypeInfo);
-      }
+      columnNames.add(ds.getOutputName());
+      columnTypes.add(DruidSerDeUtils.extractTypeFromDimension(ds));
     }
     // Aggregator columns
     for (AggregatorFactory af : query.getAggregatorSpecs()) {
@@ -496,20 +482,7 @@ public class DruidSerDe extends AbstractSerDe {
       }
       switch (types[i].getPrimitiveCategory()) {
         case TIMESTAMP:
-          long time;
-          if (value instanceof Number) {
-            time = ((Number) value).longValue();
-          } else if (value instanceof String) {
-            // FLOOR extraction function
-            try {
-              time = ISODateTimeFormat.dateTimeParser().parseMillis((String) value);
-            } catch (Exception e) {
-              throw new SerDeException("Unexpected time format: " + value.toString(), e);
-            }
-          } else {
-            throw new SerDeException("Unexpected time class: " + value.getClass().getName());
-          }
-          output.add(new TimestampWritable(new Timestamp(time)));
+          output.add(new TimestampWritable(new Timestamp((Long) value)));
           break;
         case BYTE:
           output.add(new ByteWritable(((Number) value).byteValue()));
@@ -518,20 +491,7 @@ public class DruidSerDe extends AbstractSerDe {
           output.add(new ShortWritable(((Number) value).shortValue()));
           break;
         case INT:
-          int number;
-          if (value instanceof Number) {
-            number = ((Number) value).intValue();
-          } else if (value instanceof String) {
-            // EXTRACT extraction function
-            try {
-              number = Integer.valueOf((String) value);
-            } catch (Exception e) {
-              throw new SerDeException("Unexpected integer format: " + value.toString(), e);
-            }
-          } else {
-            throw new SerDeException("Unexpected integer class: " + value.getClass().getName());
-          }
-          output.add(new IntWritable(number));
+          output.add(new IntWritable(((Number) value).intValue()));
           break;
         case LONG:
           output.add(new LongWritable(((Number) value).longValue()));
