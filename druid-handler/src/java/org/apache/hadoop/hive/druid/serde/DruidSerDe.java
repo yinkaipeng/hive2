@@ -68,6 +68,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.StringUtils;
 import org.joda.time.Period;
+import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,6 +76,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.metamx.common.lifecycle.Lifecycle;
+import com.metamx.common.parsers.ParseException;
 import com.metamx.http.client.HttpClient;
 import com.metamx.http.client.HttpClientConfig;
 import com.metamx.http.client.HttpClientInit;
@@ -85,6 +87,8 @@ import io.druid.query.Query;
 import io.druid.query.aggregation.AggregatorFactory;
 import io.druid.query.aggregation.PostAggregator;
 import io.druid.query.dimension.DimensionSpec;
+import io.druid.query.dimension.ExtractionDimensionSpec;
+import io.druid.query.extraction.TimeFormatExtractionFn;
 import io.druid.query.groupby.GroupByQuery;
 import io.druid.query.metadata.metadata.ColumnAnalysis;
 import io.druid.query.metadata.metadata.SegmentAnalysis;
@@ -370,8 +374,22 @@ public class DruidSerDe extends AbstractSerDe {
     columnTypes.add(TypeInfoFactory.timestampTypeInfo);
     // Dimension columns
     for (DimensionSpec ds : query.getDimensions()) {
-      columnNames.add(ds.getOutputName());
-      columnTypes.add(TypeInfoFactory.stringTypeInfo);
+      if (ds instanceof ExtractionDimensionSpec) {
+        ExtractionDimensionSpec eds = (ExtractionDimensionSpec) ds;
+        TimeFormatExtractionFn tfe = (TimeFormatExtractionFn) eds.getExtractionFn();
+        if (tfe.getFormat() == null || tfe.getFormat().equals(DruidSerDeUtils.ISO_TIME_FORMAT)) {
+          // Timestamp (null or default used by FLOOR)
+          columnNames.add(ds.getOutputName());
+          columnTypes.add(TypeInfoFactory.timestampTypeInfo);
+        } else {
+          // EXTRACT from timestamp
+          columnNames.add(ds.getOutputName());
+          columnTypes.add(TypeInfoFactory.intTypeInfo);
+        }
+      } else {
+        columnNames.add(ds.getOutputName());
+        columnTypes.add(TypeInfoFactory.stringTypeInfo);
+      }
     }
     // Aggregator columns
     for (AggregatorFactory af : query.getAggregatorSpecs()) {
@@ -478,7 +496,20 @@ public class DruidSerDe extends AbstractSerDe {
       }
       switch (types[i].getPrimitiveCategory()) {
         case TIMESTAMP:
-          output.add(new TimestampWritable(new Timestamp((Long) value)));
+          long time;
+          if (value instanceof Number) {
+            time = ((Number) value).longValue();
+          } else if (value instanceof String) {
+            // FLOOR extraction function
+            try {
+              time = ISODateTimeFormat.dateTimeParser().parseMillis((String) value);
+            } catch (Exception e) {
+              throw new SerDeException("Unexpected time format: " + value.toString(), e);
+            }
+          } else {
+            throw new SerDeException("Unexpected time class: " + value.getClass().getName());
+          }
+          output.add(new TimestampWritable(new Timestamp(time)));
           break;
         case BYTE:
           output.add(new ByteWritable(((Number) value).byteValue()));
@@ -487,7 +518,20 @@ public class DruidSerDe extends AbstractSerDe {
           output.add(new ShortWritable(((Number) value).shortValue()));
           break;
         case INT:
-          output.add(new IntWritable(((Number) value).intValue()));
+          int number;
+          if (value instanceof Number) {
+            number = ((Number) value).intValue();
+          } else if (value instanceof String) {
+            // EXTRACT extraction function
+            try {
+              number = Integer.valueOf((String) value);
+            } catch (Exception e) {
+              throw new SerDeException("Unexpected integer format: " + value.toString(), e);
+            }
+          } else {
+            throw new SerDeException("Unexpected integer class: " + value.getClass().getName());
+          }
+          output.add(new IntWritable(number));
           break;
         case LONG:
           output.add(new LongWritable(((Number) value).longValue()));

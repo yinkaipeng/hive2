@@ -30,10 +30,10 @@ public final class DruidSerDeUtils {
 
   private static final Logger LOG = LoggerFactory.getLogger(DruidSerDeUtils.class);
 
+  protected static final String ISO_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+
   protected static final String FLOAT_TYPE = "FLOAT";
-
   protected static final String LONG_TYPE = "LONG";
-
   protected static final String STRING_TYPE = "STRING";
 
   /* This method converts from the String representation of Druid type
