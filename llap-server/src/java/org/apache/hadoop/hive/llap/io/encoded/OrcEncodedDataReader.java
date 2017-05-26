@@ -377,7 +377,9 @@ public class OrcEncodedDataReader extends CallableWithNdc<Void>
                 metadataReader, stripe, globalIncludes, sargColumns);
             counters.incrTimeCounter(LlapIOCounters.HDFS_TIME_NS, startTimeHdfs);
             if (hasFileId && metadataCache != null) {
-              stripeMetadata = metadataCache.putStripeMetadata(stripeMetadata);
+              OrcStripeMetadata newMetadata = metadataCache.putStripeMetadata(stripeMetadata);
+              isFoundInCache = newMetadata != stripeMetadata; // May be cached concurrently.
+              stripeMetadata = newMetadata;
               if (LlapIoImpl.ORC_LOGGER.isTraceEnabled()) {
                 LlapIoImpl.ORC_LOGGER.trace("Caching stripe {} metadata with includes: {}",
                     stripeKey.stripeIx, DebugUtils.toString(globalIncludes));
