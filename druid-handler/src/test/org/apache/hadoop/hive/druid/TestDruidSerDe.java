@@ -339,6 +339,18 @@ public class TestDruidSerDe {
                   new FloatWritable(6.333333F) }
   };
 
+  // GroupBy query results as records (types defined by metastore)
+  private static final String GROUP_BY_COLUMN_NAMES = "__time,country,device,total_usage,data_transfer,avg_usage";
+  private static final String GROUP_BY_COLUMN_TYPES = "timestamp,string,string,int,double,float";
+  private static final Object[][] GROUP_BY_QUERY_RESULTS_RECORDS_2 = new Object[][] {
+    new Object[] { new TimestampWritable(new Timestamp(1325376000000L)), new Text("India"),
+            new Text("phone"), new IntWritable(88), new DoubleWritable(29.91233453F),
+            new FloatWritable(60.32F) },
+    new Object[] { new TimestampWritable(new Timestamp(1325376012000L)), new Text("Spain"),
+            new Text("pc"), new IntWritable(16), new DoubleWritable(172.93494959F),
+            new FloatWritable(6.333333F) }
+  };
+
   // Select query
   private static final String SELECT_QUERY =
           "{   \"queryType\": \"select\",  "
@@ -523,6 +535,13 @@ public class TestDruidSerDe {
     deserializeQueryResults(serDe, Query.GROUP_BY, GROUP_BY_QUERY,
             GROUP_BY_QUERY_RESULTS, GROUP_BY_QUERY_RESULTS_RECORDS
     );
+    // GroupBy query (simulating column types from metastore)
+    tbl.setProperty(serdeConstants.LIST_COLUMNS, GROUP_BY_COLUMN_NAMES);
+    tbl.setProperty(serdeConstants.LIST_COLUMN_TYPES, GROUP_BY_COLUMN_TYPES);
+    SerDeUtils.initializeSerDe(serDe, conf, tbl, null);
+    deserializeQueryResults(serDe, Query.GROUP_BY, GROUP_BY_QUERY,
+            GROUP_BY_QUERY_RESULTS, GROUP_BY_QUERY_RESULTS_RECORDS_2
+    );
     // Select query
     tbl = createPropertiesQuery("wikipedia", Query.SELECT, SELECT_QUERY);
     SerDeUtils.initializeSerDe(serDe, conf, tbl, null);
@@ -543,6 +562,7 @@ public class TestDruidSerDe {
     return tbl;
   }
 
+  @SuppressWarnings("unchecked")
   private static void deserializeQueryResults(DruidSerDe serDe, String queryType, String jsonQuery,
           String resultString, Object[][] records
   ) throws SerDeException, JsonParseException,
@@ -595,9 +615,12 @@ public class TestDruidSerDe {
     field1.setAccessible(true);
     field1.set(reader, query);
     if (reader instanceof DruidGroupByQueryRecordReader) {
-      Method method1 = DruidGroupByQueryRecordReader.class.getDeclaredMethod("initExtractors");
+      Method method1 = DruidGroupByQueryRecordReader.class.getDeclaredMethod("initDimensionTypes");
       method1.setAccessible(true);
       method1.invoke(reader);
+      Method method2 = DruidGroupByQueryRecordReader.class.getDeclaredMethod("initExtractors");
+      method2.setAccessible(true);
+      method2.invoke(reader);
     }
     Field field2 = DruidQueryRecordReader.class.getDeclaredField("results");
     field2.setAccessible(true);
@@ -612,10 +635,11 @@ public class TestDruidSerDe {
     DruidWritable writable = new DruidWritable();
     int pos = 0;
     while (reader.next(NullWritable.get(), writable)) {
-      Object row = serDe.deserialize(writable);
+      List<Object> row = (List<Object>) serDe.deserialize(writable);
       Object[] expectedFieldsData = records[pos];
       assertEquals(expectedFieldsData.length, fieldRefs.size());
       for (int i = 0; i < fieldRefs.size(); i++) {
+        assertEquals("Field " + i + " type", expectedFieldsData[i].getClass(), row.get(i).getClass());
         Object fieldData = oi.getStructFieldData(row, fieldRefs.get(i));
         assertEquals("Field " + i, expectedFieldsData[i], fieldData);
       }
@@ -628,10 +652,11 @@ public class TestDruidSerDe {
     field2.set(reader, results);
     pos = 0;
     while (reader.nextKeyValue()) {
-      Object row = serDe.deserialize(reader.getCurrentValue());
+      List<Object> row = (List<Object>) serDe.deserialize(reader.getCurrentValue());
       Object[] expectedFieldsData = records[pos];
       assertEquals(expectedFieldsData.length, fieldRefs.size());
       for (int i = 0; i < fieldRefs.size(); i++) {
+        assertEquals("Field " + i + " type", expectedFieldsData[i].getClass(), row.get(i).getClass());
         Object fieldData = oi.getStructFieldData(row, fieldRefs.get(i));
         assertEquals("Field " + i, expectedFieldsData[i], fieldData);
       }
@@ -682,7 +707,7 @@ public class TestDruidSerDe {
    * @throws NoSuchMethodException
    */
   @Test
-  public void testDruidSerializer()
+  public void testDruidObjectSerializer()
           throws SerDeException, JsonParseException, JsonMappingException,
           NoSuchFieldException, SecurityException, IllegalArgumentException,
           IllegalAccessException, IOException, InterruptedException,
@@ -737,9 +762,62 @@ public class TestDruidSerDe {
     // Serialize
     DruidWritable writable = (DruidWritable) serDe.serialize(rowObject, inspector);
     // Check result
-    assertEquals(DRUID_WRITABLE.getValue().size(), writable.getValue().size());
-    for (Entry<String, Object> e: DRUID_WRITABLE.getValue().entrySet()) {
+    assertEquals(druidWritable.getValue().size(), writable.getValue().size());
+    for (Entry<String, Object> e: druidWritable.getValue().entrySet()) {
       assertEquals(e.getValue(), writable.getValue().get(e.getKey()));
+    }
+  }
+
+  private static final Object[] ROW_OBJECT_2 = new Object[] {
+      new TimestampWritable(new Timestamp(1377907200000L)),
+      new Text("dim1_val"),
+      new DoubleWritable(10669.3D),
+      new FloatWritable(10669.45F),
+      new HiveDecimalWritable(HiveDecimal.create(1064.34D)),
+      new LongWritable(1113939),
+      new IntWritable(1112123),
+      new ShortWritable((short) 12),
+      new ByteWritable((byte) 0)
+  };
+  private static final DruidWritable DRUID_WRITABLE_2 = new DruidWritable(
+      ImmutableMap.<String, Object>builder()
+          .put("__time", 1377907200000L)
+          .put("c0", "dim1_val")
+          .put("c1", 10669.3D)
+          .put("c2", 10669.45F)
+          .put("c3", 1064.34D)
+          .put("c4", 1113939L)
+          .put("c5", 1112123)
+          .put("c6", (short) 12)
+          .put("c7", (byte) 0)
+          .build());
+
+  @Test
+  public void testDruidObjectDeserializer()
+          throws SerDeException, JsonParseException, JsonMappingException,
+          NoSuchFieldException, SecurityException, IllegalArgumentException,
+          IllegalAccessException, IOException, InterruptedException,
+          NoSuchMethodException, InvocationTargetException {
+    // Create, initialize, and test the SerDe
+    DruidSerDe serDe = new DruidSerDe();
+    Configuration conf = new Configuration();
+    Properties tbl;
+    // Mixed source (all types)
+    tbl = createPropertiesSource(COLUMN_NAMES, COLUMN_TYPES);
+    SerDeUtils.initializeSerDe(serDe, conf, tbl, null);
+    deserializeObject(tbl, serDe, ROW_OBJECT_2, DRUID_WRITABLE_2);
+  }
+
+  @SuppressWarnings("unchecked")
+  private static void deserializeObject(Properties properties, DruidSerDe serDe,
+      Object[] rowObject, DruidWritable druidWritable) throws SerDeException {
+    // Deserialize
+    List<Object> object = (List<Object>) serDe.deserialize(druidWritable);
+    // Check result
+    assertEquals(rowObject.length, object.size());
+    for (int i = 0; i < rowObject.length; i++) {
+      assertEquals(rowObject[i].getClass(), object.get(i).getClass());
+      assertEquals(rowObject[i], object.get(i));
     }
   }
 }
