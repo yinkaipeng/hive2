@@ -33,7 +33,7 @@ STAGE PLANS:
             druid.query.type groupBy
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: $f1 (type: float), $f2 (type: float), extract_month (type: int)
+            expressions: $f1 (type: float), $f2 (type: float), extract_month (type: string)
             outputColumnNames: _col0, _col1, _col2
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -87,7 +87,7 @@ STAGE PLANS:
             druid.query.type groupBy
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: extract_month (type: int), $f1 (type: bigint)
+            expressions: extract_month (type: string), $f1 (type: bigint)
             outputColumnNames: _col0, _col1
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -167,7 +167,7 @@ STAGE PLANS:
             druid.query.type groupBy
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: extract_month (type: int), $f2 (type: bigint), $f3 (type: float), page (type: string)
+            expressions: extract_month (type: string), $f2 (type: bigint), $f3 (type: float), page (type: string)
             outputColumnNames: _col0, _col1, _col2, _col3
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -195,7 +195,7 @@ STAGE PLANS:
             druid.query.type groupBy
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: extract_month (type: int), $f2 (type: bigint), $f3 (type: float), page (type: string)
+            expressions: extract_month (type: string), $f2 (type: bigint), $f3 (type: float), page (type: string)
             outputColumnNames: _col0, _col1, _col2, _col3
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -223,7 +223,7 @@ STAGE PLANS:
             druid.query.type groupBy
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: extract_month (type: int), $f2 (type: bigint), $f3 (type: float), page (type: string)
+            expressions: extract_month (type: string), $f2 (type: bigint), $f3 (type: float), page (type: string)
             outputColumnNames: _col0, _col1, _col2, _col3
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -249,7 +249,7 @@ STAGE PLANS:
             druid.query.type groupBy
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: extract_year (type: int), $f1 (type: bigint)
+            expressions: extract_year (type: string), $f1 (type: bigint)
             outputColumnNames: _col0, _col1
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -277,7 +277,7 @@ STAGE PLANS:
             druid.query.type groupBy
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: extract_month (type: int), $f2 (type: bigint), $f3 (type: float), page (type: string)
+            expressions: extract_month (type: string), $f2 (type: bigint), $f3 (type: float), page (type: string)
             outputColumnNames: _col0, _col1, _col2, _col3
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -307,7 +307,7 @@ STAGE PLANS:
             druid.query.type groupBy
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: extract_month (type: int), $f2 (type: bigint), $f3 (type: float), page (type: string)
+            expressions: extract_month (type: string), $f2 (type: bigint), $f3 (type: float), page (type: string)
             outputColumnNames: _col0, _col1, _col2, _col3
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -337,7 +337,7 @@ STAGE PLANS:
             druid.query.type groupBy
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: extract_month (type: int), $f2 (type: bigint), $f3 (type: float), page (type: string)
+            expressions: extract_month (type: string), $f2 (type: bigint), $f3 (type: float), page (type: string)
             outputColumnNames: _col0, _col1, _col2, _col3
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -365,7 +365,7 @@ STAGE PLANS:
             druid.query.type groupBy
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: extract_month (type: int), $f2 (type: bigint), $f3 (type: float), page (type: string)
+            expressions: extract_month (type: string), $f2 (type: bigint), $f3 (type: float), page (type: string)
             outputColumnNames: _col0, _col1, _col2, _col3
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink

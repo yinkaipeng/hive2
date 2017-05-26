@@ -58,7 +58,3 @@ GROUP BY robot, language, floor_day(`__time`)
 ORDER BY CAST(robot AS INTEGER) ASC, m DESC
 LIMIT 10;
 
-EXPLAIN
-SELECT substring(namespace, CAST(deleted AS INT), 4)
-FROM druid_table_1;
-

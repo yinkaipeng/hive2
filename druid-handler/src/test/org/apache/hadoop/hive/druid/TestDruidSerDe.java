@@ -595,12 +595,9 @@ public class TestDruidSerDe {
     field1.setAccessible(true);
     field1.set(reader, query);
     if (reader instanceof DruidGroupByQueryRecordReader) {
-      Method method1 = DruidGroupByQueryRecordReader.class.getDeclaredMethod("initDimensionTypes");
+      Method method1 = DruidGroupByQueryRecordReader.class.getDeclaredMethod("initExtractors");
       method1.setAccessible(true);
       method1.invoke(reader);
-      Method method2 = DruidGroupByQueryRecordReader.class.getDeclaredMethod("initExtractors");
-      method2.setAccessible(true);
-      method2.invoke(reader);
     }
     Field field2 = DruidQueryRecordReader.class.getDeclaredField("results");
     field2.setAccessible(true);
