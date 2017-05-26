@@ -113,7 +113,7 @@ STAGE PLANS:
             druid.query.type groupBy
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: extract (type: string), $f1 (type: float), $f2 (type: float)
+            expressions: extract (type: timestamp), $f1 (type: float), $f2 (type: float)
             outputColumnNames: _col0, _col1, _col2
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
