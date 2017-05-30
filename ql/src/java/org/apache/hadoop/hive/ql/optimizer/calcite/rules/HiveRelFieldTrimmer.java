@@ -313,8 +313,4 @@ public class HiveRelFieldTrimmer extends RelFieldTrimmer {
       }
     }
   }
-
-  protected TrimResult result(RelNode r, final Mapping mapping) {
-    return new TrimResult(r, mapping);
-  }
 }
