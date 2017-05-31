@@ -222,6 +222,10 @@ public class Warehouse {
     return false;
   }
 
+  void addToChangeManagement(Path file) throws MetaException {
+    cm.addFile(file);
+  }
+
   public boolean deleteDir(Path f, boolean recursive) throws MetaException {
     return deleteDir(f, recursive, false);
   }

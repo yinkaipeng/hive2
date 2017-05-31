@@ -1,23 +1,24 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+/*
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
 
 package org.apache.hadoop.hive.ql.exec;
 
+import org.apache.hadoop.hive.metastore.ReplChangeManager;
 import org.apache.hadoop.hive.ql.parse.EximUtil;
 import org.apache.hadoop.hive.ql.parse.ReplicationSpec;
 import org.apache.hadoop.hive.ql.plan.CopyWork;
@@ -73,7 +74,27 @@ public class ReplCopyTask extends Task<ReplCopyWork> implements Serializable {
       FileSystem srcFs = fromPath.getFileSystem(conf);
       dstFs = toPath.getFileSystem(conf);
 
-      List<FileStatus> srcFiles = new ArrayList<FileStatus>();
+      // This should only be true for copy tasks created from functions, otherwise there should never
+      // be a CM uri in the from path.
+      if (ReplChangeManager.isCMFileUri(fromPath, srcFs)) {
+        String[] result = ReplChangeManager.getFileWithChksumFromURI(fromPath.toString());
+        Path sourcePath = ReplChangeManager
+            .getFileStatus(new Path(result[0]), result[1], conf)
+            .getPath();
+        if (FileUtils.copy(
+            sourcePath.getFileSystem(conf), sourcePath,
+            dstFs, toPath
+            , false, false, conf
+        )) {
+          return 0;
+        } else {
+          console.printError("Failed to copy: '" + fromPath.toString() + "to: '" + toPath.toString()
+              + "'");
+          return 1;
+        }
+      }
+
+      List<FileStatus> srcFiles = new ArrayList<>();
       FileStatus[] srcs = LoadSemanticAnalyzer.matchFilesOrDir(srcFs, fromPath);
       LOG.debug("ReplCopyTasks srcs=" + (srcs == null ? "null" : srcs.length));
       if (! rwork.getReadListFromInput()){

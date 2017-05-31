@@ -1,19 +1,19 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+/*
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
  */
 package org.apache.hadoop.hive.ql.parse;
 
@@ -55,14 +55,13 @@ import org.apache.hadoop.hive.ql.parse.repl.dump.io.JsonWriter;
 import org.apache.hadoop.hive.ql.parse.repl.load.DumpMetaData;
 import org.apache.hadoop.hive.ql.parse.repl.load.EventDumpDirComparator;
 import org.apache.hadoop.hive.ql.parse.repl.load.MetaData;
+import org.apache.hadoop.hive.ql.parse.repl.load.message.CreateFunctionHandler;
 import org.apache.hadoop.hive.ql.parse.repl.load.message.MessageHandler;
 import org.apache.hadoop.hive.ql.plan.AlterDatabaseDesc;
 import org.apache.hadoop.hive.ql.plan.AlterTableDesc;
 import org.apache.hadoop.hive.ql.plan.CreateDatabaseDesc;
-import org.apache.hadoop.hive.ql.plan.CreateFunctionDesc;
 import org.apache.hadoop.hive.ql.plan.DDLWork;
 import org.apache.hadoop.hive.ql.plan.DependencyCollectionWork;
-import org.apache.hadoop.hive.ql.plan.FunctionWork;
 import org.apache.hadoop.hive.ql.plan.PlanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -378,11 +377,13 @@ public class ReplicationSemanticAnalyzer extends BaseSemanticAnalyzer {
           continue;
         }
 
-        Path functionMetadataRoot =
-            new Path(new Path(functionsRoot, functionName), FUNCTION_METADATA_DIR_NAME);
+        Path functionRoot = new Path(functionsRoot, functionName);
+        Path functionMetadataRoot = new Path(functionRoot, FUNCTION_METADATA_DIR_NAME);
         try (JsonWriter jsonWriter = new JsonWriter(functionMetadataRoot.getFileSystem(conf),
             functionMetadataRoot)) {
-          new FunctionSerializer(tuple.object).writeTo(jsonWriter, tuple.replicationSpec);
+          FunctionSerializer serializer =
+              new FunctionSerializer(tuple.object, conf);
+          serializer.writeTo(jsonWriter, tuple.replicationSpec);
         }
         REPL_STATE_LOG.info("Repl Dump: Dumped metadata for function: {}", functionName);
       }
@@ -842,31 +843,22 @@ public class ReplicationSemanticAnalyzer extends BaseSemanticAnalyzer {
         .getValidatedURI(conf, stripQuotes(functionDir.getPath().toUri().toString()));
     Path fromPath = new Path(fromURI.getScheme(), fromURI.getAuthority(), fromURI.getPath());
 
-    FileSystem fs = FileSystem.get(fromURI, conf);
-    inputs.add(toReadEntity(fromPath, conf));
-
     try {
-      MetaData metaData = EximUtil.readMetaData(fs, new Path(fromPath, EximUtil.METADATA_NAME));
-      ReplicationSpec replicationSpec = metaData.getReplicationSpec();
-      if (replicationSpec.isNoop()) {
-        // nothing to do here, silently return.
-        return;
-      }
-      CreateFunctionDesc desc = new CreateFunctionDesc(
-          dbName + "." + metaData.function.getFunctionName(),
-          false,
-          metaData.function.getClassName(),
-          metaData.function.getResourceUris()
+      CreateFunctionHandler handler = new CreateFunctionHandler();
+      List<Task<? extends Serializable>> tasksList = handler.handle(
+          new MessageHandler.Context(
+              dbName, null, fromPath.toString(), createDbTask, null, conf, db,
+              null, LOG)
       );
 
-      Task<FunctionWork> currentTask = TaskFactory.get(new FunctionWork(desc), conf);
-      if (createDbTask != null) {
-        createDbTask.addDependentTask(currentTask);
+      for (Task task : tasksList) {
+        createDbTask.addDependentTask(task);
         LOG.debug("Added {}:{} as a precursor of {}:{}",
-            createDbTask.getClass(), createDbTask.getId(), currentTask.getClass(),
-            currentTask.getId());
+            createDbTask.getClass(), createDbTask.getId(), task.getClass(),
+            task.getId());
       }
-    } catch (IOException e) {
+      inputs.addAll(handler.readEntities());
+    } catch (Exception e) {
       throw new SemanticException(ErrorMsg.INVALID_PATH.getMsg(), e);
     }
   }
