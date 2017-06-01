@@ -903,40 +903,21 @@ POSTHOOK: query: explain
 select cast(3.14 as decimal(4,2)) as c from decimal_2 order by c
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
-  Stage-1 is a root stage
-  Stage-0 depends on stages: Stage-1
+  Stage-0 is a root stage
 
 STAGE PLANS:
-  Stage: Stage-1
-    Map Reduce
-      Map Operator Tree:
-          TableScan
-            alias: decimal_2
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            Select Operator
-              Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-              Reduce Output Operator
-                sort order: 
-                Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-      Execution mode: vectorized
-      Reduce Operator Tree:
-        Select Operator
-          expressions: 3.14 (type: decimal(4,2))
-          outputColumnNames: _col0
-          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-          File Output Operator
-            compressed: false
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            table:
-                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
-                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
-                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
-
   Stage: Stage-0
     Fetch Operator
       limit: -1
       Processor Tree:
-        ListSink
+        TableScan
+          alias: decimal_2
+          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+          Select Operator
+            expressions: 3.14 (type: decimal(4,2))
+            outputColumnNames: _col0
+            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+            ListSink
 
 PREHOOK: query: select cast(3.14 as decimal(4,2)) as c from decimal_2 order by c
 PREHOOK: type: QUERY
@@ -954,40 +935,21 @@ POSTHOOK: query: explain
 select cast(cast(3.14 as float) as decimal(4,2)) as c from decimal_2 order by c
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
-  Stage-1 is a root stage
-  Stage-0 depends on stages: Stage-1
+  Stage-0 is a root stage
 
 STAGE PLANS:
-  Stage: Stage-1
-    Map Reduce
-      Map Operator Tree:
-          TableScan
-            alias: decimal_2
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            Select Operator
-              Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-              Reduce Output Operator
-                sort order: 
-                Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-      Execution mode: vectorized
-      Reduce Operator Tree:
-        Select Operator
-          expressions: 3.14 (type: decimal(4,2))
-          outputColumnNames: _col0
-          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-          File Output Operator
-            compressed: false
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            table:
-                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
-                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
-                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
-
   Stage: Stage-0
     Fetch Operator
       limit: -1
       Processor Tree:
-        ListSink
+        TableScan
+          alias: decimal_2
+          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+          Select Operator
+            expressions: 3.14 (type: decimal(4,2))
+            outputColumnNames: _col0
+            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+            ListSink
 
 PREHOOK: query: select cast(cast(3.14 as float) as decimal(4,2)) as c from decimal_2 order by c
 PREHOOK: type: QUERY
@@ -1005,40 +967,21 @@ POSTHOOK: query: explain
 select cast(cast('2012-12-19 11:12:19.1234567' as timestamp) as decimal(30,8)) as c from decimal_2 order by c
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
-  Stage-1 is a root stage
-  Stage-0 depends on stages: Stage-1
+  Stage-0 is a root stage
 
 STAGE PLANS:
-  Stage: Stage-1
-    Map Reduce
-      Map Operator Tree:
-          TableScan
-            alias: decimal_2
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            Select Operator
-              Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-              Reduce Output Operator
-                sort order: 
-                Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-      Execution mode: vectorized
-      Reduce Operator Tree:
-        Select Operator
-          expressions: 1355944339.1234567 (type: decimal(30,8))
-          outputColumnNames: _col0
-          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-          File Output Operator
-            compressed: false
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            table:
-                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
-                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
-                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
-
   Stage: Stage-0
     Fetch Operator
       limit: -1
       Processor Tree:
-        ListSink
+        TableScan
+          alias: decimal_2
+          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+          Select Operator
+            expressions: 1355944339.1234567 (type: decimal(30,8))
+            outputColumnNames: _col0
+            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+            ListSink
 
 PREHOOK: query: select cast(cast('2012-12-19 11:12:19.1234567' as timestamp) as decimal(30,8)) as c from decimal_2 order by c
 PREHOOK: type: QUERY
@@ -1048,7 +991,7 @@ POSTHOOK: query: select cast(cast('2012-12-19 11:12:19.1234567' as timestamp) as
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@decimal_2
 #### A masked pattern was here ####
-1355944339.12345670
+1355944339.1234567
 PREHOOK: query: explain
 select cast(true as decimal) as c from decimal_2 order by c
 PREHOOK: type: QUERY
@@ -1056,40 +999,21 @@ POSTHOOK: query: explain
 select cast(true as decimal) as c from decimal_2 order by c
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
-  Stage-1 is a root stage
-  Stage-0 depends on stages: Stage-1
+  Stage-0 is a root stage
 
 STAGE PLANS:
-  Stage: Stage-1
-    Map Reduce
-      Map Operator Tree:
-          TableScan
-            alias: decimal_2
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            Select Operator
-              Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-              Reduce Output Operator
-                sort order: 
-                Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-      Execution mode: vectorized
-      Reduce Operator Tree:
-        Select Operator
-          expressions: 1 (type: decimal(10,0))
-          outputColumnNames: _col0
-          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-          File Output Operator
-            compressed: false
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            table:
-                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
-                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
-                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
-
   Stage: Stage-0
     Fetch Operator
       limit: -1
       Processor Tree:
-        ListSink
+        TableScan
+          alias: decimal_2
+          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+          Select Operator
+            expressions: 1 (type: decimal(10,0))
+            outputColumnNames: _col0
+            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+            ListSink
 
 PREHOOK: query: explain
 select cast(true as decimal) as c from decimal_2 order by c
@@ -1098,40 +1022,21 @@ POSTHOOK: query: explain
 select cast(true as decimal) as c from decimal_2 order by c
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
-  Stage-1 is a root stage
-  Stage-0 depends on stages: Stage-1
+  Stage-0 is a root stage
 
 STAGE PLANS:
-  Stage: Stage-1
-    Map Reduce
-      Map Operator Tree:
-          TableScan
-            alias: decimal_2
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            Select Operator
-              Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-              Reduce Output Operator
-                sort order: 
-                Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-      Execution mode: vectorized
-      Reduce Operator Tree:
-        Select Operator
-          expressions: 1 (type: decimal(10,0))
-          outputColumnNames: _col0
-          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-          File Output Operator
-            compressed: false
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            table:
-                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
-                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
-                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
-
   Stage: Stage-0
     Fetch Operator
       limit: -1
       Processor Tree:
-        ListSink
+        TableScan
+          alias: decimal_2
+          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+          Select Operator
+            expressions: 1 (type: decimal(10,0))
+            outputColumnNames: _col0
+            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+            ListSink
 
 PREHOOK: query: select cast(true as decimal) as c from decimal_2 order by c
 PREHOOK: type: QUERY
@@ -1149,40 +1054,21 @@ POSTHOOK: query: explain
 select cast(3Y as decimal) as c from decimal_2 order by c
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
-  Stage-1 is a root stage
-  Stage-0 depends on stages: Stage-1
+  Stage-0 is a root stage
 
 STAGE PLANS:
-  Stage: Stage-1
-    Map Reduce
-      Map Operator Tree:
-          TableScan
-            alias: decimal_2
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            Select Operator
-              Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-              Reduce Output Operator
-                sort order: 
-                Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-      Execution mode: vectorized
-      Reduce Operator Tree:
-        Select Operator
-          expressions: 3 (type: decimal(10,0))
-          outputColumnNames: _col0
-          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-          File Output Operator
-            compressed: false
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            table:
-                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
-                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
-                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
-
   Stage: Stage-0
     Fetch Operator
       limit: -1
       Processor Tree:
-        ListSink
+        TableScan
+          alias: decimal_2
+          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+          Select Operator
+            expressions: 3 (type: decimal(10,0))
+            outputColumnNames: _col0
+            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+            ListSink
 
 PREHOOK: query: select cast(3Y as decimal) as c from decimal_2 order by c
 PREHOOK: type: QUERY
@@ -1200,40 +1086,21 @@ POSTHOOK: query: explain
 select cast(3S as decimal) as c from decimal_2 order by c
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
-  Stage-1 is a root stage
-  Stage-0 depends on stages: Stage-1
+  Stage-0 is a root stage
 
 STAGE PLANS:
-  Stage: Stage-1
-    Map Reduce
-      Map Operator Tree:
-          TableScan
-            alias: decimal_2
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            Select Operator
-              Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-              Reduce Output Operator
-                sort order: 
-                Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-      Execution mode: vectorized
-      Reduce Operator Tree:
-        Select Operator
-          expressions: 3 (type: decimal(10,0))
-          outputColumnNames: _col0
-          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-          File Output Operator
-            compressed: false
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            table:
-                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
-                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
-                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
-
   Stage: Stage-0
     Fetch Operator
       limit: -1
       Processor Tree:
-        ListSink
+        TableScan
+          alias: decimal_2
+          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+          Select Operator
+            expressions: 3 (type: decimal(10,0))
+            outputColumnNames: _col0
+            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+            ListSink
 
 PREHOOK: query: select cast(3S as decimal) as c from decimal_2 order by c
 PREHOOK: type: QUERY
@@ -1251,40 +1118,21 @@ POSTHOOK: query: explain
 select cast(cast(3 as int) as decimal) as c from decimal_2 order by c
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
-  Stage-1 is a root stage
-  Stage-0 depends on stages: Stage-1
+  Stage-0 is a root stage
 
 STAGE PLANS:
-  Stage: Stage-1
-    Map Reduce
-      Map Operator Tree:
-          TableScan
-            alias: decimal_2
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            Select Operator
-              Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-              Reduce Output Operator
-                sort order: 
-                Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-      Execution mode: vectorized
-      Reduce Operator Tree:
-        Select Operator
-          expressions: 3 (type: decimal(10,0))
-          outputColumnNames: _col0
-          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-          File Output Operator
-            compressed: false
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            table:
-                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
-                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
-                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
-
   Stage: Stage-0
     Fetch Operator
       limit: -1
       Processor Tree:
-        ListSink
+        TableScan
+          alias: decimal_2
+          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+          Select Operator
+            expressions: 3 (type: decimal(10,0))
+            outputColumnNames: _col0
+            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+            ListSink
 
 PREHOOK: query: select cast(cast(3 as int) as decimal) as c from decimal_2 order by c
 PREHOOK: type: QUERY
@@ -1302,40 +1150,21 @@ POSTHOOK: query: explain
 select cast(3L as decimal) as c from decimal_2 order by c
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
-  Stage-1 is a root stage
-  Stage-0 depends on stages: Stage-1
+  Stage-0 is a root stage
 
 STAGE PLANS:
-  Stage: Stage-1
-    Map Reduce
-      Map Operator Tree:
-          TableScan
-            alias: decimal_2
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            Select Operator
-              Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-              Reduce Output Operator
-                sort order: 
-                Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-      Execution mode: vectorized
-      Reduce Operator Tree:
-        Select Operator
-          expressions: 3 (type: decimal(10,0))
-          outputColumnNames: _col0
-          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-          File Output Operator
-            compressed: false
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            table:
-                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
-                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
-                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
-
   Stage: Stage-0
     Fetch Operator
       limit: -1
       Processor Tree:
-        ListSink
+        TableScan
+          alias: decimal_2
+          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+          Select Operator
+            expressions: 3 (type: decimal(10,0))
+            outputColumnNames: _col0
+            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+            ListSink
 
 PREHOOK: query: select cast(3L as decimal) as c from decimal_2 order by c
 PREHOOK: type: QUERY
@@ -1353,40 +1182,21 @@ POSTHOOK: query: explain
 select cast(0.99999999999999999999 as decimal(20,19)) as c from decimal_2 order by c
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
-  Stage-1 is a root stage
-  Stage-0 depends on stages: Stage-1
+  Stage-0 is a root stage
 
 STAGE PLANS:
-  Stage: Stage-1
-    Map Reduce
-      Map Operator Tree:
-          TableScan
-            alias: decimal_2
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            Select Operator
-              Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-              Reduce Output Operator
-                sort order: 
-                Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-      Execution mode: vectorized
-      Reduce Operator Tree:
-        Select Operator
-          expressions: 1 (type: decimal(20,19))
-          outputColumnNames: _col0
-          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-          File Output Operator
-            compressed: false
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            table:
-                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
-                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
-                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
-
   Stage: Stage-0
     Fetch Operator
       limit: -1
       Processor Tree:
-        ListSink
+        TableScan
+          alias: decimal_2
+          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+          Select Operator
+            expressions: 1 (type: decimal(20,19))
+            outputColumnNames: _col0
+            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+            ListSink
 
 PREHOOK: query: select cast(0.99999999999999999999 as decimal(20,19)) as c from decimal_2 order by c
 PREHOOK: type: QUERY
@@ -1396,7 +1206,7 @@ POSTHOOK: query: select cast(0.99999999999999999999 as decimal(20,19)) as c from
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@decimal_2
 #### A masked pattern was here ####
-1.0000000000000000000
+1
 PREHOOK: query: explain
 select cast('0.99999999999999999999' as decimal(20,20)) as c from decimal_2 order by c
 PREHOOK: type: QUERY
@@ -1404,40 +1214,21 @@ POSTHOOK: query: explain
 select cast('0.99999999999999999999' as decimal(20,20)) as c from decimal_2 order by c
 POSTHOOK: type: QUERY
 STAGE DEPENDENCIES:
-  Stage-1 is a root stage
-  Stage-0 depends on stages: Stage-1
+  Stage-0 is a root stage
 
 STAGE PLANS:
-  Stage: Stage-1
-    Map Reduce
-      Map Operator Tree:
-          TableScan
-            alias: decimal_2
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            Select Operator
-              Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-              Reduce Output Operator
-                sort order: 
-                Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-      Execution mode: vectorized
-      Reduce Operator Tree:
-        Select Operator
-          expressions: 0.99999999999999999999 (type: decimal(20,20))
-          outputColumnNames: _col0
-          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-          File Output Operator
-            compressed: false
-            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
-            table:
-                input format: org.apache.hadoop.mapred.SequenceFileInputFormat
-                output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
-                serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
-
   Stage: Stage-0
     Fetch Operator
       limit: -1
       Processor Tree:
-        ListSink
+        TableScan
+          alias: decimal_2
+          Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+          Select Operator
+            expressions: 0.99999999999999999999 (type: decimal(20,20))
+            outputColumnNames: _col0
+            Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: COMPLETE
+            ListSink
 
 PREHOOK: query: select cast('0.99999999999999999999' as decimal(20,20)) as c from decimal_2 order by c
 PREHOOK: type: QUERY
