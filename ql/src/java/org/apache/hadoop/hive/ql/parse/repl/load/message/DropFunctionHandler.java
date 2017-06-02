@@ -17,37 +17,35 @@
  */
 package org.apache.hadoop.hive.ql.parse.repl.load.message;
 
-import org.apache.hadoop.hive.metastore.messaging.DropTableMessage;
+import org.apache.hadoop.hive.metastore.messaging.DropFunctionMessage;
+import org.apache.hadoop.hive.ql.exec.FunctionUtils;
 import org.apache.hadoop.hive.ql.exec.Task;
 import org.apache.hadoop.hive.ql.exec.TaskFactory;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
-import org.apache.hadoop.hive.ql.plan.DDLWork;
-import org.apache.hadoop.hive.ql.plan.DropTableDesc;
+import org.apache.hadoop.hive.ql.plan.DropFunctionDesc;
+import org.apache.hadoop.hive.ql.plan.FunctionWork;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class DropTableHandler extends AbstractMessageHandler {
+public class DropFunctionHandler extends AbstractMessageHandler {
   @Override
   public List<Task<? extends Serializable>> handle(Context context)
       throws SemanticException {
-    DropTableMessage msg = deserializer.getDropTableMessage(context.dmd.getPayload());
+    DropFunctionMessage msg = deserializer.getDropFunctionMessage(context.dmd.getPayload());
     String actualDbName = context.isDbNameEmpty() ? msg.getDB() : context.dbName;
-    String actualTblName = context.isTableNameEmpty() ? msg.getTable() : context.tableName;
-    DropTableDesc dropTableDesc = new DropTableDesc(
-        actualDbName + "." + actualTblName,
-        false, true, true,
-        eventOnlyReplicationSpec(context)
-    );
-    Task<DDLWork> dropTableTask = TaskFactory.get(
-        new DDLWork(readEntitySet, writeEntitySet, dropTableDesc),
-        context.hiveConf
-    );
+    String qualifiedFunctionName =
+        FunctionUtils.qualifyFunctionName(msg.getFunctionName(), actualDbName);
+    DropFunctionDesc desc = new DropFunctionDesc(qualifiedFunctionName, false);
+    Task<? extends Serializable> dropFunctionTask = TaskFactory.get(new FunctionWork(desc), context.hiveConf);
     context.log.debug(
-        "Added drop tbl task : {}:{}", dropTableTask.getId(), dropTableDesc.getTableName()
+        "Added drop function task : {}:{}", dropFunctionTask.getId(), desc.getFunctionName()
     );
     databasesUpdated.put(actualDbName, context.dmd.getEventTo());
-    return Collections.<Task<? extends Serializable>>singletonList(dropTableTask);
+    List<Task<? extends Serializable>> retval = new ArrayList<>();
+    retval.add(dropFunctionTask);
+    return retval;
   }
 }
