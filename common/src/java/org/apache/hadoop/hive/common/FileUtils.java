@@ -31,6 +31,7 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Random;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -614,8 +615,26 @@ public final class FileUtils {
     boolean deleteSource,
     boolean overwrite,
     HiveConf conf) throws IOException {
+    return copy(srcFS, src, dstFS, dst, deleteSource, overwrite, conf, ShimLoader.getHadoopShims());
+  }
 
-    HadoopShims shims = ShimLoader.getHadoopShims();
+  /**
+   * Copies files between filesystems as a fs super user using distcp, and runs
+   * as a privileged user.
+   */
+  public static boolean privilegedCopy(FileSystem srcFS, Path src, Path dst,
+      HiveConf conf) throws IOException {
+    String privilegedUser = conf.getVar(HiveConf.ConfVars.HIVE_DISTCP_DOAS_USER);
+    return distCp(srcFS, src, dst, false, privilegedUser, conf, ShimLoader.getHadoopShims());
+  }
+
+  @VisibleForTesting
+  static boolean copy(FileSystem srcFS, Path src,
+      FileSystem dstFS, Path dst,
+      boolean deleteSource,
+      boolean overwrite,
+      HiveConf conf, HadoopShims shims) throws IOException {
+
     boolean copied;
 
     /* Run distcp if source file/dir is too big */
@@ -623,13 +642,14 @@ public final class FileUtils {
         srcFS.getFileStatus(src).getLen() > conf.getLongVar(HiveConf.ConfVars.HIVE_EXEC_COPYFILE_MAXSIZE)) {
       LOG.info("Source is " + srcFS.getFileStatus(src).getLen() + " bytes. (MAX: " + conf.getLongVar(HiveConf.ConfVars.HIVE_EXEC_COPYFILE_MAXSIZE) + ")");
       LOG.info("Launch distributed copy (distcp) job.");
-      copied = shims.runDistCp(src, dst, conf);
-      if (copied && deleteSource) {
-        srcFS.delete(src, true);
-      }
+      copied = distCp(srcFS, src, dst, deleteSource, null, conf, shims);
     } else {
       copied = FileUtil.copy(srcFS, src, dstFS, dst, deleteSource, overwrite, conf);
     }
+    // Note : Currently, this implementation does not "fall back" to regular copy if distcp
+    // is tried and it fails. We depend upon that behaviour in cases like replication,
+    // wherein if distcp fails, there is good reason to not plod along with a trivial
+    // implementation, and fail instead.
 
     boolean inheritPerms = conf.getBoolVar(HiveConf.ConfVars.HIVE_WAREHOUSE_SUBDIR_INHERIT_PERMS);
     if (copied && inheritPerms) {
@@ -638,6 +658,21 @@ public final class FileUtils {
       } catch (Exception e) {
         LOG.warn("Error setting permissions or group of " + dst, e);
       }
+    }
+    return copied;
+  }
+
+  static boolean distCp(FileSystem srcFS, Path src, Path dst,
+      boolean deleteSource, String doAsUser,
+      HiveConf conf, HadoopShims shims) throws IOException {
+    boolean copied = false;
+    if (doAsUser == null){
+      copied = shims.runDistCp(src, dst, conf);
+    } else {
+      copied = shims.runDistCpAs(src, dst, conf, doAsUser);
+    }
+    if (copied && deleteSource) {
+      srcFS.delete(src, true);
     }
     return copied;
   }
