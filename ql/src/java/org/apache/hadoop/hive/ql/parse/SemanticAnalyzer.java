@@ -8930,8 +8930,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
   /** Parses semjoin hints in the query and returns the table names mapped to filter size, or -1 if not specified.
    *  Hints can be in 2 formats
-   *  1. TableName, ColumnName, bloom filter entries
-   *  2. TableName, ColumnName
+   *  1. TableName, ColumnName, Target-TableName, bloom filter entries
+   *  2. TableName, ColumnName, Target-TableName
    *  */
   private Map<String, List<SemiJoinHint>> parseSemiJoinHint(List<ASTNode> hints) throws SemanticException {
     if (hints == null || hints.size() == 0) return null;
@@ -8967,15 +8967,15 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     throws SemanticException {
     // Check if there are enough entries in the tree to constitute a hint.
     int numEntriesLeft = args.getChildCount() - curIdx;
-    if (numEntriesLeft < 2) {
+    if (numEntriesLeft < 3) {
       throw new SemanticException("User provided only 1 entry for the hint with alias "
               + args.getChild(curIdx).getText());
     }
 
-    String alias = args.getChild(curIdx++).getText();
+    String source = args.getChild(curIdx++).getText();
     // validate
-    if (StringUtils.isNumeric(alias)) {
-      throw new SemanticException("User provided bloom filter entries when alias is expected");
+    if (StringUtils.isNumeric(source)) {
+      throw new SemanticException("User provided bloom filter entries when source alias is expected");
     }
 
     String colName = args.getChild(curIdx++).getText();
@@ -8984,8 +8984,14 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       throw new SemanticException("User provided bloom filter entries when column name is expected");
     }
 
+    String target = args.getChild(curIdx++).getText();
+    // validate
+    if (StringUtils.isNumeric(colName)) {
+      throw new SemanticException("User provided bloom filter entries when target alias is expected");
+    }
+
     Integer number = null;
-    if (numEntriesLeft > 2) {
+    if (numEntriesLeft > 3) {
       // Check if there exists bloom filter size entry
       try {
         number = Integer.parseInt(args.getChild(curIdx).getText());
@@ -8993,12 +8999,12 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       } catch (NumberFormatException e) { // Ignore
       }
     }
-    List<SemiJoinHint> hintList = result.get(alias);
+    List<SemiJoinHint> hintList = result.get(source);
     if (hintList == null) {
       hintList = new ArrayList<>();
-      result.put(alias, hintList);
+      result.put(source, hintList);
     }
-    hintList.add(new SemiJoinHint(colName, number));
+    hintList.add(new SemiJoinHint(colName, target, number));
     return curIdx;
   }
 
