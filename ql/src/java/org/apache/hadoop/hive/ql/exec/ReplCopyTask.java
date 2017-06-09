@@ -15,7 +15,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
 package org.apache.hadoop.hive.ql.exec;
 
 import org.apache.hadoop.hive.metastore.ReplChangeManager;
@@ -168,7 +167,7 @@ public class ReplCopyTask extends Task<ReplCopyWork> implements Serializable {
         }else{
           LOG.debug("ReplCopyTask _files now tracks:" + oneSrc.getPath().toUri());
           console.printInfo("Tracking file: " + oneSrc.getPath().toUri());
-          String chksumString = ReplChangeManager.getChksumString(oneSrc.getPath(), actualSrcFs);
+          String chksumString = ReplChangeManager.checksumFor(oneSrc.getPath(), actualSrcFs);
           listBW.write(ReplChangeManager.encodeFileUri
               (oneSrc.getPath().toUri().toString(), chksumString) + "\n");
         }
