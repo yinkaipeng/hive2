@@ -907,6 +907,16 @@ struct GetAllFunctionsResponse {
   1: optional list<Function> functions
 }
 
+// Request type for cm_recycle
+struct CmRecycleRequest {
+  1: required string dataPath,
+  2: required bool purge
+}
+
+// Response type for cm_recycle
+struct CmRecycleResponse {
+}
+
 struct TableMeta {
   1: required string dbName;
   2: required string tableName;
@@ -1447,6 +1457,9 @@ service ThriftHiveMetastore extends fb303.FacebookService
   CurrentNotificationEventId get_current_notificationEventId()
   FireEventResponse fire_listener_event(1:FireEventRequest rqst)
   void flushCache()
+
+  // Repl Change Management api
+  CmRecycleResponse cm_recycle(1:CmRecycleRequest request) throws(1:MetaException o1)
 
   GetFileMetadataByExprResult get_file_metadata_by_expr(1:GetFileMetadataByExprRequest req)
   GetFileMetadataResult get_file_metadata(1:GetFileMetadataRequest req)
