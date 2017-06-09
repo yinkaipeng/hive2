@@ -558,6 +558,7 @@ public class ObjectStore implements RawStore, Configurable {
       LOG.debug("RawStore: " + this + ", with PersistenceManager: " + pm +
           " will be shutdown");
       pm.close();
+      pm = null;
     }
   }
 
