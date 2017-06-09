@@ -300,17 +300,19 @@ public class TempletonUtils {
 
   public static String addUserHomeDirectoryIfApplicable(String origPathStr, String user)
     throws IOException, URISyntaxException {
-    URI uri = new URI(origPathStr);
-
-    if (uri.getPath().isEmpty()) {
-      String newPath = "/user/" + user;
-      uri = UriBuilder.fromUri(uri).replacePath(newPath).build();
-    } else if (!new Path(uri.getPath()).isAbsolute()) {
-      String newPath = "/user/" + user + "/" + uri.getPath();
-      uri = UriBuilder.fromUri(uri).replacePath(newPath).build();
-    } // no work needed for absolute paths
-
-    return uri.toString();
+    if(origPathStr == null || origPathStr.isEmpty()) {
+      return "/user/" + user;
+    }
+    Path p = new Path(origPathStr);
+    if(p.isAbsolute()) {
+      return origPathStr;
+    }
+    if(p.toUri().getPath().isEmpty()) {
+      //origPathStr="hdfs://host:99" for example
+      return new Path(p.toUri().getScheme(), p.toUri().getAuthority(), "/user/" + user).toString();
+    }
+    //can't have relative path if there is scheme/authority
+    return "/user/" + user + "/" + origPathStr;
   }
 
   public static Path hadoopFsPath(String fname, final Configuration conf, String user)
