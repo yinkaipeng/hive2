@@ -119,9 +119,9 @@ public class TestReplicationScenarios {
       WindowsPathUtil.convertPathsFromWindowsToHdfs(hconf);
     }
 
-    System.setProperty(HiveConf.ConfVars.METASTORE_TRANSACTIONAL_EVENT_LISTENERS.varname,
+    hconf.set(HiveConf.ConfVars.METASTORE_TRANSACTIONAL_EVENT_LISTENERS.varname,
         DBNOTIF_LISTENER_CLASSNAME); // turn on db notification listener on metastore
-    System.setProperty(HiveConf.ConfVars.METASTORE_RAW_STORE_IMPL.varname,
+    hconf.set(HiveConf.ConfVars.METASTORE_RAW_STORE_IMPL.varname,
         "org.apache.hadoop.hive.metastore.InjectableBehaviourObjectStore");
 
     hconf.setVar(HiveConf.ConfVars.REPLCMDIR, TEST_PATH + "/cmroot/");
@@ -2167,8 +2167,13 @@ public class TestReplicationScenarios {
     String finalTblReplDumpId = verifyAndReturnTblReplStatus(
         dbName, "ptned2", lastReplDumpId, lastTblReplDumpId,
         "ALTER TABLE " + dbName + ".ptned2 DROP PARTITION (b=11)");
-
-    assertTrue(finalTblReplDumpId.compareTo(lastTblReplDumpId) > 0);
+    /*
+    Comparisons using Strings for event Ids is wrong. This should be numbers since lexical string comparison
+    and numeric comparision differ. This requires a broader change where we return the dump Id as long and not string
+    fixing this here for now as it was observed in one of the builds where "1001".compareTo("998") results
+    in failure of the assertion below.
+     */
+    assertTrue(new Long(Long.parseLong(finalTblReplDumpId)).compareTo(Long.parseLong(lastTblReplDumpId)) > 0);
 
     // TODO : currently not testing the following scenarios:
     //   a) Multi-db wh-level REPL LOAD - need to add that
