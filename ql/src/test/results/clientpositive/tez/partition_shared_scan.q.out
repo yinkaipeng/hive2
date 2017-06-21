@@ -124,9 +124,9 @@ Stage-0
           <-Map 1 [SIMPLE_EDGE]
             SHUFFLE [RS_13]
               PartitionCols:_col0
-              Select Operator [SEL_8] (rows=10 width=9)
+              Select Operator [SEL_2] (rows=10 width=9)
                 Output:["_col0"]
-                Filter Operator [FIL_24] (rows=10 width=9)
+                Filter Operator [FIL_22] (rows=10 width=9)
                   predicate:i is not null
                   TableScan [TS_0] (rows=10 width=9)
                     default@foo,f1,Tbl:COMPLETE,Col:NONE,Output:["i"]
@@ -138,11 +138,7 @@ Stage-0
               <-Map 1 [SIMPLE_EDGE]
                 SHUFFLE [RS_9]
                   PartitionCols:_col0
-                  Select Operator [SEL_2] (rows=10 width=9)
-                    Output:["_col0"]
-                    Filter Operator [FIL_22] (rows=10 width=9)
-                      predicate:i is not null
-                       Please refer to the previous TableScan [TS_0]
+                   Please refer to the previous Select Operator [SEL_2]
               <-Map 4 [SIMPLE_EDGE]
                 SHUFFLE [RS_10]
                   PartitionCols:_col0
