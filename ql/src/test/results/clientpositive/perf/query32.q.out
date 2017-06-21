@@ -116,17 +116,9 @@ Stage-0
                           <-Map 1 [SIMPLE_EDGE]
                             SHUFFLE [RS_23]
                               PartitionCols:_col0
-                              Select Operator [SEL_19] (rows=287989836 width=135)
-                                Output:["_col0","_col1","_col2"]
-                                Filter Operator [FIL_56] (rows=287989836 width=135)
-                                  predicate:(cs_sold_date_sk is not null and cs_item_sk is not null)
-                                   Please refer to the previous TableScan [TS_0]
+                               Please refer to the previous Select Operator [SEL_2]
                           <-Map 7 [SIMPLE_EDGE]
                             SHUFFLE [RS_24]
                               PartitionCols:_col0
-                              Select Operator [SEL_22] (rows=8116 width=1119)
-                                Output:["_col0"]
-                                Filter Operator [FIL_57] (rows=8116 width=1119)
-                                  predicate:(d_date BETWEEN '2000-01-27' AND '2000-04-27' and d_date_sk is not null)
-                                   Please refer to the previous TableScan [TS_3]
+                               Please refer to the previous Select Operator [SEL_5]
 
