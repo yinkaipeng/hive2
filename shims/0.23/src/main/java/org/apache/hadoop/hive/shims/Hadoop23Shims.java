@@ -1118,6 +1118,7 @@ public class Hadoop23Shims extends HadoopShimsSecure {
       // if no entries were added via conf, we initiate our defaults
       params.add("-update");
       params.add("-skipcrccheck");
+      params.add("-pb");
     }
     params.add(src.toString());
     params.add(dst.toString());
