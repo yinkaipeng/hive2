@@ -83,6 +83,7 @@ import org.apache.calcite.util.ReflectiveVisitor;
 import org.apache.calcite.util.Stacks;
 import org.apache.calcite.util.Util;
 import org.apache.calcite.util.mapping.Mappings;
+import org.apache.hadoop.hive.ql.optimizer.calcite.RexSimplify;
 import org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveAggregate;
 import org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveFilter;
 import org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveJoin;
@@ -1232,7 +1233,7 @@ public class HiveRelDecorrelator implements ReflectiveVisitor {
 
       // Replace the filter expression to reference output of the join
       // Map filter to the new filter over join
-      relBuilder.push(frame.r).filter(decorrelateExpr(rel.getCondition()));
+      relBuilder.push(frame.r).filter(new RexSimplify(rel.getCluster().getRexBuilder(), true).simplify(decorrelateExpr(rel.getCondition())));
 
       // Filter does not change the input ordering.
       // Filter rel does not permute the input.
