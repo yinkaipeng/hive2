@@ -684,7 +684,7 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
         throw new SemanticException("Unrecognized token in CREATE DATABASE statement");
       }
     }
-    AlterDatabaseDesc alterDesc = new AlterDatabaseDesc(dbName, dbProps);
+    AlterDatabaseDesc alterDesc = new AlterDatabaseDesc(dbName, dbProps, null);
     addAlterDbDesc(alterDesc);
   }
 
@@ -933,7 +933,7 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
       }
     }
 
-    TruncateTableDesc truncateTblDesc = new TruncateTableDesc(tableName, partSpec);
+    TruncateTableDesc truncateTblDesc = new TruncateTableDesc(tableName, partSpec, null);
 
     DDLWork ddlWork = new DDLWork(getInputs(), getOutputs(), truncateTblDesc);
     Task<? extends Serializable> truncateTask = TaskFactory.get(ddlWork, conf);
@@ -2542,7 +2542,7 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
     String sourceName = getDotName(source);
     String targetName = getDotName(target);
 
-    AlterTableDesc alterTblDesc = new AlterTableDesc(sourceName, targetName, expectView);
+    AlterTableDesc alterTblDesc = new AlterTableDesc(sourceName, targetName, expectView, null);
     addInputsOutputsAlterTable(sourceName, null, alterTblDesc);
     rootTasks.add(TaskFactory.get(new DDLWork(getInputs(), getOutputs(),
         alterTblDesc), conf));
@@ -2620,7 +2620,7 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
     partSpecs.add(oldPartSpec);
     partSpecs.add(newPartSpec);
     addTablePartsOutputs(tab, partSpecs, WriteEntity.WriteType.DDL_EXCLUSIVE);
-    RenamePartitionDesc renamePartitionDesc = new RenamePartitionDesc(tblName, oldPartSpec, newPartSpec);
+    RenamePartitionDesc renamePartitionDesc = new RenamePartitionDesc(tblName, oldPartSpec, newPartSpec, null);
     rootTasks.add(TaskFactory.get(new DDLWork(getInputs(), getOutputs(),
         renamePartitionDesc), conf));
   }

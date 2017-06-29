@@ -106,6 +106,13 @@ public class TestReplicationScenariosAcrossInstances {
         .verify(incrementalDump.lastReplicationId)
         .run("SHOW FUNCTIONS LIKE '" + replicatedDbName + "*'")
         .verify(replicatedDbName + ".testFunction");
+
+    // Test the idempotent behavior of CREATE FUNCTION
+    replica.load(replicatedDbName, incrementalDump.dumpLocation)
+            .run("REPL STATUS " + replicatedDbName)
+            .verify(incrementalDump.lastReplicationId)
+            .run("SHOW FUNCTIONS LIKE '" + replicatedDbName + "*'")
+            .verify(replicatedDbName + ".testFunction");
   }
 
   @Ignore("This testcase is commented as it uses UDF library on java 1.8 which is not supported. Another JIRA BUG-80469 will track this.")
@@ -128,6 +135,13 @@ public class TestReplicationScenariosAcrossInstances {
         .verify(incrementalDump.lastReplicationId)
         .run("SHOW FUNCTIONS LIKE '*testfunction*'")
         .verify(null);
+
+    // Test the idempotent behavior of DROP FUNCTION
+    replica.load(replicatedDbName, incrementalDump.dumpLocation)
+            .run("REPL STATUS " + replicatedDbName)
+            .verify(incrementalDump.lastReplicationId)
+            .run("SHOW FUNCTIONS LIKE '*testfunction*'")
+            .verify(null);
   }
 
   @Test
