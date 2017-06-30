@@ -1,0 +1,80 @@
+PREHOOK: query: drop table tbl_rc
+PREHOOK: type: DROPTABLE
+POSTHOOK: query: drop table tbl_rc
+POSTHOOK: type: DROPTABLE
+PREHOOK: query: drop table tbl_parquet
+PREHOOK: type: DROPTABLE
+POSTHOOK: query: drop table tbl_parquet
+POSTHOOK: type: DROPTABLE
+PREHOOK: query: create table tbl_rc (val decimal(10,0))
+row format serde 'org.apache.hadoop.hive.serde2.columnar.LazyBinaryColumnarSerDe' stored as rcfile
+PREHOOK: type: CREATETABLE
+PREHOOK: Output: database:default
+PREHOOK: Output: default@tbl_rc
+POSTHOOK: query: create table tbl_rc (val decimal(10,0))
+row format serde 'org.apache.hadoop.hive.serde2.columnar.LazyBinaryColumnarSerDe' stored as rcfile
+POSTHOOK: type: CREATETABLE
+POSTHOOK: Output: database:default
+POSTHOOK: Output: default@tbl_rc
+PREHOOK: query: create table tbl_parquet (val decimal(10,0)) 
+STORED AS PARQUET
+PREHOOK: type: CREATETABLE
+PREHOOK: Output: database:default
+PREHOOK: Output: default@tbl_parquet
+POSTHOOK: query: create table tbl_parquet (val decimal(10,0)) 
+STORED AS PARQUET
+POSTHOOK: type: CREATETABLE
+POSTHOOK: Output: database:default
+POSTHOOK: Output: default@tbl_parquet
+PREHOOK: query: insert into table tbl_rc values(101)
+PREHOOK: type: QUERY
+PREHOOK: Input: default@values__tmp__table__1
+PREHOOK: Output: default@tbl_rc
+POSTHOOK: query: insert into table tbl_rc values(101)
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@values__tmp__table__1
+POSTHOOK: Output: default@tbl_rc
+POSTHOOK: Lineage: tbl_rc.val EXPRESSION [(values__tmp__table__1)values__tmp__table__1.FieldSchema(name:tmp_values_col1, type:string, comment:), ]
+PREHOOK: query: insert into table tbl_parquet values(101)
+PREHOOK: type: QUERY
+PREHOOK: Input: default@values__tmp__table__2
+PREHOOK: Output: default@tbl_parquet
+POSTHOOK: query: insert into table tbl_parquet values(101)
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@values__tmp__table__2
+POSTHOOK: Output: default@tbl_parquet
+POSTHOOK: Lineage: tbl_parquet.val EXPRESSION [(values__tmp__table__2)values__tmp__table__2.FieldSchema(name:tmp_values_col1, type:string, comment:), ]
+PREHOOK: query: select val, round(val, -1) from tbl_rc order by val
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tbl_rc
+#### A masked pattern was here ####
+POSTHOOK: query: select val, round(val, -1) from tbl_rc order by val
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tbl_rc
+#### A masked pattern was here ####
+101	100
+PREHOOK: query: select val, round(val, -1) from tbl_parquet order by val
+PREHOOK: type: QUERY
+PREHOOK: Input: default@tbl_parquet
+#### A masked pattern was here ####
+POSTHOOK: query: select val, round(val, -1) from tbl_parquet order by val
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@tbl_parquet
+#### A masked pattern was here ####
+101	100
+PREHOOK: query: drop table tbl_rc
+PREHOOK: type: DROPTABLE
+PREHOOK: Input: default@tbl_rc
+PREHOOK: Output: default@tbl_rc
+POSTHOOK: query: drop table tbl_rc
+POSTHOOK: type: DROPTABLE
+POSTHOOK: Input: default@tbl_rc
+POSTHOOK: Output: default@tbl_rc
+PREHOOK: query: drop table tbl_parquet
+PREHOOK: type: DROPTABLE
+PREHOOK: Input: default@tbl_parquet
+PREHOOK: Output: default@tbl_parquet
+POSTHOOK: query: drop table tbl_parquet
+POSTHOOK: type: DROPTABLE
+POSTHOOK: Input: default@tbl_parquet
+POSTHOOK: Output: default@tbl_parquet
