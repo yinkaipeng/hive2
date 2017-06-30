@@ -449,7 +449,7 @@ public enum ErrorMsg {
   CANNOT_DROP_INDEX(10317, "Error while dropping index"),
   INVALID_AST_TREE(10318, "Internal error : Invalid AST"),
   ERROR_SERIALIZE_METASTORE(10319, "Error while serializing the metastore objects"),
-  IO_ERROR(10320, "Error while peforming IO operation "),
+  IO_ERROR(10320, "Error while performing IO operation "),
   ERROR_SERIALIZE_METADATA(10321, "Error while serializing the metadata"),
   INVALID_LOAD_TABLE_FILE_WORK(10322, "Invalid Load Table Work or Load File Work"),
   CLASSPATH_ERROR(10323, "Classpath error"),

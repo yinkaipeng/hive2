@@ -302,23 +302,4 @@ public class ReplCopyTask extends Task<ReplCopyWork> implements Serializable {
     }
     return copyTask;
   }
-
-  public static Task<?> getDumpCopyTask(ReplicationSpec replicationSpec, Path srcPath, Path dstPath, HiveConf conf) {
-    Task<?> copyTask = null;
-    LOG.debug("ReplCopyTask:getDumpCopyTask: "+srcPath + "=>" + dstPath);
-    if ((replicationSpec != null) && replicationSpec.isInReplicationScope()){
-      ReplCopyWork rcwork = new ReplCopyWork(srcPath, dstPath, false);
-      LOG.debug("ReplCopyTask:\trcwork");
-      if (replicationSpec.isLazy()){
-        LOG.debug("ReplCopyTask:\tlazy");
-        rcwork.setListFilesOnOutputBehaviour(true);
-      }
-      copyTask = TaskFactory.get(rcwork, conf);
-    } else {
-      LOG.debug("ReplCopyTask:\tcwork");
-      copyTask = TaskFactory.get(new CopyWork(srcPath, dstPath, false), conf);
-    }
-    return copyTask;
-  }
-
 }
