@@ -45,6 +45,7 @@ import org.apache.hadoop.hive.common.FileUtils;
 import org.apache.hadoop.hive.common.HiveStatsUtils;
 import org.apache.hadoop.hive.common.JavaUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.ReplChangeManager.RecycleType;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.MetaException;
@@ -208,12 +209,18 @@ public class Warehouse {
     return false;
   }
 
-  public boolean renameDir(Path sourcePath, Path destPath) throws MetaException {
-    return renameDir(sourcePath, destPath, false);
+  public boolean renameDir(Path sourcePath, Path destPath, boolean needCmRecycle) throws MetaException {
+    return renameDir(sourcePath, destPath, false, needCmRecycle);
   }
 
-  public boolean renameDir(Path sourcePath, Path destPath, boolean inheritPerms) throws MetaException {
+  public boolean renameDir(Path sourcePath, Path destPath,
+                           boolean inheritPerms, boolean needCmRecycle) throws MetaException {
     try {
+      if (needCmRecycle) {
+        // Copy the source files to cmroot. As the client will move the source files to another
+        // location, we should make a copy of the files to cmroot instead of moving it.
+        cm.recycle(sourcePath, RecycleType.COPY, true);
+      }
       FileSystem fs = getFs(sourcePath);
       return FileUtils.renameWithPerms(fs, sourcePath, destPath, inheritPerms, conf);
     } catch (Exception ex) {
@@ -223,7 +230,7 @@ public class Warehouse {
   }
 
   void addToChangeManagement(Path file) throws MetaException {
-    cm.addFile(file);
+    cm.recycle(file, RecycleType.COPY, true);
   }
 
   public boolean deleteDir(Path f, boolean recursive) throws MetaException {
@@ -231,13 +238,13 @@ public class Warehouse {
   }
 
   public boolean deleteDir(Path f, boolean recursive, boolean ifPurge) throws MetaException {
-    cm.recycle(f, ifPurge);
+    cm.recycle(f, RecycleType.MOVE, ifPurge);
     FileSystem fs = getFs(f);
     return fsHandler.deleteDir(fs, f, recursive, ifPurge, conf);
   }
 
   public void recycleDirToCmPath(Path f, boolean ifPurge) throws MetaException {
-    cm.recycle(f, ifPurge);
+    cm.recycle(f, RecycleType.MOVE, ifPurge);
     return;
   }
 

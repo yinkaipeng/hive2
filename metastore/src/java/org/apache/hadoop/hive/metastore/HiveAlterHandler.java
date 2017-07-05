@@ -284,10 +284,10 @@ public class HiveAlterHandler implements AlterHandler {
         // check that src exists otherwise there is no need to copy the data
         // rename the src to destination
         try {
-          if (srcFs.exists(srcPath) && !srcFs.rename(srcPath, destPath)) {
+          if (srcFs.exists(srcPath) && !wh.renameDir(srcPath, destPath, true)) {
             throw new IOException("Renaming " + srcPath + " to " + destPath + " failed");
           }
-        } catch (IOException e) {
+        } catch (IOException | MetaException e) {
           LOG.error("Alter Table operation for " + dbname + "." + name + " failed.", e);
           boolean revertMetaDataTransaction = false;
           try {
@@ -325,13 +325,13 @@ public class HiveAlterHandler implements AlterHandler {
   }
 
   /**
-   * RemoteExceptionS from hadoop RPC wrap the stack trace into e.getMessage() which makes
-   * logs/stack traces confusing.
+   * MetaException that encapsulates error message from RemoteException from hadoop RPC which wrap
+   * the stack trace into e.getMessage() which makes logs/stack traces confusing.
    * @param ex
    * @return
    */
-  String getSimpleMessage(IOException ex) {
-    if(ex instanceof RemoteException) {
+  String getSimpleMessage(Exception ex) {
+    if(ex instanceof MetaException) {
       String msg = ex.getMessage();
       if(msg == null || !msg.contains("\n")) {
         return msg;
@@ -534,10 +534,10 @@ public class HiveAlterHandler implements AlterHandler {
                 throw new IOException("Unable to create path " + destParentPath);
             }
 
-            wh.renameDir(srcPath, destPath, true);
+            wh.renameDir(srcPath, destPath, true, true);
             LOG.info("Partition directory rename from " + srcPath + " to " + destPath + " done.");
           }
-        } catch (IOException ex) {
+        } catch (IOException | MetaException ex) {
           LOG.error("Cannot rename partition directory from " + srcPath + " to " +
               destPath, ex);
           boolean revertMetaDataTransaction = false;
