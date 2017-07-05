@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -59,10 +60,10 @@ public class TestFileUtils {
     when(mockFs.getFileStatus(any(Path.class))).thenReturn(mockFileStatus);
 
     HadoopShims shims = mock(HadoopShims.class);
-    when(shims.runDistCp(copySrc, copyDst, conf)).thenReturn(true);
+    when(shims.runDistCp(Collections.singletonList(copySrc), copyDst, conf)).thenReturn(true);
 
     Assert.assertTrue(FileUtils.copy(mockFs, copySrc, mockFs, copyDst, false, false, conf, shims));
-    verify(shims).runDistCp(copySrc, copyDst, conf);
+    verify(shims).runDistCp(Collections.singletonList(copySrc), copyDst, conf);
   }
 
   @Test
@@ -81,14 +82,14 @@ public class TestFileUtils {
     String doAsUser = conf.getVar(HiveConf.ConfVars.HIVE_DISTCP_DOAS_USER);
 
     HadoopShims shims = mock(HadoopShims.class);
-    when(shims.runDistCpAs(copySrc, copyDst, conf, doAsUser)).thenReturn(true);
-    when(shims.runDistCp(copySrc, copyDst, conf)).thenReturn(false);
+    when(shims.runDistCpAs(Collections.singletonList(copySrc), copyDst, conf, doAsUser)).thenReturn(true);
+    when(shims.runDistCp(Collections.singletonList(copySrc), copyDst, conf)).thenReturn(false);
 
     // doAs when asked
-    Assert.assertTrue(FileUtils.distCp(mockFs, copySrc, copyDst, true, doAsUser, conf, shims));
-    verify(shims).runDistCpAs(copySrc, copyDst, conf, doAsUser);
+    Assert.assertTrue(FileUtils.distCp(mockFs, Collections.singletonList(copySrc), copyDst, true, doAsUser, conf, shims));
+    verify(shims).runDistCpAs(Collections.singletonList(copySrc), copyDst, conf, doAsUser);
     // don't doAs when not asked
-    Assert.assertFalse(FileUtils.distCp(mockFs, copySrc, copyDst, true, null, conf, shims));
-    verify(shims).runDistCp(copySrc, copyDst, conf);
+    Assert.assertFalse(FileUtils.distCp(mockFs, Collections.singletonList(copySrc), copyDst, true, null, conf, shims));
+    verify(shims).runDistCp(Collections.singletonList(copySrc), copyDst, conf);
   }
 }

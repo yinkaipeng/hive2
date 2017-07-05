@@ -28,6 +28,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -622,10 +623,10 @@ public final class FileUtils {
    * Copies files between filesystems as a fs super user using distcp, and runs
    * as a privileged user.
    */
-  public static boolean privilegedCopy(FileSystem srcFS, Path src, Path dst,
+  public static boolean privilegedCopy(FileSystem srcFS, List<Path> srcPaths, Path dst,
       HiveConf conf) throws IOException {
     String privilegedUser = conf.getVar(HiveConf.ConfVars.HIVE_DISTCP_DOAS_USER);
-    return distCp(srcFS, src, dst, false, privilegedUser, conf, ShimLoader.getHadoopShims());
+    return distCp(srcFS, srcPaths, dst, false, privilegedUser, conf, ShimLoader.getHadoopShims());
   }
 
   @VisibleForTesting
@@ -642,7 +643,7 @@ public final class FileUtils {
         srcFS.getFileStatus(src).getLen() > conf.getLongVar(HiveConf.ConfVars.HIVE_EXEC_COPYFILE_MAXSIZE)) {
       LOG.info("Source is " + srcFS.getFileStatus(src).getLen() + " bytes. (MAX: " + conf.getLongVar(HiveConf.ConfVars.HIVE_EXEC_COPYFILE_MAXSIZE) + ")");
       LOG.info("Launch distributed copy (distcp) job.");
-      copied = distCp(srcFS, src, dst, deleteSource, null, conf, shims);
+      copied = distCp(srcFS, Collections.singletonList(src), dst, deleteSource, null, conf, shims);
     } else {
       copied = FileUtil.copy(srcFS, src, dstFS, dst, deleteSource, overwrite, conf);
     }
@@ -662,17 +663,19 @@ public final class FileUtils {
     return copied;
   }
 
-  static boolean distCp(FileSystem srcFS, Path src, Path dst,
+  public static boolean distCp(FileSystem srcFS, List<Path> srcPaths, Path dst,
       boolean deleteSource, String doAsUser,
       HiveConf conf, HadoopShims shims) throws IOException {
     boolean copied = false;
     if (doAsUser == null){
-      copied = shims.runDistCp(src, dst, conf);
+      copied = shims.runDistCp(srcPaths, dst, conf);
     } else {
-      copied = shims.runDistCpAs(src, dst, conf, doAsUser);
+      copied = shims.runDistCpAs(srcPaths, dst, conf, doAsUser);
     }
     if (copied && deleteSource) {
-      srcFS.delete(src, true);
+      for (Path path : srcPaths) {
+        srcFS.delete(path, true);
+      }
     }
     return copied;
   }
