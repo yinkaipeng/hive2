@@ -33,7 +33,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -188,7 +187,7 @@ public class ReplCopyTask extends Task<ReplCopyWork> implements Serializable {
       // If the srcMap is not empty which means we made the list of files for distCp.
       // If there are files from different filesystems, then the map will have multiple entries.
       if (!srcMap.isEmpty()) {
-        for (final Map.Entry<FileSystem, List<Path>> entry : srcMap.entrySet()) {
+        for (final HashMap.Entry<FileSystem, List<Path>> entry : srcMap.entrySet()) {
           FileSystem actualSrcFs = entry.getKey();
           List<Path> srcPaths = entry.getValue();
           if (!doCopy(toPath, dstFs, srcPaths, actualSrcFs, conf)) {
