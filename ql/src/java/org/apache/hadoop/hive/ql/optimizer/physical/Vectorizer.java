@@ -941,6 +941,12 @@ public class Vectorizer implements PhysicalPlanResolver {
       HashMap<Node, Object> nodeOutput = new HashMap<Node, Object>();
       ogw.startWalking(topNodes, nodeOutput);
 
+      for (Node topNode : topNodes) {
+        if (topNode instanceof TableScanOperator) {
+          ((TableScanOperator) topNode).getConf().setVectorized(true);
+        }
+      }
+
       vectorTaskColumnInfo.setScratchTypeNameArray(vnp.getVectorScratchColumnTypeNames());
 
       vectorTaskColumnInfo.transferToBaseWork(mapWork);
