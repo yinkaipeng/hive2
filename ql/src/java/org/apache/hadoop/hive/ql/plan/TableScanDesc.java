@@ -101,6 +101,8 @@ public class TableScanDesc extends AbstractOperatorDesc {
 
   private boolean isAcidTable;
 
+  private boolean vectorized;
+
   private transient TableSample tableSample;
 
   private transient Table tableMetadata;
@@ -388,5 +390,13 @@ public class TableScanDesc extends AbstractOperatorDesc {
   @Explain(displayName = "properties", explainLevels = { Level.DEFAULT, Level.USER, Level.EXTENDED })
   public Map<String, String> getOpProps() {
     return opProps;
+  }
+
+  public void setVectorized(boolean vectorized) {
+    this.vectorized = vectorized;
+  }
+
+  public boolean isVectorized() {
+    return vectorized;
   }
 }
