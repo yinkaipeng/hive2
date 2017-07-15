@@ -27,6 +27,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.hive.common.HiveStatsUtils;
+import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.conf.HiveVariableSource;
 import org.apache.hadoop.hive.conf.VariableSubstitution;
@@ -242,7 +243,7 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
     return colTypes;
   }
 
-  private String genRewrittenQuery(List<String> colNames, int numBitVectors, Map<String,String> partSpec,
+  private String genRewrittenQuery(List<String> colNames, HiveConf conf, Map<String,String> partSpec,
     boolean isPartitionStats) throws SemanticException{
     StringBuilder rewrittenQueryBuilder = new StringBuilder("select ");
     String rewrittenQuery;
@@ -251,11 +252,20 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
       if (i > 0) {
         rewrittenQueryBuilder.append(" , ");
       }
+      String func = HiveConf.getVar(conf, HiveConf.ConfVars.HIVE_STATS_NDV_ALGO).toLowerCase();
       rewrittenQueryBuilder.append("compute_stats(`");
       rewrittenQueryBuilder.append(colNames.get(i));
-      rewrittenQueryBuilder.append("` , ");
-      rewrittenQueryBuilder.append(numBitVectors);
-      rewrittenQueryBuilder.append(" )");
+      rewrittenQueryBuilder.append("`, '" + func + "'");
+      if (func.equals("fm")) {
+        int numBitVectors = 0;
+        try {
+          numBitVectors = HiveStatsUtils.getNumBitVectorsForNDVEstimation(conf);
+        } catch (Exception e) {
+          throw new SemanticException(e.getMessage());
+        }
+        rewrittenQueryBuilder.append(", " + numBitVectors);
+      }
+      rewrittenQueryBuilder.append(")");
     }
 
     if (isPartitionStats) {
@@ -378,13 +388,7 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
         isTableLevel = true;
       }
       colType = getColumnTypes(colNames);
-      int numBitVectors;
-      try {
-        numBitVectors = HiveStatsUtils.getNumBitVectorsForNDVEstimation(conf);
-      } catch (Exception e) {
-        throw new SemanticException(e.getMessage());
-      }
-      rewrittenQuery = genRewrittenQuery(colNames, numBitVectors, partSpec, isPartitionStats);
+      rewrittenQuery = genRewrittenQuery(colNames, conf, partSpec, isPartitionStats);
       rewrittenTree = genRewrittenTree(rewrittenQuery);
     } else {
       // Not an analyze table column compute statistics statement - don't do any rewrites
@@ -448,13 +452,7 @@ public class ColumnStatsSemanticAnalyzer extends SemanticAnalyzer {
       isTableLevel = true;
     }
     colType = getColumnTypes(colNames);
-    int numBitVectors = 0;
-    try {
-      numBitVectors = HiveStatsUtils.getNumBitVectorsForNDVEstimation(conf);
-    } catch (Exception e) {
-      throw new SemanticException(e.getMessage());
-    }
-    rewrittenQuery = genRewrittenQuery(colNames, numBitVectors, partSpec, isPartitionStats);
+    rewrittenQuery = genRewrittenQuery(colNames, conf, partSpec, isPartitionStats);
     rewrittenTree = genRewrittenTree(rewrittenQuery);
 
     context.analyzeRewrite = new AnalyzeRewriteContext();
