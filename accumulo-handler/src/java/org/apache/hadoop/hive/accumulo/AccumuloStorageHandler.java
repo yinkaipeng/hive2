@@ -27,14 +27,6 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.mapred.AccumuloInputFormat;
-import org.apache.accumulo.core.client.mapred.AccumuloOutputFormat;
-import org.apache.accumulo.core.client.mapreduce.lib.impl.InputConfigurator;
-import org.apache.accumulo.core.client.mapreduce.lib.impl.OutputConfigurator;
-import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
-import org.apache.accumulo.fate.Fate;
-import org.apache.accumulo.start.Main;
-import org.apache.accumulo.trace.instrument.Tracer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.accumulo.mr.HiveAccumuloTableInputFormat;
 import org.apache.hadoop.hive.accumulo.mr.HiveAccumuloTableOutputFormat;
@@ -62,7 +54,6 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -146,7 +137,6 @@ public class AccumuloStorageHandler extends DefaultStorageHandler implements Hiv
     connectionParams = new AccumuloConnectionParameters(conf);
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public Class<? extends SerDe> getSerDeClass() {
     return AccumuloSerDe.class;
@@ -197,6 +187,37 @@ public class AccumuloStorageHandler extends DefaultStorageHandler implements Hiv
     }
 
     log.info("Computed input job properties of " + jobProperties);
+
+    Configuration conf = getConf();
+    helper.loadDependentJars(conf);
+
+    // When Kerberos is enabled, we have to add the Accumulo delegation token to the
+    // Job so that it gets passed down to the YARN/Tez task.
+    if (connectionParams.useSasl()) {
+      try {
+        // Open an accumulo connection
+        Connector conn = connectionParams.getConnector();
+
+        // Convert the Accumulo token in a Hadoop token
+        Token<? extends TokenIdentifier> accumuloToken = helper.setConnectorInfoForInputAndOutput(connectionParams, conn, conf);
+
+        // Probably don't have a JobConf here, but we can still try...
+        if (conf instanceof JobConf) {
+          // Convert the Accumulo token in a Hadoop token
+          log.debug("Adding Hadoop Token for Accumulo to Job's Credentials: " + accumuloToken);
+
+          // Add the Hadoop token to the JobConf
+          JobConf jobConf = (JobConf) conf;
+          jobConf.getCredentials().addToken(accumuloToken.getService(), accumuloToken);
+          log.info("All job tokens: " + jobConf.getCredentials().getAllTokens());
+        } else {
+          log.info("Don't have a JobConf, so we cannot persist Tokens. Have to do it later.");
+        }
+      } catch (Exception e) {
+        throw new RuntimeException("Failed to obtain DelegationToken for "
+            + connectionParams.getAccumuloUserName(), e);
+      }
+    }
   }
 
   @Override
@@ -323,7 +344,6 @@ public class AccumuloStorageHandler extends DefaultStorageHandler implements Hiv
     // do nothing
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public DecomposedPredicate decomposePredicate(JobConf conf, Deserializer deserializer,
       ExprNodeDesc desc) {
@@ -341,15 +361,9 @@ public class AccumuloStorageHandler extends DefaultStorageHandler implements Hiv
     }
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public void configureJobConf(TableDesc tableDesc, JobConf jobConf) {
-    try {
-      Utils.addDependencyJars(jobConf, Tracer.class, Fate.class, Connector.class, Main.class,
-          ZooKeeper.class, AccumuloStorageHandler.class);
-    } catch (IOException e) {
-      log.error("Could not add necessary Accumulo dependencies to classpath", e);
-    }
+    helper.loadDependentJars(jobConf);
 
     Properties tblProperties = tableDesc.getProperties();
     AccumuloSerDeParameters serDeParams = null;
@@ -370,36 +384,17 @@ public class AccumuloStorageHandler extends DefaultStorageHandler implements Hiv
     // Job so that it gets passed down to the YARN/Tez task.
     if (connectionParams.useSasl()) {
       try {
-        // Obtain a delegation token from Accumulo
+        // Open an accumulo connection
         Connector conn = connectionParams.getConnector();
-        AuthenticationToken token = helper.getDelegationToken(conn);
-
-        // Make sure the Accumulo token is set in the Configuration (only a stub of the Accumulo
-        // AuthentiationToken is serialized, not the entire token). configureJobConf may be
-        // called multiple times with the same JobConf which results in an error from Accumulo
-        // MapReduce API. Catch the error, log a debug message and just keep going
-        try {
-          InputConfigurator.setConnectorInfo(AccumuloInputFormat.class, jobConf,
-              connectionParams.getAccumuloUserName(), token);
-        } catch (IllegalStateException e) {
-          // The implementation balks when this method is invoked multiple times
-          log.debug("Ignoring IllegalArgumentException about re-setting connector information");
-        }
-        try {
-          OutputConfigurator.setConnectorInfo(AccumuloOutputFormat.class, jobConf,
-              connectionParams.getAccumuloUserName(), token);
-        } catch (IllegalStateException e) {
-          // The implementation balks when this method is invoked multiple times
-          log.debug("Ignoring IllegalArgumentException about re-setting connector information");
-        }
 
         // Convert the Accumulo token in a Hadoop token
-        Token<? extends TokenIdentifier> accumuloToken = helper.getHadoopToken(token);
+        Token<? extends TokenIdentifier> accumuloToken = helper.setConnectorInfoForInputAndOutput(connectionParams, conn, jobConf);
 
-        log.info("Adding Hadoop Token for Accumulo to Job's Credentials");
+        log.debug("Adding Hadoop Token for Accumulo to Job's Credentials");
 
         // Add the Hadoop token to the JobConf
         helper.mergeTokenIntoJobConf(jobConf, accumuloToken);
+        log.debug("All job tokens: " + jobConf.getCredentials().getAllTokens());
       } catch (Exception e) {
         throw new RuntimeException("Failed to obtain DelegationToken for " + connectionParams.getAccumuloUserName(), e);
       }
