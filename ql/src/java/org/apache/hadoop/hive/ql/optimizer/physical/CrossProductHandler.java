@@ -95,8 +95,10 @@ public class CrossProductHandler implements PhysicalPlanResolver, Dispatcher {
       && conf.get(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_MAX_PARALLELISM) == null) {
       LlapClusterStateForCompile llapInfo = LlapClusterStateForCompile.getClusterInfo(conf);
       llapInfo.initClusterInfo();
-      conf.setInt(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_MAX_PARALLELISM,
-        llapInfo.getKnownExecutorCount());
+      if (llapInfo.hasClusterInfo()) {
+        conf.setInt(CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_MAX_PARALLELISM,
+          llapInfo.getKnownExecutorCount());
+      }
     }
 
     TaskGraphWalker ogw = new TaskGraphWalker(this);
