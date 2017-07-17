@@ -200,7 +200,8 @@ public class HiveAlgorithmsUtil {
   }
 
   public static boolean isFittingIntoMemory(Double maxSize, RelNode input, int buckets) {
-    Double currentMemory = RelMetadataQuery.instance().cumulativeMemoryWithinPhase(input);
+    final RelMetadataQuery mq = input.getCluster().getMetadataQuery();
+    Double currentMemory = mq.cumulativeMemoryWithinPhase(input);
     if (currentMemory != null) {
       if(currentMemory / buckets > maxSize) {
         return false;
@@ -311,7 +312,7 @@ public class HiveAlgorithmsUtil {
 
   public static Double getJoinMemory(HiveJoin join, MapJoinStreamingRelation streamingSide) {
     Double memory = 0.0;
-    RelMetadataQuery mq = RelMetadataQuery.instance();
+    final RelMetadataQuery mq = join.getCluster().getMetadataQuery();
     if (streamingSide == MapJoinStreamingRelation.NONE ||
             streamingSide == MapJoinStreamingRelation.RIGHT_RELATION) {
       // Left side
@@ -339,7 +340,7 @@ public class HiveAlgorithmsUtil {
     final Double maxSplitSize = join.getCluster().getPlanner().getContext().
             unwrap(HiveAlgorithmsConf.class).getMaxSplitSize();
     // We repartition: new number of splits
-    RelMetadataQuery mq = RelMetadataQuery.instance();
+    final RelMetadataQuery mq = join.getCluster().getMetadataQuery();
     final Double averageRowSize = mq.getAverageRowSize(join);
     final Double rowCount = mq.getRowCount(join);
     if (averageRowSize == null || rowCount == null) {
@@ -359,7 +360,8 @@ public class HiveAlgorithmsUtil {
     } else {
       return null;
     }
-    return RelMetadataQuery.instance().splitCount(largeInput);
+    final RelMetadataQuery mq = join.getCluster().getMetadataQuery();
+    return mq.splitCount(largeInput);
   }
 
 }
