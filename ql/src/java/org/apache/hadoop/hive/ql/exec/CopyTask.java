@@ -18,6 +18,7 @@
 
 package org.apache.hadoop.hive.ql.exec;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ import org.apache.hadoop.hive.ql.DriverContext;
 import org.apache.hadoop.hive.ql.parse.LoadSemanticAnalyzer;
 import org.apache.hadoop.hive.ql.plan.CopyWork;
 import org.apache.hadoop.hive.ql.plan.api.StageType;
+import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.util.StringUtils;
 
 /**
@@ -76,18 +78,8 @@ public class CopyTask extends Task<CopyWork> implements Serializable {
         return 2;
       }
 
-      for (FileStatus oneSrc : srcs) {
-        console.printInfo("Copying file: " + oneSrc.getPath().toString());
-        LOG.debug("Copying file: " + oneSrc.getPath().toString());
-        if (!FileUtils.copy(srcFs, oneSrc.getPath(), dstFs, toPath,
-            false, // delete source
-            true, // overwrite destination
-            conf)) {
-          console.printError("Failed to copy: '" + oneSrc.getPath().toString()
-              + "to: '" + toPath.toString() + "'");
-          return 1;
-        }
-      }
+      if (doCopy(dstFs, toPath, srcFs, srcs , console, conf))
+        return 1;
       return 0;
 
     } catch (Exception e) {
@@ -95,6 +87,24 @@ public class CopyTask extends Task<CopyWork> implements Serializable {
           + StringUtils.stringifyException(e));
       return (1);
     }
+  }
+
+  public static boolean doCopy(FileSystem dstFs, Path toPath, FileSystem srcFs, FileStatus[] srcs,
+      SessionState.LogHelper console, HiveConf conf)
+      throws IOException {
+    for (FileStatus oneSrc : srcs) {
+      console.printInfo("Copying file: " + oneSrc.getPath().toString());
+      LOG.debug("Copying file: " + oneSrc.getPath().toString());
+      if (!FileUtils.copy(srcFs, oneSrc.getPath(), dstFs, toPath,
+          false, // delete source
+          true, // overwrite destination
+          conf)) {
+        console.printError("Failed to copy: '" + oneSrc.getPath().toString()
+            + "to: '" + toPath.toString() + "'");
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

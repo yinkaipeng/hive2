@@ -24,11 +24,13 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.ReplChangeManager;
+import org.apache.hadoop.hive.ql.exec.CopyTask;
 import org.apache.hadoop.hive.ql.exec.ReplCopyTask;
 import org.apache.hadoop.hive.ql.parse.EximUtil;
 import org.apache.hadoop.hive.ql.parse.LoadSemanticAnalyzer;
 import org.apache.hadoop.hive.ql.parse.ReplicationSpec;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
+import org.apache.hadoop.hive.ql.session.SessionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,16 +44,19 @@ public class FileOperations {
   private static Logger logger = LoggerFactory.getLogger(FileOperations.class);
   private final Path dataFileListPath;
   private final Path exportRootDataDir;
-  private HiveConf hiveConf;
+  private final HiveConf hiveConf;
   private final FileSystem dataFileSystem, exportFileSystem;
+  private final boolean forExportCommand;
 
-  public FileOperations(Path dataFileListPath, Path exportRootDataDir, HiveConf hiveConf)
+  public FileOperations(Path dataFileListPath, Path exportRootDataDir, HiveConf hiveConf,
+      boolean forExportCommand)
       throws IOException {
     this.dataFileListPath = dataFileListPath;
     this.exportRootDataDir = exportRootDataDir;
     this.hiveConf = hiveConf;
     dataFileSystem = dataFileListPath.getFileSystem(hiveConf);
     exportFileSystem = exportRootDataDir.getFileSystem(hiveConf);
+    this.forExportCommand = forExportCommand;
   }
 
   public void export(ReplicationSpec forReplicationSpec) throws IOException, SemanticException {
@@ -66,16 +71,21 @@ public class FileOperations {
    * This writes the actual data in the exportRootDataDir from the source.
    */
   private void copyFiles() throws IOException {
-    List<FileStatus> fileStatuses = Arrays.asList(
-        LoadSemanticAnalyzer.matchFilesOrDir(dataFileSystem, dataFileListPath));
-    List<Path> paths =
-        Lists.transform(fileStatuses, new Function<FileStatus, Path>() {
-          @Override
-          public Path apply(FileStatus fileStatus) {
-            return fileStatus.getPath();
-          }
-        });
-    ReplCopyTask.doCopy(exportRootDataDir, exportFileSystem, paths, dataFileSystem, hiveConf);
+    FileStatus[] fileStatuses =
+        LoadSemanticAnalyzer.matchFilesOrDir(dataFileSystem, dataFileListPath);
+    if (forExportCommand) {
+      CopyTask.doCopy(exportFileSystem, exportRootDataDir, dataFileSystem, fileStatuses,
+          new SessionState.LogHelper(logger), hiveConf);
+    } else {
+      List<Path> paths =
+          Lists.transform(Arrays.asList(fileStatuses), new Function<FileStatus, Path>() {
+            @Override
+            public Path apply(FileStatus fileStatus) {
+              return fileStatus.getPath();
+            }
+          });
+      ReplCopyTask.doCopy(exportRootDataDir, exportFileSystem, paths, dataFileSystem, hiveConf);
+    }
   }
 
   /**
