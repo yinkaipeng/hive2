@@ -876,6 +876,9 @@
       <field name="numDVs">
         <column name="NUM_DISTINCTS" jdbc-type="BIGINT" allows-null="true"/>
       </field>
+      <field name="bitVector">
+        <column name="BIT_VECTOR" jdbc-type="BLOB" allows-null="true"/>
+      </field>
       <field name="avgColLen">
         <column name="AVG_COL_LEN" jdbc-type="DOUBLE" allows-null="true"/>
       </field>
@@ -939,6 +942,9 @@
       </field>
       <field name="numDVs">
         <column name="NUM_DISTINCTS" jdbc-type="BIGINT" allows-null="true"/>
+      </field>
+      <field name="bitVector">
+        <column name="BIT_VECTOR" jdbc-type="BLOB" allows-null="true"/>
       </field>
       <field name="avgColLen">
         <column name="AVG_COL_LEN" jdbc-type="DOUBLE" allows-null="true"/>

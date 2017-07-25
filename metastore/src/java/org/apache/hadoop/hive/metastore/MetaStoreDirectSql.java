@@ -21,6 +21,7 @@ package org.apache.hadoop.hive.metastore;
 import static org.apache.commons.lang.StringUtils.join;
 import static org.apache.commons.lang.StringUtils.repeat;
 
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.SQLException;
@@ -62,6 +63,8 @@ import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.metastore.cache.CacheUtils;
 import org.apache.hadoop.hive.metastore.cache.CachedStore;
+import org.apache.hadoop.hive.metastore.columnstats.aggr.ColumnStatsAggregator;
+import org.apache.hadoop.hive.metastore.columnstats.aggr.ColumnStatsAggregatorFactory;
 import org.apache.hadoop.hive.metastore.model.MConstraint;
 import org.apache.hadoop.hive.metastore.model.MDatabase;
 import org.apache.hadoop.hive.metastore.model.MPartitionColumnStatistics;
@@ -941,6 +944,24 @@ class MetaStoreDirectSql {
     return ((Number) obj).doubleValue();
   }
 
+  static String extractSqlBlob(Object value) throws MetaException {
+    if (value == null)
+      return null;
+    if (value instanceof Blob) {
+      try {
+        // getBytes function says: pos the ordinal position of the first byte in
+        // the BLOB value to be extracted; the first byte is at position 1
+        return new String(((Blob) value).getBytes(1, (int) ((Blob) value).length()));
+      } catch (SQLException e) {
+        throw new MetaException("Encounter error while processing blob.");
+      }
+    } else {
+      // this may happen when enablebitvector is false
+      LOG.debug("Expected blob type but got " + value.getClass().getName());
+      return null;
+    }
+  }
+
   private static String trimCommaList(StringBuilder sb) {
     if (sb.length() > 0) {
       sb.setLength(sb.length() - 1);
@@ -1207,12 +1228,12 @@ class MetaStoreDirectSql {
   }
 
   public ColumnStatistics getTableStats(final String dbName, final String tableName,
-      List<String> colNames) throws MetaException {
-    if (colNames.isEmpty()) {
+      List<String> colNames, boolean enableBitVector) throws MetaException {
+    if (colNames == null) {
       return null;
     }
     final boolean doTrace = LOG.isDebugEnabled();
-    final String queryText0 = "select " + STATS_COLLIST + " from " + TAB_COL_STATS + " "
+    final String queryText0 = "select " + getStatsList(enableBitVector) + " from " + TAB_COL_STATS + " "
           + " where \"DB_NAME\" = ? and \"TABLE_NAME\" = ? and \"COLUMN_NAME\" in (";
     Batchable<String, Object[]> b = new Batchable<String, Object[]>() {
       public List<Object[]> run(List<String> input) throws MetaException {
@@ -1246,8 +1267,8 @@ class MetaStoreDirectSql {
   }
 
   public AggrStats aggrColStatsForPartitions(String dbName, String tableName,
-      List<String> partNames, List<String> colNames, boolean useDensityFunctionForNDVEstimation, double  ndvTuner)
-      throws MetaException {
+      List<String> partNames, List<String> colNames, boolean useDensityFunctionForNDVEstimation,
+      double ndvTuner, boolean enableBitVector) throws MetaException {
     if (colNames.isEmpty() || partNames.isEmpty()) {
       LOG.debug("Columns is empty or partNames is empty : Short-circuiting stats eval");
       return new AggrStats(new ArrayList<ColumnStatisticsObj>(), 0); // Nothing to aggregate
@@ -1281,7 +1302,7 @@ class MetaStoreDirectSql {
           // Read aggregated stats for one column
           colStatsAggrFromDB =
               columnStatisticsObjForPartitions(dbName, tableName, partNames, colNamesForDB,
-                  partsFound, useDensityFunctionForNDVEstimation, ndvTuner);
+                  partsFound, useDensityFunctionForNDVEstimation, ndvTuner, enableBitVector);
           if (!colStatsAggrFromDB.isEmpty()) {
             ColumnStatisticsObj colStatsAggr = colStatsAggrFromDB.get(0);
             colStatsList.add(colStatsAggr);
@@ -1294,7 +1315,7 @@ class MetaStoreDirectSql {
       partsFound = partsFoundForPartitions(dbName, tableName, partNames, colNames);
       colStatsList =
           columnStatisticsObjForPartitions(dbName, tableName, partNames, colNames, partsFound,
-              useDensityFunctionForNDVEstimation, ndvTuner);
+              useDensityFunctionForNDVEstimation, ndvTuner, enableBitVector);
     }
     LOG.info("useDensityFunctionForNDVEstimation = " + useDensityFunctionForNDVEstimation
         + "\npartsFound = " + partsFound + "\nColumnStatisticsObj = "
@@ -1357,14 +1378,14 @@ class MetaStoreDirectSql {
 
   private List<ColumnStatisticsObj> columnStatisticsObjForPartitions(final String dbName,
     final String tableName, final List<String> partNames, List<String> colNames, long partsFound,
-    final boolean useDensityFunctionForNDVEstimation, final double  ndvTuner) throws MetaException {
+    final boolean useDensityFunctionForNDVEstimation, final double ndvTuner, final boolean enableBitVector) throws MetaException {
     final boolean areAllPartsFound = (partsFound == partNames.size());
     return runBatched(colNames, new Batchable<String, ColumnStatisticsObj>() {
       public List<ColumnStatisticsObj> run(final List<String> inputColNames) throws MetaException {
         return runBatched(partNames, new Batchable<String, ColumnStatisticsObj>() {
           public List<ColumnStatisticsObj> run(List<String> inputPartNames) throws MetaException {
             return columnStatisticsObjForPartitionsBatch(dbName, tableName, inputPartNames,
-                inputColNames, areAllPartsFound, useDensityFunctionForNDVEstimation, ndvTuner);
+                inputColNames, areAllPartsFound, useDensityFunctionForNDVEstimation, ndvTuner, enableBitVector);
           }
         });
       }
@@ -1374,14 +1395,10 @@ class MetaStoreDirectSql {
   // Get aggregated column stats for a table per partition for all columns in the partition
   // This is primarily used to populate stats object when using CachedStore (Check CachedStore#prewarm)
   public Map<String, List<ColumnStatisticsObj>> getColStatsForTablePartitions(String dbName,
-      String tblName) throws MetaException {
-    String queryText =
-        "select \"PARTITION_NAME\", \"COLUMN_NAME\", \"COLUMN_TYPE\", \"LONG_LOW_VALUE\", "
-            + "\"LONG_HIGH_VALUE\", \"DOUBLE_LOW_VALUE\", \"DOUBLE_HIGH_VALUE\",  "
-            + "\"BIG_DECIMAL_LOW_VALUE\", \"BIG_DECIMAL_HIGH_VALUE\", \"NUM_NULLS\", "
-            + "\"NUM_DISTINCTS\", \"AVG_COL_LEN\", \"MAX_COL_LEN\", \"NUM_TRUES\", \"NUM_FALSES\""
-            + " from " + PART_COL_STATS + " where \"DB_NAME\" = ? and \"TABLE_NAME\" = ?"
-            + " order by \"PARTITION_NAME\"";
+      String tblName, boolean enableBitVector) throws MetaException {
+    String queryText = "select \"PARTITION_NAME\", " + getStatsList(enableBitVector) + " from "
+        + " " + PART_COL_STATS + " where \"DB_NAME\" = ? and \"TABLE_NAME\" = ?"
+        + " order by \"PARTITION_NAME\"";
     long start = 0;
     long end = 0;
     Query query = null;
@@ -1433,6 +1450,28 @@ class MetaStoreDirectSql {
 
   /** Should be called with the list short enough to not trip up Oracle/etc. */
   private List<ColumnStatisticsObj> columnStatisticsObjForPartitionsBatch(String dbName,
+      String tableName, List<String> partNames, List<String> colNames, boolean areAllPartsFound,
+      boolean useDensityFunctionForNDVEstimation, double ndvTuner, boolean enableBitVector) throws MetaException {
+    if(enableBitVector) {
+      return aggrStatsUseJava(dbName, tableName, partNames, colNames, areAllPartsFound, useDensityFunctionForNDVEstimation, ndvTuner);
+    }
+    else {
+      return aggrStatsUseDB(dbName, tableName, partNames, colNames, areAllPartsFound, useDensityFunctionForNDVEstimation, ndvTuner);
+    }
+  }
+
+  private List<ColumnStatisticsObj> aggrStatsUseJava(String dbName, String tableName,
+      List<String> partNames, List<String> colNames, boolean areAllPartsFound,
+      boolean useDensityFunctionForNDVEstimation, double ndvTuner) throws MetaException {
+    // 1. get all the stats for colNames in partNames;
+    List<ColumnStatistics> partStats = getPartitionStats(dbName, tableName, partNames, colNames,
+        true);
+    // 2. use util function to aggr stats
+    return MetaStoreUtils.aggrPartitionStats(partStats, dbName, tableName, partNames, colNames,
+        areAllPartsFound, useDensityFunctionForNDVEstimation, ndvTuner);
+  }
+
+  private List<ColumnStatisticsObj> aggrStatsUseDB(String dbName,
       String tableName, List<String> partNames, List<String> colNames, boolean areAllPartsFound,
       boolean useDensityFunctionForNDVEstimation, double ndvTuner) throws MetaException {
     // TODO: all the extrapolation logic should be moved out of this class,
@@ -1705,10 +1744,10 @@ class MetaStoreDirectSql {
     ColumnStatisticsData data = new ColumnStatisticsData();
     ColumnStatisticsObj cso = new ColumnStatisticsObj((String)row[i++], (String)row[i++], data);
     Object llow = row[i++], lhigh = row[i++], dlow = row[i++], dhigh = row[i++],
-        declow = row[i++], dechigh = row[i++], nulls = row[i++], dist = row[i++],
+        declow = row[i++], dechigh = row[i++], nulls = row[i++], dist = row[i++], bitVector = row[i++],
         avglen = row[i++], maxlen = row[i++], trues = row[i++], falses = row[i++];
     StatObjectConverter.fillColumnStatisticsData(cso.getColType(), data,
-        llow, lhigh, dlow, dhigh, declow, dechigh, nulls, dist, avglen, maxlen, trues, falses);
+        llow, lhigh, dlow, dhigh, declow, dechigh, nulls, dist, bitVector, avglen, maxlen, trues, falses);
     return cso;
   }
 
@@ -1741,14 +1780,14 @@ class MetaStoreDirectSql {
   }
 
   public List<ColumnStatistics> getPartitionStats(final String dbName, final String tableName,
-      final List<String> partNames, List<String> colNames) throws MetaException {
+      final List<String> partNames, List<String> colNames, boolean enableBitVector) throws MetaException {
     if (colNames.isEmpty() || partNames.isEmpty()) {
       return Lists.newArrayList();
     }
     final boolean doTrace = LOG.isDebugEnabled();
-    final String queryText0 = "select \"PARTITION_NAME\", " + STATS_COLLIST + " from "
-      + " " + PART_COL_STATS + " where \"DB_NAME\" = ? and \"TABLE_NAME\" = ? and \"COLUMN_NAME\""
-      + "  in (%1$s) AND \"PARTITION_NAME\" in (%2$s) order by \"PARTITION_NAME\"";
+    final String queryText0 = "select \"PARTITION_NAME\", " + getStatsList(enableBitVector) + " from "
+        + " " + PART_COL_STATS + " where \"DB_NAME\" = ? and \"TABLE_NAME\" = ? and \"COLUMN_NAME\""
+        + "  in (%1$s) AND \"PARTITION_NAME\" in (%2$s) order by \"PARTITION_NAME\"";
     Batchable<String, Object[]> b = new Batchable<String, Object[]>() {
       public List<Object[]> run(final List<String> inputColNames) throws MetaException {
         Batchable<String, Object[]> b2 = new Batchable<String, Object[]>() {
@@ -1800,11 +1839,13 @@ class MetaStoreDirectSql {
   }
 
   /** The common query part for table and partition stats */
-  private static final String STATS_COLLIST =
-      "\"COLUMN_NAME\", \"COLUMN_TYPE\", \"LONG_LOW_VALUE\", \"LONG_HIGH_VALUE\", "
-    + "\"DOUBLE_LOW_VALUE\", \"DOUBLE_HIGH_VALUE\", \"BIG_DECIMAL_LOW_VALUE\", "
-    + "\"BIG_DECIMAL_HIGH_VALUE\", \"NUM_NULLS\", \"NUM_DISTINCTS\", \"AVG_COL_LEN\", "
-    + "\"MAX_COL_LEN\", \"NUM_TRUES\", \"NUM_FALSES\", \"LAST_ANALYZED\" ";
+  private final String getStatsList(boolean enableBitVector) {
+    return "\"COLUMN_NAME\", \"COLUMN_TYPE\", \"LONG_LOW_VALUE\", \"LONG_HIGH_VALUE\", "
+        + "\"DOUBLE_LOW_VALUE\", \"DOUBLE_HIGH_VALUE\", \"BIG_DECIMAL_LOW_VALUE\", "
+        + "\"BIG_DECIMAL_HIGH_VALUE\", \"NUM_NULLS\", \"NUM_DISTINCTS\", "
+        + (enableBitVector ? "\"BIT_VECTOR\", " : "\'\', ") + "\"AVG_COL_LEN\", "
+        + "\"MAX_COL_LEN\", \"NUM_TRUES\", \"NUM_FALSES\", \"LAST_ANALYZED\" ";
+  }
 
   private ColumnStatistics makeColumnStats(
       List<Object[]> list, ColumnStatisticsDesc csd, int offset) throws MetaException {
@@ -1814,7 +1855,7 @@ class MetaStoreDirectSql {
     for (Object[] row : list) {
       // LastAnalyzed is stored per column but thrift has it per several;
       // get the lowest for now as nobody actually uses this field.
-      Object laObj = row[offset + 14];
+      Object laObj = row[offset + 15];
       if (laObj != null && (!csd.isSetLastAnalyzed() || csd.getLastAnalyzed() > extractSqlLong(laObj))) {
         csd.setLastAnalyzed(extractSqlLong(laObj));
       }
