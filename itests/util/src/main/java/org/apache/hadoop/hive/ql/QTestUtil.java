@@ -2281,7 +2281,7 @@ public class QTestUtil {
       }
       for (Map.Entry<String, Integer> entry : tableNameToID.entrySet()) {
         String toReplace1 = ",_" + entry.getKey() + "_" ;
-        String replacementString1 = ","+entry.getValue();
+        String replacementString1 = ","+entry.getValue()+",";
         String toReplace2 = "_" + entry.getKey() + "_," ;
         String replacementString2 = ""+entry.getValue()+",";
         try {
@@ -2297,10 +2297,10 @@ public class QTestUtil {
       }
 
       // Load the column stats and table params with 30 TB scale
-      String importStatement1 =  "CALL SYSCS_UTIL.SYSCS_IMPORT_TABLE_LOBS_FROM_EXTFILE(null, '" + "TAB_COL_STATS" +
+      String importStatement1 =  "CALL SYSCS_UTIL.SYSCS_IMPORT_TABLE(null, '" + "TAB_COL_STATS" +
         "', '" + tmpFileLoc1.getAbsolutePath() +
         "', ',', null, 'UTF-8', 1)";
-      String importStatement2 =  "CALL SYSCS_UTIL.SYSCS_IMPORT_TABLE_LOBS_FROM_EXTFILE(null, '" + "TABLE_PARAMS" +
+      String importStatement2 =  "CALL SYSCS_UTIL.SYSCS_IMPORT_TABLE(null, '" + "TABLE_PARAMS" +
         "', '" + tmpFileLoc2.getAbsolutePath() +
         "', ',', null, 'UTF-8', 1)";
       try {
@@ -2324,6 +2324,8 @@ public class QTestUtil {
         }
       } catch (SQLException e) {
         LOG.info("Got SQL Exception  " +  e.getMessage());
+        e.printStackTrace();
+       throw e;
       }
     } catch (FileNotFoundException e1) {
         LOG.info("Got File not found Exception " + e1.getMessage());
@@ -2331,6 +2333,7 @@ public class QTestUtil {
         LOG.info("Got IOException " + e1.getMessage());
 	} catch (SQLException e1) {
         LOG.info("Got SQLException " + e1.getMessage());
+        e1.printStackTrace();
 	} finally {
       // Statements and PreparedStatements
       int i = 0;
