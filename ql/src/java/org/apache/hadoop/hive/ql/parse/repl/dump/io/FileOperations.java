@@ -17,27 +17,22 @@
  */
 package org.apache.hadoop.hive.ql.parse.repl.dump.io;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.ReplChangeManager;
-import org.apache.hadoop.hive.ql.exec.CopyTask;
-import org.apache.hadoop.hive.ql.exec.ReplCopyTask;
 import org.apache.hadoop.hive.ql.parse.EximUtil;
 import org.apache.hadoop.hive.ql.parse.LoadSemanticAnalyzer;
 import org.apache.hadoop.hive.ql.parse.ReplicationSpec;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
-import org.apache.hadoop.hive.ql.session.SessionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 public class FileOperations {
@@ -46,17 +41,14 @@ public class FileOperations {
   private final Path exportRootDataDir;
   private final HiveConf hiveConf;
   private final FileSystem dataFileSystem, exportFileSystem;
-  private final boolean forExportCommand;
 
-  public FileOperations(Path dataFileListPath, Path exportRootDataDir, HiveConf hiveConf,
-      boolean forExportCommand)
+  public FileOperations(Path dataFileListPath, Path exportRootDataDir, HiveConf hiveConf)
       throws IOException {
     this.dataFileListPath = dataFileListPath;
     this.exportRootDataDir = exportRootDataDir;
     this.hiveConf = hiveConf;
     dataFileSystem = dataFileListPath.getFileSystem(hiveConf);
     exportFileSystem = exportRootDataDir.getFileSystem(hiveConf);
-    this.forExportCommand = forExportCommand;
   }
 
   public void export(ReplicationSpec forReplicationSpec) throws IOException, SemanticException {
@@ -73,19 +65,11 @@ public class FileOperations {
   private void copyFiles() throws IOException {
     FileStatus[] fileStatuses =
         LoadSemanticAnalyzer.matchFilesOrDir(dataFileSystem, dataFileListPath);
-    if (forExportCommand) {
-      CopyTask.doCopy(exportFileSystem, exportRootDataDir, dataFileSystem, fileStatuses,
-          new SessionState.LogHelper(logger), hiveConf);
-    } else {
-      List<Path> paths =
-          Lists.transform(Arrays.asList(fileStatuses), new Function<FileStatus, Path>() {
-            @Override
-            public Path apply(FileStatus fileStatus) {
-              return fileStatus.getPath();
-            }
-          });
-      ReplCopyTask.doCopy(exportRootDataDir, exportFileSystem, paths, dataFileSystem, hiveConf);
+    List<Path> srcPaths = new ArrayList<>();
+    for (FileStatus fileStatus : fileStatuses) {
+      srcPaths.add(fileStatus.getPath());
     }
+    new CopyUtils(hiveConf).doCopy(exportRootDataDir, srcPaths);
   }
 
   /**
