@@ -74,12 +74,48 @@ public class HdfsUtils {
       if (sourceStatus.getAclEntries() != null) {
         LOG.trace(sourceStatus.aclStatus.toString());
         aclEntries = new ArrayList<>(sourceStatus.getAclEntries());
-        removeBaseAclEntries(aclEntries);
-
-        //the ACL api's also expect the tradition user/group/other permission in the form of ACL
-        aclEntries.add(newAclEntry(AclEntryScope.ACCESS, AclEntryType.USER, sourcePerm.getUserAction()));
-        aclEntries.add(newAclEntry(AclEntryScope.ACCESS, AclEntryType.GROUP, sourcePerm.getGroupAction()));
-        aclEntries.add(newAclEntry(AclEntryScope.ACCESS, AclEntryType.OTHER, sourcePerm.getOtherAction()));
+        List<AclEntry> defaultAclEntries = extractBaseDefaultAclEntries(aclEntries);
+        
+        if ( defaultAclEntries.size() > 0) {
+          removeBaseAclEntries(aclEntries);
+        
+          //remove base acl entries if there is a default acl set for that named user|group
+          List<AclEntry> temp = new ArrayList<AclEntry>();
+          for(AclEntry entry : aclEntries) {
+            if (defaultAclEntries.contains(entry)) {
+              for (AclEntry deleteEntry : aclEntries){
+                if (deleteEntry.getType().equals(entry.getType()) &&
+                    deleteEntry.getName().equals(entry.getName())){
+                  temp.add(deleteEntry);
+                }
+              }
+            }
+          }
+          if (temp.size() > 0){
+            aclEntries.removeAll(temp);
+          }
+        
+          //set directory's ACL entries based on parent's DEFAULT entries
+          for(AclEntry entry: defaultAclEntries) {
+            if (entry.getName() != null){
+              aclEntries.add(newAclEntry(AclEntryScope.ACCESS, entry.getType(), entry.getName(), entry.getPermission()));
+            }
+            else {
+              aclEntries.add(newAclEntry(AclEntryScope.ACCESS, entry.getType(), entry.getPermission()));
+            }
+          }
+        } else {
+          //the ACL api's also expect the tradition user/group/other permission in the form of ACL
+          sourcePerm = sourceStatus.getFileStatus().getPermission();
+        
+          //this is default permissions set on a directory without any ACLs
+          if (aclEntries.size() == 0) {
+            aclEntries.add(newAclEntry(AclEntryScope.ACCESS, AclEntryType.GROUP, sourcePerm.getGroupAction()));
+          }
+        
+          aclEntries.add(newAclEntry(AclEntryScope.ACCESS, AclEntryType.USER, sourcePerm.getUserAction()));
+          aclEntries.add(newAclEntry(AclEntryScope.ACCESS, AclEntryType.OTHER, sourcePerm.getOtherAction()));
+        }
       }
     }
 
@@ -161,6 +197,46 @@ public class HdfsUtils {
         return false;
       }
     });
+  }
+  
+  /**
+   * Create a new AclEntry with scope, type, name and permission.
+   * 
+   * @param scope
+   *          AclEntryScope scope of the ACL entry
+   * @param type
+   *          AclEntryType ACL entry type
+   * @param name
+   *          String optional ACL entry name
+   * @param permission
+   *          FsAction set of permissions in the ACL entry
+   * @return AclEntry new AclEntry
+   */
+  private static AclEntry newAclEntry(AclEntryScope scope, AclEntryType type, String name,
+      FsAction permission) {
+    return new AclEntry.Builder().setScope(scope).setType(type).setName(name)
+        .setPermission(permission).build();
+  }
+  
+  /**
+   * Extracts the DEFAULT ACL entries from the list of acl entries
+   * 
+   * @param entries
+   *          acl entries to extract from
+   * @return default unnamed acl entries
+   */
+  private static List<AclEntry> extractBaseDefaultAclEntries(List<AclEntry> entries) {
+    List<AclEntry> defaultAclEntries = new ArrayList<AclEntry>(entries);
+    Iterables.removeIf(defaultAclEntries, new Predicate<AclEntry>() {
+      @Override
+      public boolean apply(AclEntry input) {
+        if (input.getScope().equals(AclEntryScope.ACCESS)) {
+          return true;
+        }
+        return false;
+      }
+    });
+    return defaultAclEntries;
   }
 
   private static void run(FsShell shell, String[] command) throws Exception {
