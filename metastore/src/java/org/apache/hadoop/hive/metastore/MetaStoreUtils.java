@@ -438,7 +438,7 @@ public class MetaStoreUtils {
       return deserializer;
     } catch (RuntimeException e) {
       throw e;
-    } catch (Exception e) {
+    } catch (Throwable e) {
       LOG.error("error in initSerDe: " + e.getClass().getName() + " "
           + e.getMessage(), e);
       throw new MetaException(e.getClass().getName() + " " + e.getMessage());
@@ -481,7 +481,7 @@ public class MetaStoreUtils {
       return deserializer;
     } catch (RuntimeException e) {
       throw e;
-    } catch (Exception e) {
+    } catch (Throwable e) {
       LOG.error("error in initSerDe: " + e.getClass().getName() + " "
           + e.getMessage(), e);
       throw new MetaException(e.getClass().getName() + " " + e.getMessage());
