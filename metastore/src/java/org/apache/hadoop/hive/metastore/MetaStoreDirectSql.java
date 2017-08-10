@@ -407,6 +407,7 @@ class MetaStoreDirectSql {
       return new ArrayList<Partition>();
     }
     return runBatched(partNames, new Batchable<String, Partition>() {
+      @Override
       public List<Partition> run(List<String> input) throws MetaException {
         String filter = "" + PARTITIONS + ".\"PART_NAME\" in (" + makeParams(input.size()) + ")";
         return getPartitionsViaSqlFilterInternal(dbName, tblName, null, filter, input,
@@ -429,8 +430,8 @@ class MetaStoreDirectSql {
   }
 
   public static class SqlFilterForPushdown {
-    private List<Object> params = new ArrayList<Object>();
-    private List<String> joins = new ArrayList<String>();
+    private final List<Object> params = new ArrayList<Object>();
+    private final List<String> joins = new ArrayList<String>();
     private String filter;
     private Table table;
   }
@@ -540,6 +541,7 @@ class MetaStoreDirectSql {
 
     // Get full objects. For Oracle/etc. do it in batches.
     List<Partition> result = runBatched(sqlResult, new Batchable<Object, Partition>() {
+      @Override
       public List<Partition> run(List<Object> input) throws MetaException {
         return getPartitionsFromPartitionIds(dbNameLcase, tblNameLcase, isView, input);
       }
@@ -948,6 +950,7 @@ class MetaStoreDirectSql {
     if (value == null)
       return null;
     if (value instanceof Blob) {
+      //derby, oracle
       try {
         // getBytes function says: pos the ordinal position of the first byte in
         // the BLOB value to be extracted; the first byte is at position 1
@@ -955,7 +958,12 @@ class MetaStoreDirectSql {
       } catch (SQLException e) {
         throw new MetaException("Encounter error while processing blob.");
       }
-    } else {
+    }
+    else if (value instanceof byte[]) {
+      // mysql, postgres, sql server
+      return new String((byte[])value);
+    }
+	else {
       // this may happen when enablebitvector is false
       LOG.debug("Expected blob type but got " + value.getClass().getName());
       return null;
@@ -1236,6 +1244,7 @@ class MetaStoreDirectSql {
     final String queryText0 = "select " + getStatsList(enableBitVector) + " from " + TAB_COL_STATS + " "
           + " where \"DB_NAME\" = ? and \"TABLE_NAME\" = ? and \"COLUMN_NAME\" in (";
     Batchable<String, Object[]> b = new Batchable<String, Object[]>() {
+      @Override
       public List<Object[]> run(List<String> input) throws MetaException {
         String queryText = queryText0 + makeParams(input.size()) + ")";
         Object[] params = new Object[input.size() + 2];
@@ -1341,8 +1350,10 @@ class MetaStoreDirectSql {
         + " and \"COLUMN_NAME\" in (%1$s) and \"PARTITION_NAME\" in (%2$s)"
         + " group by \"PARTITION_NAME\"";
     List<Long> allCounts = runBatched(colNames, new Batchable<String, Long>() {
+      @Override
       public List<Long> run(final List<String> inputColName) throws MetaException {
         return runBatched(partNames, new Batchable<String, Long>() {
+          @Override
           public List<Long> run(List<String> inputPartNames) throws MetaException {
             long partsFound = 0;
             String queryText = String.format(queryText0,
@@ -1381,8 +1392,10 @@ class MetaStoreDirectSql {
     final boolean useDensityFunctionForNDVEstimation, final double ndvTuner, final boolean enableBitVector) throws MetaException {
     final boolean areAllPartsFound = (partsFound == partNames.size());
     return runBatched(colNames, new Batchable<String, ColumnStatisticsObj>() {
+      @Override
       public List<ColumnStatisticsObj> run(final List<String> inputColNames) throws MetaException {
         return runBatched(partNames, new Batchable<String, ColumnStatisticsObj>() {
+          @Override
           public List<ColumnStatisticsObj> run(List<String> inputPartNames) throws MetaException {
             return columnStatisticsObjForPartitionsBatch(dbName, tableName, inputPartNames,
                 inputColNames, areAllPartsFound, useDensityFunctionForNDVEstimation, ndvTuner, enableBitVector);
@@ -1453,7 +1466,7 @@ class MetaStoreDirectSql {
       String tableName, List<String> partNames, List<String> colNames, boolean areAllPartsFound,
       boolean useDensityFunctionForNDVEstimation, double ndvTuner, boolean enableBitVector) throws MetaException {
     if(enableBitVector) {
-      return aggrStatsUseJava(dbName, tableName, partNames, colNames, areAllPartsFound, useDensityFunctionForNDVEstimation, ndvTuner);
+      return aggrStatsUseJava(dbName, tableName, partNames, colNames, useDensityFunctionForNDVEstimation, ndvTuner);
     }
     else {
       return aggrStatsUseDB(dbName, tableName, partNames, colNames, areAllPartsFound, useDensityFunctionForNDVEstimation, ndvTuner);
@@ -1461,14 +1474,14 @@ class MetaStoreDirectSql {
   }
 
   private List<ColumnStatisticsObj> aggrStatsUseJava(String dbName, String tableName,
-      List<String> partNames, List<String> colNames, boolean areAllPartsFound,
+      List<String> partNames, List<String> colNames,
       boolean useDensityFunctionForNDVEstimation, double ndvTuner) throws MetaException {
     // 1. get all the stats for colNames in partNames;
     List<ColumnStatistics> partStats = getPartitionStats(dbName, tableName, partNames, colNames,
         true);
     // 2. use util function to aggr stats
     return MetaStoreUtils.aggrPartitionStats(partStats, dbName, tableName, partNames, colNames,
-        areAllPartsFound, useDensityFunctionForNDVEstimation, ndvTuner);
+        useDensityFunctionForNDVEstimation, ndvTuner);
   }
 
   private List<ColumnStatisticsObj> aggrStatsUseDB(String dbName,
@@ -1666,7 +1679,7 @@ class MetaStoreDirectSql {
                 row[2 + colStatIndex] = null;
               } else {
                 Long val = extractSqlLong(o);
-                row[2 + colStatIndex] = (Long) (val / sumVal * (partNames.size()));
+                row[2 + colStatIndex] = val / sumVal * (partNames.size());
               }
             } else if (IExtrapolatePartStatus.aggrTypes[colStatIndex] == IExtrapolatePartStatus.AggrType.Min
                 || IExtrapolatePartStatus.aggrTypes[colStatIndex] == IExtrapolatePartStatus.AggrType.Max) {
@@ -1789,8 +1802,10 @@ class MetaStoreDirectSql {
         + " " + PART_COL_STATS + " where \"DB_NAME\" = ? and \"TABLE_NAME\" = ? and \"COLUMN_NAME\""
         + "  in (%1$s) AND \"PARTITION_NAME\" in (%2$s) order by \"PARTITION_NAME\"";
     Batchable<String, Object[]> b = new Batchable<String, Object[]>() {
+      @Override
       public List<Object[]> run(final List<String> inputColNames) throws MetaException {
         Batchable<String, Object[]> b2 = new Batchable<String, Object[]>() {
+          @Override
           public List<Object[]> run(List<String> inputPartNames) throws MetaException {
             String queryText = String.format(queryText0,
                 makeParams(inputColNames.size()), makeParams(inputPartNames.size()));
