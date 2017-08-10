@@ -77,7 +77,7 @@ POSTHOOK: Input: default@src_stat
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 value               	string              	                    	                    	122                 	121                 	1.23                	124                 	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"key\":\"true\",\"value\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"value\":\"true\",\"key\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ANALYZE TABLE src_stat_int COMPUTE STATISTICS for columns key
 PREHOOK: type: QUERY
 PREHOOK: Input: default@src_stat_int
@@ -135,7 +135,7 @@ POSTHOOK: Input: default@src_stat
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 key                 	string              	                    	                    	0                   	3333                	2.222               	3                   	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"key\":\"true\",\"value\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"value\":\"true\",\"key\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ALTER TABLE default.src_stat UPDATE STATISTICS for column value SET ('numDVs'='232','numNulls'='233','avgColLen'='2.34','maxColLen'='235')
 PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
 POSTHOOK: query: ALTER TABLE default.src_stat UPDATE STATISTICS for column value SET ('numDVs'='232','numNulls'='233','avgColLen'='2.34','maxColLen'='235')
@@ -149,7 +149,7 @@ POSTHOOK: Input: default@src_stat
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 value               	string              	                    	                    	233                 	232                 	2.34                	235                 	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"key\":\"true\",\"value\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"value\":\"true\",\"key\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: use default
 PREHOOK: type: SWITCHDATABASE
 PREHOOK: Input: database:default
@@ -202,9 +202,11 @@ POSTHOOK: Output: database:default
 POSTHOOK: Output: default@datatype_stats
 PREHOOK: query: INSERT INTO datatype_stats values(2, 3, 45, 456, 45454.4, 454.6565, 2355, '2012-01-01 01:02:03', '2012-01-01', 'update_statistics', 'stats', 'hive', 'true', 'bin')
 PREHOOK: type: QUERY
+PREHOOK: Input: default@values__tmp__table__1
 PREHOOK: Output: default@datatype_stats
 POSTHOOK: query: INSERT INTO datatype_stats values(2, 3, 45, 456, 45454.4, 454.6565, 2355, '2012-01-01 01:02:03', '2012-01-01', 'update_statistics', 'stats', 'hive', 'true', 'bin')
 POSTHOOK: type: QUERY
+POSTHOOK: Input: default@values__tmp__table__1
 POSTHOOK: Output: default@datatype_stats
 POSTHOOK: Lineage: datatype_stats.b EXPRESSION [(values__tmp__table__1)values__tmp__table__1.FieldSchema(name:tmp_values_col4, type:string, comment:), ]
 POSTHOOK: Lineage: datatype_stats.bin EXPRESSION [(values__tmp__table__1)values__tmp__table__1.FieldSchema(name:tmp_values_col14, type:string, comment:), ]
@@ -222,9 +224,11 @@ POSTHOOK: Lineage: datatype_stats.ts EXPRESSION [(values__tmp__table__1)values__
 POSTHOOK: Lineage: datatype_stats.v EXPRESSION [(values__tmp__table__1)values__tmp__table__1.FieldSchema(name:tmp_values_col11, type:string, comment:), ]
 PREHOOK: query: INSERT INTO datatype_stats values(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 PREHOOK: type: QUERY
+PREHOOK: Input: default@values__tmp__table__2
 PREHOOK: Output: default@datatype_stats
 POSTHOOK: query: INSERT INTO datatype_stats values(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 POSTHOOK: type: QUERY
+POSTHOOK: Input: default@values__tmp__table__2
 POSTHOOK: Output: default@datatype_stats
 POSTHOOK: Lineage: datatype_stats.b EXPRESSION [(values__tmp__table__2)values__tmp__table__2.FieldSchema(name:tmp_values_col4, type:string, comment:), ]
 POSTHOOK: Lineage: datatype_stats.bin EXPRESSION [(values__tmp__table__2)values__tmp__table__2.FieldSchema(name:tmp_values_col14, type:string, comment:), ]
@@ -441,7 +445,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 i                   	int                 	5                   	889                 	1                   	59                  	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"i\":\"true\",\"s\":\"true\",\"t\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"s\":\"true\",\"t\":\"true\",\"i\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: DESC FORMATTED datatype_stats b
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@datatype_stats
@@ -451,7 +455,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 b                   	bigint              	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"i\":\"true\",\"s\":\"true\",\"t\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"s\":\"true\",\"t\":\"true\",\"i\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column b SET ('numDVs'='9','numNulls'='14','highValue'='89','lowValue'='8')
 PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
 POSTHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column b SET ('numDVs'='9','numNulls'='14','highValue'='89','lowValue'='8')
@@ -465,7 +469,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 b                   	bigint              	8                   	89                  	14                  	9                   	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"i\":\"true\",\"s\":\"true\",\"t\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"i\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: DESC FORMATTED datatype_stats f
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@datatype_stats
@@ -475,7 +479,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 f                   	float               	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"i\":\"true\",\"s\":\"true\",\"t\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"i\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column f SET ('numDVs'='563','numNulls'='45','highValue'='2345.656','lowValue'='8.00')
 PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
 POSTHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column f SET ('numDVs'='563','numNulls'='45','highValue'='2345.656','lowValue'='8.00')
@@ -489,7 +493,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 f                   	float               	8.0                 	2345.656            	45                  	563                 	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"t\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"f\":\"true\",\"i\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: DESC FORMATTED datatype_stats d
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@datatype_stats
@@ -499,7 +503,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 d                   	double              	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"t\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"f\":\"true\",\"i\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column d SET ('numDVs'='5677','numNulls'='12','highValue'='560.3367','lowValue'='0.00455')
 PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
 POSTHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column d SET ('numDVs'='5677','numNulls'='12','highValue'='560.3367','lowValue'='0.00455')
@@ -513,7 +517,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 d                   	double              	0.00455             	560.3367            	12                  	5677                	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"t\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: DESC FORMATTED datatype_stats dem
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@datatype_stats
@@ -523,7 +527,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 dem                 	decimal(10,0)       	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"t\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column dem SET ('numDVs'='57','numNulls'='912','highValue'='560','lowValue'='0')
 PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
 POSTHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column dem SET ('numDVs'='57','numNulls'='912','highValue'='560','lowValue'='0')
@@ -537,7 +541,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 dem                 	decimal(10,0)       	0                   	560                 	912                 	57                  	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"t\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\",\"dem\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: DESC FORMATTED datatype_stats ts
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@datatype_stats
@@ -547,7 +551,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 ts                  	timestamp           	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"t\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\",\"dem\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column ts SET ('numDVs'='7','numNulls'='12','highValue'='1357030923','lowValue'='1357030924')
 PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
 POSTHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column ts SET ('numDVs'='7','numNulls'='12','highValue'='1357030923','lowValue'='1357030924')
@@ -561,7 +565,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 ts                  	timestamp           	1357030924          	1357030923          	12                  	7                   	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"t\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\",\"dem\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: DESC FORMATTED datatype_stats dt
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@datatype_stats
@@ -571,7 +575,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 dt                  	date                	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"t\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\",\"dem\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column dt SET ('numDVs'='57','numNulls'='912','highValue'='2012-01-01','lowValue'='2001-02-04')
 PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
 POSTHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column dt SET ('numDVs'='57','numNulls'='912','highValue'='2012-01-01','lowValue'='2001-02-04')
@@ -585,7 +589,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 dt                  	date                	2001-02-04          	2012-01-01          	912                 	57                  	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"t\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"dt\":\"true\",\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\",\"dem\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: DESC FORMATTED datatype_stats str
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@datatype_stats
@@ -595,7 +599,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 str                 	string              	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"t\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"dt\":\"true\",\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\",\"dem\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column str SET ('numDVs'='232','numNulls'='233','avgColLen'='2.34','maxColLen'='235')
 PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
 POSTHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column str SET ('numDVs'='232','numNulls'='233','avgColLen'='2.34','maxColLen'='235')
@@ -609,7 +613,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 str                 	string              	                    	                    	233                 	232                 	2.34                	235                 	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"str\":\"true\",\"t\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"dt\":\"true\",\"str\":\"true\",\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\",\"dem\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: DESC FORMATTED datatype_stats v
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@datatype_stats
@@ -619,7 +623,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 v                   	varchar(12)         	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"str\":\"true\",\"t\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"dt\":\"true\",\"str\":\"true\",\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\",\"dem\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column v SET ('numDVs'='22','numNulls'='33','avgColLen'='4.40','maxColLen'='25')
 PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
 POSTHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column v SET ('numDVs'='22','numNulls'='33','avgColLen'='4.40','maxColLen'='25')
@@ -633,7 +637,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 v                   	varchar(12)         	                    	                    	33                  	22                  	4.4                 	25                  	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"str\":\"true\",\"t\":\"true\",\"ts\":\"true\",\"v\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"dt\":\"true\",\"str\":\"true\",\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"v\":\"true\",\"i\":\"true\",\"dem\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: DESC FORMATTED datatype_stats c
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@datatype_stats
@@ -643,7 +647,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 c                   	char(5)             	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"str\":\"true\",\"t\":\"true\",\"ts\":\"true\",\"v\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"dt\":\"true\",\"str\":\"true\",\"b\":\"true\",\"s\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"v\":\"true\",\"i\":\"true\",\"dem\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column c SET ('numDVs'='2','numNulls'='03','avgColLen'='9.00','maxColLen'='58')
 PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
 POSTHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column c SET ('numDVs'='2','numNulls'='03','avgColLen'='9.00','maxColLen'='58')
@@ -657,7 +661,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 c                   	char(5)             	                    	                    	3                   	2                   	9.0                 	58                  	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"c\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"str\":\"true\",\"t\":\"true\",\"ts\":\"true\",\"v\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"dt\":\"true\",\"str\":\"true\",\"b\":\"true\",\"s\":\"true\",\"c\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"v\":\"true\",\"i\":\"true\",\"dem\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: DESC FORMATTED datatype_stats bl
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@datatype_stats
@@ -667,7 +671,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 bl                  	boolean             	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"c\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"str\":\"true\",\"t\":\"true\",\"ts\":\"true\",\"v\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"dt\":\"true\",\"str\":\"true\",\"b\":\"true\",\"s\":\"true\",\"c\":\"true\",\"t\":\"true\",\"d\":\"true\",\"f\":\"true\",\"v\":\"true\",\"i\":\"true\",\"dem\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column bl SET ('numNulls'='1','numTrues'='9','numFalses'='8')
 PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
 POSTHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column bl SET ('numNulls'='1','numTrues'='9','numFalses'='8')
@@ -681,7 +685,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 bl                  	boolean             	                    	                    	1                   	                    	                    	                    	9                   	8                   	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"bl\":\"true\",\"c\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"str\":\"true\",\"t\":\"true\",\"ts\":\"true\",\"v\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"c\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\",\"bl\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"str\":\"true\",\"s\":\"true\",\"t\":\"true\",\"v\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: DESC FORMATTED datatype_stats bin
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@datatype_stats
@@ -691,7 +695,7 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 bin                 	binary              	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"bl\":\"true\",\"c\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"str\":\"true\",\"t\":\"true\",\"ts\":\"true\",\"v\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"c\":\"true\",\"d\":\"true\",\"f\":\"true\",\"i\":\"true\",\"bl\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"str\":\"true\",\"s\":\"true\",\"t\":\"true\",\"v\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column bin SET ('numNulls'='8','avgColLen'='2.0','maxColLen'='8')
 PREHOOK: type: ALTERTABLE_UPDATETABLESTATS
 POSTHOOK: query: ALTER TABLE default.datatype_stats UPDATE STATISTICS for column bin SET ('numNulls'='8','avgColLen'='2.0','maxColLen'='8')
@@ -705,4 +709,4 @@ POSTHOOK: Input: default@datatype_stats
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
 	 	 	 	 	 	 	 	 	 	 	 
 bin                 	binary              	                    	                    	8                   	                    	2.0                 	8                   	                    	                    	                    	from deserializer   
-COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"bin\":\"true\",\"bl\":\"true\",\"c\":\"true\",\"d\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"f\":\"true\",\"i\":\"true\",\"s\":\"true\",\"str\":\"true\",\"t\":\"true\",\"ts\":\"true\",\"v\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
+COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"b\":\"true\",\"c\":\"true\",\"d\":\"true\",\"f\":\"true\",\"bin\":\"true\",\"i\":\"true\",\"bl\":\"true\",\"dem\":\"true\",\"dt\":\"true\",\"str\":\"true\",\"s\":\"true\",\"t\":\"true\",\"v\":\"true\",\"ts\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
