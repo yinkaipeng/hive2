@@ -94,7 +94,7 @@ Stage-3
             Select Operator [SEL_7] (rows=1 width=3)
               Output:["_col0"]
               Filter Operator [FIL_18] (rows=1 width=3)
-                predicate:colnum is not null
+                predicate:UDFToDouble(colnum) is not null
                 TableScan [TS_5] (rows=1 width=3)
                   mydb@q1,a,Tbl:COMPLETE,Col:NONE,Output:["colnum"]
         <-Map 4 [SIMPLE_EDGE]
@@ -103,7 +103,7 @@ Stage-3
             Select Operator [SEL_10] (rows=1 width=0)
               Output:["_col0"]
               Filter Operator [FIL_19] (rows=1 width=0)
-                predicate:key is not null
+                predicate:UDFToDouble(key) is not null
                 TableScan [TS_8] (rows=1 width=0)
                   default@q1,b,Tbl:PARTIAL,Col:NONE,Output:["key"]
         Stage-2

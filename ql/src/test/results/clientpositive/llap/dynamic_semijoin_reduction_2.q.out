@@ -128,10 +128,10 @@ STAGE PLANS:
             Map Operator Tree:
                 TableScan
                   alias: t2
-                  filterExpr: (tinyint_col_15 is not null and decimal2709_col_9 is not null and tinyint_col_20 is not null) (type: boolean)
+                  filterExpr: (UDFToLong(tinyint_col_15) is not null and decimal2709_col_9 is not null and tinyint_col_20 is not null) (type: boolean)
                   Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
                   Filter Operator
-                    predicate: (tinyint_col_15 is not null and decimal2709_col_9 is not null and tinyint_col_20 is not null) (type: boolean)
+                    predicate: (UDFToLong(tinyint_col_15) is not null and decimal2709_col_9 is not null and tinyint_col_20 is not null) (type: boolean)
                     Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
                     Select Operator
                       expressions: tinyint_col_15 (type: tinyint), decimal2709_col_9 (type: decimal(27,9)), tinyint_col_20 (type: tinyint), smallint_col_19 (type: smallint)
