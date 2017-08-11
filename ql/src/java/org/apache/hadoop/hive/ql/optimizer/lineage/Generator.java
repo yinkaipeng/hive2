@@ -76,10 +76,8 @@ public class Generator extends Transform {
     if (hooks != null && hooks.contains(ATLAS_HOOK_CLASSNAME)) {
       // Atlas would be interested in lineage information for insert,load,create etc.
       if (!pctx.getQueryProperties().isCTAS()
-          && !pctx.getQueryProperties().isMaterializedView()
           && pctx.getQueryProperties().isQuery()
           && pctx.getCreateTable() == null
-          && pctx.getCreateViewDesc() == null
           && (pctx.getLoadTableWork() == null || pctx.getLoadTableWork().isEmpty())) {
         LOG.debug("Not evaluating lineage");
         return pctx;

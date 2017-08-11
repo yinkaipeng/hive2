@@ -268,7 +268,6 @@ public class QueryProperties {
     analyzeRewrite = false;
     ctas = false;
     outerQueryLimit = -1;
-    isMaterializedView = false;
 
     hasJoin = false;
     hasGroupBy = false;
