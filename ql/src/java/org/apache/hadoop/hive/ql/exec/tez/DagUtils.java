@@ -44,9 +44,9 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.tez.runtime.library.api.Partitioner;
 import org.apache.tez.runtime.library.cartesianproduct.CartesianProductConfig;
 import org.apache.tez.runtime.library.cartesianproduct.CartesianProductEdgeManager;
-import org.apache.tez.runtime.library.partitioner.RoundRobinPartitioner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -425,7 +425,7 @@ public class DagUtils {
       edgeManagerDescriptor.setUserPayload(cpConfig.toUserPayload(new TezConfiguration(conf)));
       UnorderedPartitionedKVEdgeConfig cpEdgeConf =
         UnorderedPartitionedKVEdgeConfig.newBuilder(keyClass, valClass,
-          RoundRobinPartitioner.class.getName()).build();
+          ValueHashPartitioner.class.getName()).build();
       return cpEdgeConf.createDefaultCustomEdgeProperty(edgeManagerDescriptor);
     case SIMPLE_EDGE:
       // fallthrough
@@ -440,6 +440,14 @@ public class DagUtils {
           .setValueSerializationClass(TezBytesWritableSerialization.class.getName(), null)
           .build();
       return et4Conf.createDefaultEdgeProperty();
+    }
+  }
+
+  public static class ValueHashPartitioner implements Partitioner {
+
+    @Override
+    public int getPartition(Object key, Object value, int numPartitions) {
+      return (value.hashCode() & 2147483647) % numPartitions;
     }
   }
 
