@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.hadoop.hive.ql.parse.repl.dump.io;
+package org.apache.hadoop.hive.ql.parse.repl;
 
 import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.FileSystem;
@@ -37,7 +37,7 @@ import java.util.Map;
 
 import static org.apache.hadoop.hive.io.HdfsUtils.HadoopFileStatus;
 
-class CopyUtils {
+public class CopyUtils {
 
   private static final Logger LOG = LoggerFactory.getLogger(CopyUtils.class);
 
@@ -47,16 +47,16 @@ class CopyUtils {
   private final boolean hiveInTest, inheritPermissions;
   private final String copyAsUser;
 
-  CopyUtils(HiveConf hiveConf) {
+  public CopyUtils(String distCpDoAsUser, HiveConf hiveConf) {
     this.hiveConf = hiveConf;
     maxNumberOfFiles = hiveConf.getLongVar(HiveConf.ConfVars.HIVE_EXEC_COPYFILE_MAXNUMFILES);
     maxCopyFileSize = hiveConf.getLongVar(HiveConf.ConfVars.HIVE_EXEC_COPYFILE_MAXSIZE);
     hiveInTest = hiveConf.getBoolVar(HiveConf.ConfVars.HIVE_IN_TEST);
-    copyAsUser = hiveConf.getVar(HiveConf.ConfVars.HIVE_DISTCP_DOAS_USER);
+    this.copyAsUser = distCpDoAsUser;
     inheritPermissions = hiveConf.getBoolVar(HiveConf.ConfVars.HIVE_WAREHOUSE_SUBDIR_INHERIT_PERMS);
   }
 
-  void doCopy(Path destination, List<Path> srcPaths) throws IOException {
+  public void doCopy(Path destination, List<Path> srcPaths) throws IOException {
     Map<FileSystem, List<Path>> map = fsToFileMap(srcPaths);
     FileSystem destinationFs = destination.getFileSystem(hiveConf);
     HadoopFileStatus sourceStatus =
@@ -90,10 +90,9 @@ class CopyUtils {
   /*
       Check for conditions that will lead to local copy, checks are:
       1. we are testing hive.
-      2. both source and destination are same FileSystem
-      3. either source or destination is a "local" FileSystem("file")
-      4. aggregate fileSize of all source Paths(can be directory /  file) is less than configured size.
-      5. number of files of all source Paths(can be directory /  file) is less than configured size.
+      2. either source or destination is a "local" FileSystem("file")
+      3. aggregate fileSize of all source Paths(can be directory /  file) is less than configured size.
+      4. number of files of all source Paths(can be directory /  file) is less than configured size.
   */
   private boolean regularCopy(FileSystem destinationFs, Map.Entry<FileSystem, List<Path>> entry)
       throws IOException {
@@ -101,9 +100,7 @@ class CopyUtils {
       return true;
     }
     FileSystem sourceFs = entry.getKey();
-    boolean isLocalFs = isLocal(sourceFs) || isLocal(destinationFs);
-    boolean sameFs = sourceFs.equals(destinationFs);
-    if (isLocalFs || sameFs) {
+    if (isLocal(sourceFs) || isLocal(destinationFs)) {
       return true;
     }
 

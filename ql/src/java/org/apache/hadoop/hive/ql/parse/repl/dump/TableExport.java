@@ -34,6 +34,7 @@ import org.apache.hadoop.hive.ql.parse.ReplicationSpec;
 import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.parse.repl.dump.io.FileOperations;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -46,16 +47,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.apache.hadoop.hive.ql.parse.BaseSemanticAnalyzer.toWriteEntity;
 
 public class TableExport {
+  private static final Logger logger = LoggerFactory.getLogger(TableExport.class);
+
   private TableSpec tableSpec;
   private final ReplicationSpec replicationSpec;
   private final Hive db;
+  private final String distCpDoAsUser;
   private final HiveConf conf;
-  private final Logger logger;
   private final Paths paths;
   private final AuthEntities authEntities = new AuthEntities();
 
-  public TableExport(Paths paths, TableSpec tableSpec, ReplicationSpec replicationSpec,
-      Hive db, HiveConf conf, Logger logger)
+  public TableExport(Paths paths, TableSpec tableSpec,
+      ReplicationSpec replicationSpec, Hive db, String distCpDoAsUser, HiveConf conf)
       throws SemanticException {
     this.tableSpec = (tableSpec != null
         && tableSpec.tableHandle.isTemporary()
@@ -67,8 +70,8 @@ public class TableExport {
       this.replicationSpec.setIsMetadataOnly(true);
     }
     this.db = db;
+    this.distCpDoAsUser = distCpDoAsUser;
     this.conf = conf;
-    this.logger = logger;
     this.paths = paths;
   }
 
@@ -116,8 +119,7 @@ public class TableExport {
     }
   }
 
-  private void writeMetaData(PartitionIterable partitions)
-      throws SemanticException {
+  private void writeMetaData(PartitionIterable partitions) throws SemanticException {
     try {
       EximUtil.createExportDump(
           paths.exportFileSystem,
@@ -141,11 +143,13 @@ public class TableExport {
           throw new IllegalStateException(
               "partitions cannot be null for partitionTable :" + tableSpec.tableName);
         }
-        new PartitionExport(paths, partitions, conf, authEntities).write(replicationSpec);
+        new PartitionExport(paths, partitions, distCpDoAsUser, conf, authEntities)
+                .write(replicationSpec);
       } else {
         Path fromPath = tableSpec.tableHandle.getDataLocation();
         //this is the data copy
-        new FileOperations(fromPath, paths.dataExportDir(), conf).export(replicationSpec);
+        new FileOperations(fromPath, paths.dataExportDir(), distCpDoAsUser, conf)
+                .export(replicationSpec);
         authEntities.inputs.add(new ReadEntity(tableSpec.tableHandle));
       }
       authEntities.outputs.add(toWriteEntity(paths.exportRootDir, conf));

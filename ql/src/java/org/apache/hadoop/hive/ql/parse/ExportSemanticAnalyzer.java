@@ -73,7 +73,7 @@ public class ExportSemanticAnalyzer extends BaseSemanticAnalyzer {
     TableExport.Paths exportPaths =
         new TableExport.Paths(tmpPath, conf);
     TableExport.AuthEntities authEntities =
-        new TableExport(exportPaths, ts, replicationSpec, db, conf, LOG).write();
+        new TableExport(exportPaths, ts, replicationSpec, db, null, conf).write();
     inputs.addAll(authEntities.inputs);
     outputs.addAll(authEntities.outputs);
   }
