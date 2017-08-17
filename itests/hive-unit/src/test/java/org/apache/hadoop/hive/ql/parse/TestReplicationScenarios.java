@@ -41,7 +41,6 @@ import org.apache.hadoop.hive.ql.CommandNeedRetryException;
 import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.WindowsPathUtil;
 import org.apache.hadoop.hive.ql.exec.repl.ReplDumpWork;
-import org.apache.hadoop.hive.ql.parse.ReplicationSpec.ReplStateMap;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hive.hcatalog.api.repl.ReplicationV1CompatRule;
@@ -284,7 +283,6 @@ public class TestReplicationScenarios {
     String[] unptn_data = new String[]{ "eleven" , "twelve" };
     String[] ptn_data_1 = new String[]{ "thirteen", "fourteen", "fifteen"};
     String[] ptn_data_2 = new String[]{ "fifteen", "sixteen", "seventeen"};
-    String[] ptn_data_2_later = new String[]{ "eighteen", "nineteen", "twenty"};
     String[] empty = new String[]{};
 
     String unptn_locn = new Path(TEST_PATH , testName + "_unptn").toUri().getPath();
@@ -295,7 +293,6 @@ public class TestReplicationScenarios {
     createTestDataFile(unptn_locn, unptn_data);
     createTestDataFile(ptn_locn_1, ptn_data_1);
     createTestDataFile(ptn_locn_2, ptn_data_2);
-    createTestDataFile(ptn_locn_2_later, ptn_data_2_later);
 
     run("LOAD DATA LOCAL INPATH '" + unptn_locn + "' OVERWRITE INTO TABLE " + dbName + ".unptned");
     run("SELECT * from " + dbName + ".unptned");
@@ -318,15 +315,9 @@ public class TestReplicationScenarios {
 
     // Table dropped after "repl dump"
     run("DROP TABLE " + dbName + ".unptned");
+
     // Partition droppped after "repl dump"
     run("ALTER TABLE " + dbName + ".ptned " + "DROP PARTITION(b=1)");
-    // File changed after "repl dump"
-    Partition p = metaStoreClient.getPartition(dbName, "ptned", "b=2");
-    Path loc = new Path(p.getSd().getLocation());
-    FileSystem fs = loc.getFileSystem(hconf);
-    Path file = fs.listStatus(loc)[0].getPath();
-    fs.delete(file, false);
-    fs.copyFromLocalFile(new Path(ptn_locn_2_later), file);
 
     run("EXPLAIN REPL LOAD " + dbName + "_dupe FROM '" + replDumpLocn + "'");
     printOutput();
@@ -339,10 +330,8 @@ public class TestReplicationScenarios {
     verifyResults(unptn_data);
     run("SELECT a from " + dbName + "_dupe.ptned WHERE b=1");
     verifyResults(ptn_data_1);
-    // Since partition(b=2) changed manually, Hive cannot find
-    // it in original location and cmroot, thus empty
     run("SELECT a from " + dbName + "_dupe.ptned WHERE b=2");
-    verifyResults(empty);
+    verifyResults(ptn_data_2);
     run("SELECT a from " + dbName + ".ptned_empty");
     verifyResults(empty);
     run("SELECT * from " + dbName + ".unptned_empty");
@@ -1270,6 +1259,7 @@ public class TestReplicationScenarios {
 
     String[] ptn_data = new String[]{ "ten"};
     run("INSERT INTO TABLE " + dbName + ".ptned partition(b=1) values('" + ptn_data[0] + "')");
+    run("DROP TABLE " + dbName + ".ptned");
 
     // Inject a behaviour where it throws exception if an INSERT event is found
     // As we dynamically add a partition through INSERT INTO cmd, it should just add ADD_PARTITION
@@ -1289,6 +1279,7 @@ public class TestReplicationScenarios {
             if (event.getDbName().equalsIgnoreCase(dbName)) {
               if (event.getEventType() == "INSERT") {
                 // If an insert event is found, then return null hence no event is dumped.
+                LOG.error("Encountered INSERT event when it was not expected to");
                 return null;
               }
             }
@@ -1305,7 +1296,7 @@ public class TestReplicationScenarios {
     eventTypeValidator.assertInjectionsPerformed(true,false);
     InjectableBehaviourObjectStore.resetGetNextNotificationBehaviour(); // reset the behaviour
 
-    verifyRun("SELECT a from " + replDbName + ".ptned where (b=1) ORDER BY a", ptn_data);
+    verifyIfTableNotExist(replDbName , "ptned");
   }
 
   @Test
@@ -2522,32 +2513,57 @@ public class TestReplicationScenarios {
 
     // Replicate all the events happened so far
     Tuple incrDump = incrementalLoadAndVerify(dbName, bootstrapDump.lastReplId, replDbName);
-    verifySetup("SELECT a from " + replDbName + ".ptned where (b=1) ORDER BY a", ptn_data_1);
-    verifySetup("SELECT a from " + replDbName + ".ptned where (b=2) ORDER BY a", ptn_data_2);
+    verifyRun("SELECT a from " + replDbName + ".ptned where (b=1) ORDER BY a", ptn_data_1);
+    verifyRun("SELECT a from " + replDbName + ".ptned where (b=2) ORDER BY a", ptn_data_2);
   }
 
   @Test
+  public void testIncrementalLoadFailAndRetry() throws IOException {
+    String testName = "incrementalLoadFailAndRetry";
+    String dbName = createDB(testName);
+    run("CREATE TABLE " + dbName + ".ptned(a string) PARTITIONED BY (b int) STORED AS TEXTFILE");
+
+    // Bootstrap dump/load
+    String replDbName = dbName + "_dupe";
+    Tuple bootstrapDump = bootstrapLoadAndVerify(dbName, replDbName);
+
+    // Prefixed with incrementalLoadFailAndRetry to avoid finding entry in cmpath
+    String[] ptn_data_1 = new String[] { "incrementalLoadFailAndRetry_fifteen" };
+    String[] empty = new String[] {};
+
+    run("INSERT INTO TABLE " + dbName + ".ptned PARTITION(b=1) values('" + ptn_data_1[0] + "')");
+    run("CREATE TABLE " + dbName + ".ptned_tmp AS SELECT * FROM " + dbName + ".ptned");
+
+    // Move the data files of this newly created partition to a temp location
+    Partition ptn = null;
+    try {
+      ptn = metaStoreClient.getPartition(dbName, "ptned", new ArrayList<>(Arrays.asList("1")));
+    } catch (Exception e) {
+      assert(false);
+    }
+
+    Path ptnLoc = new Path(ptn.getSd().getLocation());
+    Path tmpLoc = new Path(TEST_PATH + "/incrementalLoadFailAndRetry");
+    FileSystem dataFs = ptnLoc.getFileSystem(hconf);
+    assert(dataFs.rename(ptnLoc, tmpLoc));
+
+    // Replicate all the events happened so far. It should fail as the data files missing in
+    // original path and not available in CM as well.
+    Tuple incrDump = replDumpDb(dbName, bootstrapDump.lastReplId, null, null);
+    verifyFail("REPL LOAD " + replDbName + " FROM '" + incrDump.dumpLocation + "'");
+
+    verifyRun("SELECT a from " + replDbName + ".ptned where (b=1) ORDER BY a", empty);
+    verifyFail("SELECT a from " + replDbName + ".ptned_tmp where (b=1) ORDER BY a");
+
+    // Move the files back to original data location
+    assert(dataFs.rename(tmpLoc, ptnLoc));
+    loadAndVerify(replDbName, incrDump.dumpLocation, incrDump.lastReplId);
+
+    verifyRun("SELECT a from " + replDbName + ".ptned where (b=1) ORDER BY a", ptn_data_1);
+    verifyRun("SELECT a from " + replDbName + ".ptned_tmp where (b=1) ORDER BY a", ptn_data_1);
+  }
+  @Test
   public void testStatus() throws IOException {
-    // first test ReplStateMap functionality
-    Map<String,Long> cmap = new ReplStateMap<String,Long>();
-
-    Long oldV;
-    oldV = cmap.put("a",1L);
-    assertEquals(1L,cmap.get("a").longValue());
-    assertEquals(null,oldV);
-
-    cmap.put("b",2L);
-    oldV = cmap.put("b",-2L);
-    assertEquals(2L, cmap.get("b").longValue());
-    assertEquals(2L, oldV.longValue());
-
-    cmap.put("c",3L);
-    oldV = cmap.put("c",33L);
-    assertEquals(33L, cmap.get("c").longValue());
-    assertEquals(3L, oldV.longValue());
-
-    // Now, to actually testing status - first, we bootstrap.
-
     String name = testName.getMethodName();
     String dbName = createDB(name);
     advanceDumpDir();
@@ -2912,7 +2928,7 @@ public class TestReplicationScenarios {
     boolean success = false;
     try {
       CommandProcessorResponse ret = driver.run(cmd);
-      success = (ret.getException() == null);
+      success = ((ret.getException() == null) && (ret.getErrorMessage() == null));
       if (!success){
         LOG.warn("Error {} : {} running [{}].", ret.getErrorCode(), ret.getErrorMessage(), cmd);
       }
