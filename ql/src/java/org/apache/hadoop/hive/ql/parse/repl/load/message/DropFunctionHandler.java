@@ -44,7 +44,7 @@ public class DropFunctionHandler extends AbstractMessageHandler {
     context.log.debug(
         "Added drop function task : {}:{}", dropFunctionTask.getId(), desc.getFunctionName()
     );
-    databasesUpdated.put(actualDbName, context.dmd.getEventTo());
+    updatedMetadata.set(context.dmd.getEventTo().toString(), actualDbName, null, null);
     List<Task<? extends Serializable>> retval = new ArrayList<>();
     retval.add(dropFunctionTask);
     return retval;
