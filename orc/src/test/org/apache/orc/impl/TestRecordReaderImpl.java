@@ -1093,12 +1093,6 @@ public class TestRecordReaderImpl {
 
     // filter by rows and groups
     result = RecordReaderImpl.planReadPartialDataStreams(streams, indexes,
-        columns, rowGroups, false, encodings, types, 32768, false);
-    assertThat(result, is(diskRanges(0, 1000, 100, 1000, 400, 1000,
-        1000, 11000 + RecordReaderUtils.WORST_UNCOMPRESSED_SLOP,
-        11000, 21000 + RecordReaderUtils.WORST_UNCOMPRESSED_SLOP,
-        41000, 51000 + RecordReaderUtils.WORST_UNCOMPRESSED_SLOP)));
-    result = RecordReaderImpl.planReadPartialDataStreams(streams, indexes,
         columns, rowGroups, false, encodings, types, 32768, true);
     assertThat(result, is(diskRanges(0, 21000 + RecordReaderUtils.WORST_UNCOMPRESSED_SLOP,
         41000, 51000 + RecordReaderUtils.WORST_UNCOMPRESSED_SLOP)));
@@ -1216,10 +1210,8 @@ public class TestRecordReaderImpl {
 
     // filter by rows and groups
     result = RecordReaderImpl.planReadPartialDataStreams(streams, indexes,
-        columns, rowGroups, true, encodings, types, 32768, false);
-    assertThat(result, is(diskRanges(0, 1000, 100, 1000,
-        400, 1000, 1000, 11000+(2*32771),
-        11000, 21000+(2*32771), 41000, 100000)));
+        columns, rowGroups, true, encodings, types, 32768, true);
+    assertThat(result, is(diskRanges(0, 100000)));
 
     rowGroups = new boolean[]{false, false, false, false, false, true};
     result = RecordReaderImpl.planReadPartialDataStreams(streams, indexes,
@@ -1304,11 +1296,10 @@ public class TestRecordReaderImpl {
 
     // filter by rows and groups
     result = RecordReaderImpl.planReadPartialDataStreams(streams, indexes,
-        columns, rowGroups, false, encodings, types, 32768, false);
-    assertThat(result, is(diskRanges(100, 1000, 400, 1000, 500, 1000,
+        columns, rowGroups, false, encodings, types, 32768, true);
+    assertThat(result, is(diskRanges(100, 1000,
         11000, 21000 + RecordReaderUtils.WORST_UNCOMPRESSED_SLOP,
-        41000, 51000 + RecordReaderUtils.WORST_UNCOMPRESSED_SLOP,
-        51000, 95000, 95000, 97000, 97000, 100000)));
+        41000, 100000)));
   }
 
   @Test
