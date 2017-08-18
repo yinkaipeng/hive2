@@ -2398,15 +2398,20 @@ public final class Utilities {
 
   public static List<TezTask> getTezTasks(List<Task<? extends Serializable>> tasks) {
     List<TezTask> tezTasks = new ArrayList<TezTask>();
-    Set<Task<? extends Serializable>> visited = new HashSet<Task<? extends Serializable>>();
     if (tasks != null) {
-      getTezTasks(tasks, tezTasks, visited);
+      Set<Task<? extends Serializable>> visited = new HashSet<Task<? extends Serializable>>();
+      while (!tasks.isEmpty()) {
+        tasks = getTezTasks(tasks, tezTasks, visited);
+      }
     }
     return tezTasks;
   }
 
-  private static void getTezTasks(List<Task<? extends Serializable>> tasks, List<TezTask> tezTasks,
-      Set<Task<? extends Serializable>> visited) {
+  private static List<Task<? extends Serializable>> getTezTasks(
+          List<Task<? extends Serializable>> tasks,
+          List<TezTask> tezTasks,
+          Set<Task<? extends Serializable>> visited) {
+    List<Task<? extends Serializable>> childTasks = new ArrayList<>();
     for (Task<? extends Serializable> task : tasks) {
       if (visited.contains(task)) {
         continue;
@@ -2416,23 +2421,29 @@ public final class Utilities {
       }
 
       if (task.getDependentTasks() != null) {
-        getTezTasks(task.getDependentTasks(), tezTasks, visited);
+        childTasks.addAll(task.getDependentTasks());
       }
       visited.add(task);
     }
+    return childTasks;
   }
 
   public static List<SparkTask> getSparkTasks(List<Task<? extends Serializable>> tasks) {
     List<SparkTask> sparkTasks = new ArrayList<SparkTask>();
-    Set<Task<? extends Serializable>> visited = new HashSet<Task<? extends Serializable>>();
     if (tasks != null) {
-      getSparkTasks(tasks, sparkTasks, visited);
+      Set<Task<? extends Serializable>> visited = new HashSet<Task<? extends Serializable>>();
+      while (!tasks.isEmpty()) {
+        tasks = getSparkTasks(tasks, sparkTasks, visited);
+      }
     }
     return sparkTasks;
   }
 
-  private static void getSparkTasks(List<Task<? extends Serializable>> tasks,
-    List<SparkTask> sparkTasks, Set<Task<? extends Serializable>> visited) {
+  private static List<Task<? extends Serializable>> getSparkTasks(
+          List<Task<? extends Serializable>> tasks,
+          List<SparkTask> sparkTasks,
+          Set<Task<? extends Serializable>> visited) {
+    List<Task<? extends Serializable>> childTasks = new ArrayList<>();
     for (Task<? extends Serializable> task : tasks) {
       if (visited.contains(task)) {
         continue;
@@ -2442,23 +2453,29 @@ public final class Utilities {
       }
 
       if (task.getDependentTasks() != null) {
-        getSparkTasks(task.getDependentTasks(), sparkTasks, visited);
+        childTasks.addAll(task.getDependentTasks());
       }
       visited.add(task);
     }
+    return childTasks;
   }
 
   public static List<ExecDriver> getMRTasks(List<Task<? extends Serializable>> tasks) {
     List<ExecDriver> mrTasks = new ArrayList<ExecDriver>();
-    Set<Task<? extends Serializable>> visited = new HashSet<Task<? extends Serializable>>();
     if (tasks != null) {
-      getMRTasks(tasks, mrTasks, visited);
+      Set<Task<? extends Serializable>> visited = new HashSet<Task<? extends Serializable>>();
+      while (!tasks.isEmpty()) {
+        tasks = getMRTasks(tasks, mrTasks, visited);
+      }
     }
     return mrTasks;
   }
 
-  private static void getMRTasks(List<Task<? extends Serializable>> tasks, List<ExecDriver> mrTasks,
-      Set<Task<? extends Serializable>> visited) {
+  private static List<Task<? extends Serializable>> getMRTasks(
+          List<Task<? extends Serializable>> tasks,
+          List<ExecDriver> mrTasks,
+          Set<Task<? extends Serializable>> visited) {
+    List<Task<? extends Serializable>> childTasks = new ArrayList<>();
     for (Task<? extends Serializable> task : tasks) {
       if (visited.contains(task)) {
         continue;
@@ -2468,10 +2485,11 @@ public final class Utilities {
       }
 
       if (task.getDependentTasks() != null) {
-        getMRTasks(task.getDependentTasks(), mrTasks, visited);
+        childTasks.addAll(task.getDependentTasks());
       }
       visited.add(task);
     }
+    return childTasks;
   }
 
   /**
