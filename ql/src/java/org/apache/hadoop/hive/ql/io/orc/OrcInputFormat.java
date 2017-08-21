@@ -20,6 +20,7 @@ package org.apache.hadoop.hive.ql.io.orc;
 
 import org.apache.orc.impl.InStream;
 import org.apache.orc.impl.SchemaEvolution;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -84,6 +85,7 @@ import org.apache.hadoop.hive.ql.io.AcidUtils.Directory;
 import org.apache.hadoop.hive.ql.io.BatchToRowInputFormat;
 import org.apache.hadoop.hive.ql.io.BatchToRowReader;
 import org.apache.hadoop.hive.ql.io.CombineHiveInputFormat;
+import org.apache.hadoop.hive.ql.io.HdfsUtils;
 import org.apache.hadoop.hive.ql.io.HiveInputFormat;
 import org.apache.hadoop.hive.ql.io.InputFormatChecker;
 import org.apache.hadoop.hive.ql.io.LlapWrappableInputFormatInterface;
@@ -114,7 +116,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hive.common.util.Ref;
-import org.apache.orc.ColumnStatistics;
 import org.apache.orc.OrcProto;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -745,10 +746,12 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
     private List<OrcSplit> splitsRef = null;
     private final UserGroupInformation ugi;
     private final boolean allowSyntheticFileIds;
+    private final boolean isDefaultFs;
 
     public ETLSplitStrategy(Context context, FileSystem fs, Path dir,
         List<HdfsFileStatusWithId> children, List<OrcProto.Type> readerTypes, boolean isOriginal,
-        List<DeltaMetaData> deltas, boolean[] covered, UserGroupInformation ugi, boolean allowSyntheticFileIds) {
+        List<DeltaMetaData> deltas, boolean[] covered, UserGroupInformation ugi,
+        boolean allowSyntheticFileIds, boolean isDefaultFs) {
       assert !children.isEmpty();
       this.context = context;
       this.dirs = Lists.newArrayList(new ETLDir(dir, fs, children.size()));
@@ -759,6 +762,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
       this.covered = covered;
       this.ugi = ugi;
       this.allowSyntheticFileIds = allowSyntheticFileIds;
+      this.isDefaultFs = isDefaultFs;
     }
 
     @Override
@@ -896,7 +900,8 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
       List<Future<List<OrcSplit>>> localListF = null;
       List<OrcSplit> localListS = null;
       for (SplitInfo splitInfo : splitInfos) {
-        SplitGenerator sg = new SplitGenerator(splitInfo, tpUgi, allowSyntheticFileIds);
+        SplitGenerator sg = new SplitGenerator(
+            splitInfo, tpUgi, allowSyntheticFileIds, isDefaultFs);
         if (!sg.isBlocking()) {
           if (localListS == null) {
             localListS = new ArrayList<>(splits.size());
@@ -934,10 +939,11 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
     private final FileSystem fs;
     private final Path dir;
     private final boolean allowSyntheticFileIds;
+    private final boolean isDefaultFs;
 
-    public BISplitStrategy(Context context, FileSystem fs,
-        Path dir, List<HdfsFileStatusWithId> fileStatuses, boolean isOriginal,
-        List<DeltaMetaData> deltas, boolean[] covered, boolean allowSyntheticFileIds) {
+    public BISplitStrategy(Context context, FileSystem fs, Path dir,
+        List<HdfsFileStatusWithId> fileStatuses, boolean isOriginal, List<DeltaMetaData> deltas,
+        boolean[] covered, boolean allowSyntheticFileIds, boolean isDefaultFs) {
       super(dir, context.numBuckets, deltas, covered);
       this.fileStatuses = fileStatuses;
       this.isOriginal = isOriginal;
@@ -945,6 +951,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
       this.fs = fs;
       this.dir = dir;
       this.allowSyntheticFileIds = allowSyntheticFileIds;
+      this.isDefaultFs = isDefaultFs;
     }
 
     @Override
@@ -953,7 +960,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
       for (HdfsFileStatusWithId file : fileStatuses) {
         FileStatus fileStatus = file.getFileStatus();
         if (fileStatus.getLen() != 0) {
-          Object fileKey = file.getFileId();
+          Object fileKey = isDefaultFs ? file.getFileId() : null;
           if (fileKey == null && allowSyntheticFileIds) {
             fileKey = new SyntheticFileId(fileStatus);
           }
@@ -1127,12 +1134,12 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
     private SchemaEvolution evolution;
 
     public SplitGenerator(SplitInfo splitInfo, UserGroupInformation ugi,
-        boolean allowSyntheticFileIds) throws IOException {
+        boolean allowSyntheticFileIds, boolean isDefaultFs) throws IOException {
       this.ugi = ugi;
       this.context = splitInfo.context;
       this.fs = splitInfo.fs;
       this.file = splitInfo.fileWithId.getFileStatus();
-      this.fsFileId = splitInfo.fileWithId.getFileId();
+      this.fsFileId = isDefaultFs ? splitInfo.fileWithId.getFileId() : null;
       this.blockSize = this.file.getBlockSize();
       this.orcTail = splitInfo.orcTail;
       this.readerTypes = splitInfo.readerTypes;
@@ -1510,6 +1517,9 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
     }
     boolean useFileIdsConfig = HiveConf.getBoolVar(
         conf, ConfVars.HIVE_ORC_INCLUDE_FILE_ID_IN_SPLITS);
+    boolean checkDefaultFs = HiveConf.getBoolVar(
+        context.conf, ConfVars.LLAP_CACHE_DEFAULT_FS_FILE_ID);
+
     // Sharing this state assumes splits will succeed or fail to get it together (same FS).
     // We also start with null and only set it to true on the first call, so we would only do
     // the global-disable thing on the first failure w/the API error, not any random failure.
@@ -1527,6 +1537,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
     CompletionService<AcidDirInfo> ecs = new ExecutorCompletionService<>(Context.threadPool);
     for (Path dir : paths) {
       FileSystem fs = dir.getFileSystem(conf);
+// TODO# HERE, not above
       FileGenerator fileGenerator = new FileGenerator(context, fs, dir, useFileIds, ugi);
       pathFutures.add(ecs.submit(fileGenerator));
     }
@@ -1570,12 +1581,14 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
           combinedCtx.combined = null;
           continue;
         }
+        boolean isDefaultFs = (!checkDefaultFs) || ((adi.fs instanceof DistributedFileSystem)
+            && HdfsUtils.isDefaultFs((DistributedFileSystem) adi.fs));
 
         // We have received a new directory information, make a split strategy.
         --resultsLeft;
         SplitStrategy<?> splitStrategy = determineSplitStrategy(combinedCtx, context, adi.fs,
             adi.splitPath, adi.acidInfo, adi.baseOrOriginalFiles, readerTypes, ugi,
-            allowSyntheticFileIds);
+            allowSyntheticFileIds, isDefaultFs);
         if (splitStrategy == null) continue; // Combined.
 
         if (isDebugEnabled) {
@@ -1654,15 +1667,16 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
   private static SplitStrategy<?> combineOrCreateETLStrategy(CombinedCtx combinedCtx,
       Context context, FileSystem fs, Path dir, List<HdfsFileStatusWithId> files,
       List<DeltaMetaData> deltas, boolean[] covered, List<OrcProto.Type> readerTypes,
-      boolean isOriginal, UserGroupInformation ugi, boolean allowSyntheticFileIds) {
+      boolean isOriginal, UserGroupInformation ugi, boolean allowSyntheticFileIds,
+      boolean isDefaultFs) {
     if (!deltas.isEmpty() || combinedCtx == null) {
       return new ETLSplitStrategy(
           context, fs, dir, files, readerTypes, isOriginal, deltas, covered, ugi,
-          allowSyntheticFileIds);
+          allowSyntheticFileIds, isDefaultFs);
     } else if (combinedCtx.combined == null) {
       combinedCtx.combined = new ETLSplitStrategy(
           context, fs, dir, files, readerTypes, isOriginal, deltas, covered, ugi,
-          allowSyntheticFileIds);
+          allowSyntheticFileIds, isDefaultFs);
       combinedCtx.combineStartUs = System.nanoTime();
       return null;
     } else {
@@ -1673,12 +1687,12 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
       case NO_AND_CONTINUE:
         return new ETLSplitStrategy(
             context, fs, dir, files, readerTypes, isOriginal, deltas, covered, ugi,
-            allowSyntheticFileIds);
+            allowSyntheticFileIds, isDefaultFs);
       case NO_AND_SWAP: {
         ETLSplitStrategy oldBase = combinedCtx.combined;
         combinedCtx.combined = new ETLSplitStrategy(
             context, fs, dir, files, readerTypes, isOriginal, deltas, covered, ugi,
-            allowSyntheticFileIds);
+            allowSyntheticFileIds, isDefaultFs);
         combinedCtx.combineStartUs = System.nanoTime();
         return oldBase;
       }
@@ -2023,7 +2037,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
   static SplitStrategy<?> determineSplitStrategy(CombinedCtx combinedCtx, Context context,
       FileSystem fs, Path dir, AcidUtils.Directory dirInfo,
       List<HdfsFileStatusWithId> baseOrOriginalFiles, List<OrcProto.Type> readerTypes,
-      UserGroupInformation ugi, boolean allowSyntheticFileIds) {
+      UserGroupInformation ugi, boolean allowSyntheticFileIds, boolean isDefaultFs) {
     Path base = dirInfo.getBaseDirectory();
     List<HdfsFileStatusWithId> original = dirInfo.getOriginalFiles();
     List<DeltaMetaData> deltas = AcidUtils.serializeDeltas(dirInfo.getCurrentDirectories());
@@ -2052,19 +2066,19 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
         case BI:
           // BI strategy requested through config
           return new BISplitStrategy(context, fs, dir, baseOrOriginalFiles,
-              isOriginal, deltas, covered, allowSyntheticFileIds);
+              isOriginal, deltas, covered, allowSyntheticFileIds, isDefaultFs);
         case ETL:
           // ETL strategy requested through config
           return combineOrCreateETLStrategy(combinedCtx, context, fs, dir, baseOrOriginalFiles,
-              deltas, covered, readerTypes, isOriginal, ugi, allowSyntheticFileIds);
+              deltas, covered, readerTypes, isOriginal, ugi, allowSyntheticFileIds, isDefaultFs);
         default:
           // HYBRID strategy
           if (avgFileSize > context.maxSize || totalFiles <= context.etlFileThreshold) {
             return combineOrCreateETLStrategy(combinedCtx, context, fs, dir, baseOrOriginalFiles,
-                deltas, covered, readerTypes, isOriginal, ugi, allowSyntheticFileIds);
+                deltas, covered, readerTypes, isOriginal, ugi, allowSyntheticFileIds, isDefaultFs);
           } else {
             return new BISplitStrategy(context, fs, dir, baseOrOriginalFiles,
-                isOriginal, deltas, covered, allowSyntheticFileIds);
+                isOriginal, deltas, covered, allowSyntheticFileIds, isDefaultFs);
           }
       }
     } else {
