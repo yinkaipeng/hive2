@@ -1,5 +1,92 @@
 Changes only in Hortonworks git repo and not in released hive-2.1.1
 ===================================================================
+BUG FIXES
+  HDP-2.6.2:
+    HIVE-16164 : Provide mechanism for passing HMS notification ID between transactional and non-transactional listeners. (Sergio Pena, reviewed by Mohit Sabharwal, Alexander Kolbasov)
+    HIVE-16642 : New Events created as part of replv2 potentially break replv1 (Sushanth Sowmyan, reviewed by Thejas Nair)
+    HIVE-16272 : support for drop function in incremental replication (Anishek Agarwal, reviewed by Sushanth Sowmyan)
+    HIVE-16684 : Bootstrap REPL DUMP shouldn't fail when table is dropped after fetching the table names (Sankar Hariappan, reviewed by Sushanth Sowmyan, Thejas Nair)
+    HIVE-16686 : repl invocations of distcp needs additional handling (Sushanth Sowmyan, reviewed by Thejas Nair)
+    HIVE-16848 : NPE during CachedStore refresh
+    HIVE-16804 : Semijoin hint : Needs support for target table. (Deepak Jaiswal, reviewed by Jason Dere)
+    HIVE-16671 : LLAP IO: BufferUnderflowException may happen in very rare(?) cases due to ORC end-of-CB estimation (Sergey Shelukhin, reviewed by Prasanth Jayachandran)
+    HIVE-16571 : HiveServer2: Prefer LIFO over round-robin for Tez session reuse (Gopal Vijayaraghavan, reviewed by Sergey Shelukhin)
+    HIVE-16808 : WebHCat statusdir parameter doesn't properly handle Unicode characters when using relative path
+    HIVE-16706 : Bootstrap REPL DUMP shouldn't fail when a partition is dropped/renamed when dump in progress (Sankar Hariappan via Thejas Nair)
+    HIVE-16727 : REPL DUMP for insert event should't fail if the table is already dropped. (Sankar Hariappan via Thejas Nair)
+    HIVE-16644 : Hook Change Manager to Insert Overwrite (Sankar Hariappan via Thejas Nair)
+    HIVE-16813 : Incremental REPL LOAD should load the events in the same sequence as it is dumped (Sankar Hariappan, reviewed by Anishek Agarwal, Thejas Nair)
+    HIVE-16871 : CachedStore.get_aggr_stats_for has side affect
+    HIVE-16323 : HS2 JDOPersistenceManagerFactory.pmCache leaks after HIVE-14204
+    HIVE-16591 : DR for function Binaries on HDFS (Anishek Agarwal, reviewed by Sankar Hariappan, Thejas Nair)
+    HIVE-15587 : Using ChangeManager to copy files in ReplCopyTask (Daniel Dai, reviewed by Vaibhav Gumashta)
+    HIVE-16866 : existing available UDF is used in TestReplicationScenariosAcrossInstances#testDropFunctionIncrementalReplication (Anishek Agarwal, reviewed by Sankar Hariappan, Thejas Nair)
+    HIVE-15294 : Capture additional metadata to replicate a simple insert at destination (Vaibhav Gumashta reviewed by Thejas Nair)
+    HIVE-16847 : LLAP queue order issue (Sergey Shelukhin, reviewed by Siddharth Seth and Prasanth Jayachandran)
+    HIVE-16918 : Skip ReplCopyTask distcp for _metadata copying. Also enable -pb for distcp (Sushanth Sowmyan, reviewed by Thejas Nair, Anishek Agarwal)
+    HIVE-16654 : Optimize a combination of avg(), sum(), count(distinct) etc (Pengcheng Xiong, reviewed by Ashutosh Chauhan)
+    HIVE-16837 : MetadataOnly optimizer conflicts with count distinct rewrite (Pengcheng Xiong, reviewed by Ashutosh Chauhan)
+    HIVE-16703 : Hive may add the same file to the session and vertex in Tez (Sergey Shelukhin, reviewed by Siddharth Seth)
+    HIVE-16867 : Extend shared scan optimizer to reuse computation from other operators (Jesus Camacho Rodriguez, reviewed by Ashutosh Chauhan)
+    HIVE-16775 : Fix HiveFilterAggregateTransposeRule when filter is always false (Pengcheng Xiong via Jesus Camacho Rodriguez)
+    HIVE-16797 : Enhance HiveFilterSetOpTransposeRule to remove union branches (Pengcheng Xiong, reviewed by Ashutosh Chauhan)
+    HIVE-16809 : Improve filter condition for correlated subqueries 
+    HIVE-16838 : Improve plans for subqueries with non-equi co-related predicates
+    HIVE-16947 : Semijoin Reduction : Task cycle created due to multiple semijoins in conjunction with hashjoin
+    HIVE-16785 : Ensure replication actions are idempotent if any series of events are applied again. (Sankar Hariappan, reviewed by Anishek Agarwal, Thejas Nair)
+    HIVE-16776 : Strange cast behavior for table backed by druid
+    HIVE-16750 : Support change management for rename table/partition (Sankar Hariappan, reviewed by Anishek Agarwal, Daniel Dai)
+    HIVE-17007 : NPE introduced by HIVE-16871
+    HIVE-16901 : Distcp optimization - One distcp per ReplCopyTask (Sankar Hariappan, reviewed by Anishek Agarwal, Daniel Dai)
+    HIVE-14389 : Beeline should not output query and prompt to stdout (Vihang Karajgaonkar, reviewed by Peter Vary, Thejas M Nair and Yongzhi Chen)
+    HIVE-10616 : TypeInfoUtils doesn't handle DECIMAL with just precision specified (Thomas Friedrich, reviewed by Gunther Hagleitner)
+    HIVE-10495 : Hive index creation code throws NPE if index table is null (Bing Li via Ashutosh Chauhan)
+    HIVE-6990  : Direct SQL fails when the explicit schema setting is different from the default one
+    HIVE-17073 : Incorrect result with vectorization and SharedWorkOptimizer
+    HIVE-16892 : Move creation of _files from ReplCopyTask to analysis phase for boostrap replication (Anishek Agarwal, reviewed by Sankar Hariappan, Thejas Nair)
+    HIVE-17066 : Query78 filter wrong estimatation is generating bad plan causing query failures (Vineet Garg, reviewed by Ashutosh Chauhan)
+    HIVE-16893 : move replication dump related work in semantic analysis phase to execution phase using a task (Anishek Agarwal, reviewed by Sankar Hariappan, Daniel Dai)
+    HIVE-15081 : RetryingMetaStoreClient.getProxy(HiveConf, Boolean) doesn't match constructor of HiveMetaStoreClient (Rui reviewed by Sergey)
+    HIVE-17021 : Support replication of concatenate operation (Sankar Hariappan, reviewed by Daniel Dai)
+    HIVE-17093 : LLAP ssl configs need to be localized to talk to a wire encrypted hdfs.
+    HIVE-16690 : NPE during analyze column stats
+    HIVE-15471 : LLAP fails to start with NPE in application log
+    HIVE-16926 : LlapTaskUmbilicalExternalClient should not start new umbilical server for every fragment request
+    HIVE-17091 : "Timed out getting readerEvents" error from external LLAP client (Jason Dere, reviewed by Siddharth Seth)
+    HIVE-4577  : hive CLI can't handle hadoop dfs command with space and quotes
+    HIVE-17097 : Fix SemiJoinHint parsing in SemanticAnalyzer (Rajesh Balamohan, reviewed by Gopal V, Deepak Jaiswal)
+    HIVE-17083 : Merge credentials in DagUtils instead of overwriting
+    HIVE-16973 : Fetching of Delegation tokens (Kerberos) for AccumuloStorageHandler fails in HS2 (Josh Elser via Sushanth Sowmyan)
+    HIVE-16996 : Add HLL as an alternative to FM sketch to compute stats (Pengcheng Xiong, reviewed by Ashutosh Chauhan, Prasanth Jayachandran)
+    HIVE-17005 : Ensure REPL DUMP and REPL LOAD are authorized properly (Sushanth Sowmyan, reviewed by Thejas Nair)
+    HIVE-17095 : Long chain repl loads do not complete in a timely fashion (Sushanth Sowmyan, reviewed by Daniel Dai)
+    HIVE-17085 : ORC file merge/concatenation should do full schema check
+    HIVE-17144 :  export table query failing for temporary table
+    HIVE-17137 : Fix javolution conflict (Pengcheng Xiong, reviewed by Jesus Camacho Rodriguez)
+    HIVE-15724 : getPrimaryKeys and getForeignKeys in metastore does not normalize db and table name (Daniel Dai via Pengcheng Xiong)
+    HIVE-16788 : ODBC call SQLForeignKeys leads to NPE if you use PK arguments rather than FK arguments (Jesus Camacho Rodriguez, reviewed by Ashutosh Chauhan)
+    HIVE-16965 : SMB join may produce incorrect results (Deepak Jaiswal, reviewed by gopalv)
+    HIVE-16761 : LLAP IO: SMB joins fail elevator  (Sergey Shelukhin, reviewed by Jason Dere, Deepak Jaiswal)
+    HIVE-16985 : LLAP IO: enable SMB join in elevator after the former is fixed (Deepak Jaiswal, reviewed by Sergey Shelukhin)
+    HIVE-15519 : BitSet not computed properly for ColumnBuffer subset (Rui Li, reviewed by Thejas Nair)
+    HIVE-17113 : Duplicate bucket files can get written to table by runaway task
+    HIVE-17212 : Dynamic add partition by insert shouldn't generate INSERT event (Sankar Hariappan, reviewed by Anishek Agarwal, Daniel Dai)
+    HIVE-17208 : Repl dump should pass in db/table information to authorization API
+    HIVE-17209 : ObjectCacheFactory should return null when tez shared object registry is not setup (Rajesh Balamohan, reviewed by Sergey Shelukhin)
+    HIVE-11481 : hive incorrectly set extended ACLs for unnamed group for new databases/tables with inheritPerms enabled
+    HIVE-17254 : Skip updating AccessTime of recycled files in ReplChangeManager
+    HIVE-14864 : Distcp is not called from MoveTask when src is a directory (Sahil Takiar, reviewed by Sergio Pena)
+    HIVE-17144 : export of temporary tables not working and it seems to be using distcp rather than filesystem copy (Anishek Agarwal, reviewed by Daniel Dai)
+    HIVE-16895 : Multi-threaded execution of bootstrap dump of partitions (Anishek Agarwal, reviewed by Sankar Hariappan, Daniel Dai)
+    HIVE-16896 : move replication load related work in semantic analysis phase to execution phase using a task (Anishek Agarwal, reviewed by Sankar Hariappan, Daniel Dai)
+    HIVE-17301 : Make JSONMessageFactory.getTObj method thread safe (Tao Li, reviewed by Daniel Dai)
+    HIVE-16683 : of ORC-125 to fix incorrect handling of future WriterVersions in ORC.
+    HIVE-17281 : LLAP external client not properly handling KILLED notification that occurs when a fragment is rejected
+    HIVE-17283 : Enable parallel edges of semijoin along with mapjoins (Deepak Jaiswal, reviewed by gopalv)
+    HIVE-17289 : EXPORT and IMPORT shouldn't perform distcp with doAs privileged user (Sankar Hariappan, reviewed by Daniel Dai)
+    HIVE-16864 : add validation to stream position search in LLAP IO (Sergey Shelukhin, reviewed by Prasanth Jayachandran)
+    HIVE-17172 : add ordering checks to DiskRangeList (Sergey Shelukhin, reviewed by Deepak Jaiswal and Prasanth Jayachandran)
+
 NEW FEATURES & BUG FIXES
   HDP-2.6.1:
     HIVE-16779: cachedStore leak PersistenceManager resources
