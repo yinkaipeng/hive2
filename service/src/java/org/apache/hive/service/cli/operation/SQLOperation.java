@@ -247,11 +247,13 @@ public class SQLOperation extends ExecuteStatementOperation {
       /**
        * If the operation was cancelled by another thread, or the execution timed out, Driver#run
        * may return a non-zero response code. We will simply return if the operation state is
-       * CANCELED, TIMEDOUT or CLOSED, otherwise throw an exception
+       * CANCELED, TIMEDOUT, CLOSED or FINISHED, otherwise throw an exception
        */
       if ((getStatus().getState() == OperationState.CANCELED)
           || (getStatus().getState() == OperationState.TIMEDOUT)
-          || (getStatus().getState() == OperationState.CLOSED)) {
+          || (getStatus().getState() == OperationState.CLOSED)
+          || (getStatus().getState() == OperationState.FINISHED)) {
+        LOG.warn("Ignore exception in terminal state", e);
         return;
       } else {
         setState(OperationState.ERROR);
