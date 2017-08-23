@@ -243,9 +243,17 @@ public class ReplicationSpec {
     // -> ^(TOK_REPLICATION $replId $isMetadataOnly)
     isInReplicationScope = true;
     eventId = PlanUtils.stripQuotes(node.getChild(0).getText());
-    if (node.getChildCount() > 1){
-      if (node.getChild(1).getText().toLowerCase().equals("metadata")) {
-        isMetadataOnly= true;
+    if ((node.getChildCount() > 1)
+            && node.getChild(1).getText().toLowerCase().equals("metadata")) {
+      isMetadataOnly= true;
+      try {
+        if (Long.parseLong(eventId) >= 0) {
+          // If metadata-only dump, then the state of the dump shouldn't be the latest event id as
+          // the data is not yet dumped and shall be dumped in future export.
+          currStateId = eventId;
+        }
+      } catch (Exception ex) {
+        // Ignore the exception and fall through the default currentStateId
       }
     }
   }
