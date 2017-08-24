@@ -5,15 +5,15 @@ POSTHOOK: type: QUERY
 Plan optimized by CBO.
 
 Vertex dependency in root stage
-Reducer 10 <- Map 14 (SIMPLE_EDGE), Reducer 9 (SIMPLE_EDGE)
+Reducer 10 <- Map 7 (SIMPLE_EDGE), Reducer 12 (SIMPLE_EDGE)
 Reducer 12 <- Map 11 (SIMPLE_EDGE), Map 13 (SIMPLE_EDGE)
 Reducer 2 <- Map 1 (SIMPLE_EDGE), Map 7 (SIMPLE_EDGE)
-Reducer 3 <- Reducer 10 (SIMPLE_EDGE), Reducer 2 (SIMPLE_EDGE)
+Reducer 3 <- Reducer 2 (SIMPLE_EDGE), Reducer 9 (SIMPLE_EDGE)
 Reducer 4 <- Map 15 (SIMPLE_EDGE), Reducer 3 (SIMPLE_EDGE)
 Reducer 5 <- Reducer 4 (SIMPLE_EDGE)
 Reducer 6 <- Reducer 5 (SIMPLE_EDGE)
-Reducer 8 <- Map 7 (SIMPLE_EDGE), Reducer 12 (SIMPLE_EDGE)
-Reducer 9 <- Map 7 (SIMPLE_EDGE), Reducer 8 (SIMPLE_EDGE)
+Reducer 8 <- Map 7 (SIMPLE_EDGE), Reducer 10 (SIMPLE_EDGE)
+Reducer 9 <- Map 14 (SIMPLE_EDGE), Reducer 8 (SIMPLE_EDGE)
 
 Stage-0
   Fetch Operator
@@ -52,7 +52,30 @@ Stage-0
                           PartitionCols:_col14
                           Merge Join Operator [MERGEJOIN_99] (rows=927646829 width=88)
                             Conds:RS_40._col1, _col2=RS_41._col14, _col13(Inner),Output:["_col3","_col8","_col9","_col14","_col18","_col23"]
-                          <-Reducer 10 [SIMPLE_EDGE]
+                          <-Reducer 2 [SIMPLE_EDGE]
+                            SHUFFLE [RS_40]
+                              PartitionCols:_col1, _col2
+                              Merge Join Operator [MERGEJOIN_94] (rows=316788826 width=135)
+                                Conds:RS_37._col0=RS_38._col0(Inner),Output:["_col1","_col2","_col3"]
+                              <-Map 7 [SIMPLE_EDGE]
+                                SHUFFLE [RS_38]
+                                  PartitionCols:_col0
+                                  Select Operator [SEL_5] (rows=4058 width=1119)
+                                    Output:["_col0"]
+                                    Filter Operator [FIL_87] (rows=4058 width=1119)
+                                      predicate:(d_moy BETWEEN 4 AND 10 and (d_year = 1998) and d_date_sk is not null)
+                                      TableScan [TS_3] (rows=73049 width=1119)
+                                        default@date_dim,d3,Tbl:COMPLETE,Col:NONE,Output:["d_date_sk","d_year","d_moy"]
+                              <-Map 1 [SIMPLE_EDGE]
+                                SHUFFLE [RS_37]
+                                  PartitionCols:_col0
+                                  Select Operator [SEL_2] (rows=287989836 width=135)
+                                    Output:["_col0","_col1","_col2","_col3"]
+                                    Filter Operator [FIL_86] (rows=287989836 width=135)
+                                      predicate:(cs_bill_customer_sk is not null and cs_item_sk is not null and cs_sold_date_sk is not null)
+                                      TableScan [TS_0] (rows=287989836 width=135)
+                                        default@catalog_sales,catalog_sales,Tbl:COMPLETE,Col:NONE,Output:["cs_sold_date_sk","cs_bill_customer_sk","cs_item_sk","cs_net_profit"]
+                          <-Reducer 9 [SIMPLE_EDGE]
                             SHUFFLE [RS_41]
                               PartitionCols:_col14, _col13
                               Select Operator [SEL_33] (rows=843315281 width=88)
@@ -68,7 +91,7 @@ Stage-0
                                         predicate:s_store_sk is not null
                                         TableScan [TS_18] (rows=1704 width=1910)
                                           default@store,store,Tbl:COMPLETE,Col:NONE,Output:["s_store_sk","s_store_id","s_store_name"]
-                                <-Reducer 9 [SIMPLE_EDGE]
+                                <-Reducer 8 [SIMPLE_EDGE]
                                   SHUFFLE [RS_30]
                                     PartitionCols:_col3
                                     Merge Join Operator [MERGEJOIN_97] (rows=766650239 width=88)
@@ -76,13 +99,8 @@ Stage-0
                                     <-Map 7 [SIMPLE_EDGE]
                                       SHUFFLE [RS_28]
                                         PartitionCols:_col0
-                                        Select Operator [SEL_17] (rows=4058 width=1119)
-                                          Output:["_col0"]
-                                          Filter Operator [FIL_91] (rows=4058 width=1119)
-                                            predicate:(d_moy BETWEEN 4 AND 10 and (d_year = 1998) and d_date_sk is not null)
-                                            TableScan [TS_3] (rows=73049 width=1119)
-                                              default@date_dim,d3,Tbl:COMPLETE,Col:NONE,Output:["d_date_sk","d_year","d_moy"]
-                                    <-Reducer 8 [SIMPLE_EDGE]
+                                         Please refer to the previous Select Operator [SEL_5]
+                                    <-Reducer 10 [SIMPLE_EDGE]
                                       SHUFFLE [RS_27]
                                         PartitionCols:_col6
                                         Merge Join Operator [MERGEJOIN_96] (rows=696954748 width=88)
@@ -118,26 +136,4 @@ Stage-0
                                                     predicate:(sr_item_sk is not null and sr_customer_sk is not null and sr_ticket_number is not null and sr_returned_date_sk is not null)
                                                     TableScan [TS_9] (rows=57591150 width=77)
                                                       default@store_returns,store_returns,Tbl:COMPLETE,Col:NONE,Output:["sr_returned_date_sk","sr_item_sk","sr_customer_sk","sr_ticket_number","sr_net_loss"]
-                          <-Reducer 2 [SIMPLE_EDGE]
-                            SHUFFLE [RS_40]
-                              PartitionCols:_col1, _col2
-                              Merge Join Operator [MERGEJOIN_94] (rows=316788826 width=135)
-                                Conds:RS_37._col0=RS_38._col0(Inner),Output:["_col1","_col2","_col3"]
-                              <-Map 7 [SIMPLE_EDGE]
-                                SHUFFLE [RS_38]
-                                  PartitionCols:_col0
-                                  Select Operator [SEL_5] (rows=4058 width=1119)
-                                    Output:["_col0"]
-                                    Filter Operator [FIL_87] (rows=4058 width=1119)
-                                      predicate:(d_moy BETWEEN 4 AND 10 and (d_year = 1998) and d_date_sk is not null)
-                                       Please refer to the previous TableScan [TS_3]
-                              <-Map 1 [SIMPLE_EDGE]
-                                SHUFFLE [RS_37]
-                                  PartitionCols:_col0
-                                  Select Operator [SEL_2] (rows=287989836 width=135)
-                                    Output:["_col0","_col1","_col2","_col3"]
-                                    Filter Operator [FIL_86] (rows=287989836 width=135)
-                                      predicate:(cs_bill_customer_sk is not null and cs_item_sk is not null and cs_sold_date_sk is not null)
-                                      TableScan [TS_0] (rows=287989836 width=135)
-                                        default@catalog_sales,catalog_sales,Tbl:COMPLETE,Col:NONE,Output:["cs_sold_date_sk","cs_bill_customer_sk","cs_item_sk","cs_net_profit"]
 
