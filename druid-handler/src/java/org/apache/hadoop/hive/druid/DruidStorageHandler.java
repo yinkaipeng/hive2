@@ -274,8 +274,7 @@ public class DruidStorageHandler extends DefaultHiveMetaHook implements HiveStor
     if (MetaStoreUtils.isExternalTable(table)) {
       return;
     }
-    Lifecycle lifecycle = new Lifecycle();
-    LOG.info(String.format("Committing table [%s] to the druid metastore", table.getDbName()));
+    LOG.info("Committing table {} to the druid metastore", table.getDbName());
     final Path tableDir = getSegmentDescriptorDir();
     try {
       List<DataSegment> segmentList = DruidStorageHandlerUtils
@@ -387,7 +386,6 @@ public class DruidStorageHandler extends DefaultHiveMetaHook implements HiveStor
       Throwables.propagate(e);
     } finally {
       cleanWorkingDir();
-      lifecycle.stop();
     }
   }
 
