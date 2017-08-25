@@ -44,6 +44,7 @@ public class ReplicationSpec {
   private boolean isNoop = false;
   private boolean isLazy = false; // lazy mode => we only list files, and expect that the eventual copy will pull data in.
   private boolean isReplace = true; // default is that the import mode is insert overwrite
+  private boolean isImportCmd = false;
 
   // Key definitions related to replication
   public enum KEY {
@@ -180,7 +181,7 @@ public class ReplicationSpec {
    * @param replacementReplState Replacement-candidate state
    * @return whether or not a provided replacement candidate is newer(or equal) to the existing object state or not
    */
-  public static boolean allowReplacement(String currReplState, String replacementReplState){
+  public boolean allowReplacement(String currReplState, String replacementReplState){
     if ((currReplState == null) || (currReplState.isEmpty())) {
       // if we have no replication state on record for the obj, allow replacement.
       return true;
@@ -196,7 +197,11 @@ public class ReplicationSpec {
     long currReplStateLong = Long.parseLong(currReplState.replaceAll("\\D",""));
     long replacementReplStateLong = Long.parseLong(replacementReplState.replaceAll("\\D",""));
 
-    return ((currReplStateLong - replacementReplStateLong) < 0);
+    if (isImportCmd()) {
+      return ((currReplStateLong - replacementReplStateLong) <= 0);
+    } else {
+      return ((currReplStateLong - replacementReplStateLong) < 0);
+    }
   }
 
  /**
@@ -274,6 +279,17 @@ public class ReplicationSpec {
 
   public void setIsMetadataOnly(boolean isMetadataOnly){
     this.isMetadataOnly = isMetadataOnly;
+  }
+
+  /**
+   * @return true if this statement refers to import operation. false if REPL/EXPORT commands
+   */
+  public boolean isImportCmd(){
+    return isImportCmd;
+  }
+
+  public void setIsImportCmd(boolean isImportCmd){
+    this.isImportCmd = isImportCmd;
   }
 
   /**
