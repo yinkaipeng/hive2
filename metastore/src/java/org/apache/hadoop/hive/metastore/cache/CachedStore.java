@@ -1838,13 +1838,14 @@ public class CachedStore implements RawStore, Configurable {
   }
 
   @Override
-  public void createTableWithConstraints(Table tbl,
+  public List<String> createTableWithConstraints(Table tbl,
       List<SQLPrimaryKey> primaryKeys, List<SQLForeignKey> foreignKeys)
       throws InvalidObjectException, MetaException {
     // TODO constraintCache
-    rawStore.createTableWithConstraints(tbl, primaryKeys, foreignKeys);
+    List<String> constraintNames = rawStore.createTableWithConstraints(tbl, primaryKeys, foreignKeys);
     SharedCache.addTableToCache(HiveStringUtils.normalizeIdentifier(tbl.getDbName()),
         HiveStringUtils.normalizeIdentifier(tbl.getTableName()), tbl);
+    return constraintNames;
   }
 
   @Override
@@ -1855,17 +1856,17 @@ public class CachedStore implements RawStore, Configurable {
   }
 
   @Override
-  public void addPrimaryKeys(List<SQLPrimaryKey> pks)
+  public List<String> addPrimaryKeys(List<SQLPrimaryKey> pks)
       throws InvalidObjectException, MetaException {
     // TODO constraintCache
-    rawStore.addPrimaryKeys(pks);
+    return rawStore.addPrimaryKeys(pks);
   }
 
   @Override
-  public void addForeignKeys(List<SQLForeignKey> fks)
+  public List<String> addForeignKeys(List<SQLForeignKey> fks)
       throws InvalidObjectException, MetaException {
     // TODO constraintCache
-    rawStore.addForeignKeys(fks);
+    return rawStore.addForeignKeys(fks);
   }
 
   @Override

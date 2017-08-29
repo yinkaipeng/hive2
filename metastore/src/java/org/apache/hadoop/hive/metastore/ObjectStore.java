@@ -181,6 +181,7 @@ import com.google.common.collect.Lists;
 public class ObjectStore implements RawStore, Configurable {
   private static Properties prop = null;
   private static PersistenceManagerFactory pmf = null;
+  private static boolean forTwoMetastoreTesting = false;
 
   private static Lock pmfPropLock = new ReentrantLock();
   /**
@@ -1009,7 +1010,7 @@ public class ObjectStore implements RawStore, Configurable {
   }
 
   @Override
-  public void createTableWithConstraints(Table tbl,
+  public List<String> createTableWithConstraints(Table tbl,
     List<SQLPrimaryKey> primaryKeys, List<SQLForeignKey> foreignKeys)
     throws InvalidObjectException, MetaException {
     boolean success = false;
@@ -1019,9 +1020,10 @@ public class ObjectStore implements RawStore, Configurable {
       // Add primary keys and foreign keys.
       // We need not do a deep retrieval of the Table Column Descriptor while persisting the PK/FK
       // since this transaction involving create table is not yet committed.
-      addPrimaryKeys(primaryKeys, false);
-      addForeignKeys(foreignKeys, false);
+      List<String> constraintNames = addPrimaryKeys(primaryKeys, false);
+      constraintNames.addAll(addForeignKeys(foreignKeys, false));
       success = commitTransaction();
+      return constraintNames;
     } finally {
       if (!success) {
         rollbackTransaction();
@@ -3485,7 +3487,7 @@ public class ObjectStore implements RawStore, Configurable {
   }
 
   private String generateConstraintName(String... parameters) throws MetaException {
-    int hashcode = ArrayUtils.toString(parameters).hashCode();
+    int hashcode = ArrayUtils.toString(parameters).hashCode() & 0xfffffff;
     int counter = 0;
     final int MAX_RETRIES = 10;
     while (counter < MAX_RETRIES) {
@@ -3499,14 +3501,15 @@ public class ObjectStore implements RawStore, Configurable {
   }
 
   @Override
-  public void addForeignKeys(
+  public List<String> addForeignKeys(
     List<SQLForeignKey> fks) throws InvalidObjectException, MetaException {
-   addForeignKeys(fks, true);
+   return addForeignKeys(fks, true);
   }
 
-  private void addForeignKeys(
+  private List<String> addForeignKeys(
     List<SQLForeignKey> fks, boolean retrieveCD) throws InvalidObjectException,
     MetaException {
+    List<String> fkNames = new ArrayList<String>();
     List<MConstraint> mpkfks = new ArrayList<MConstraint>();
     String currentConstraintName = null;
 
@@ -3555,6 +3558,7 @@ public class ObjectStore implements RawStore, Configurable {
       } else {
         currentConstraintName = fks.get(i).getFk_name();
       }
+      fkNames.add(currentConstraintName);
       Integer updateRule = fks.get(i).getUpdate_rule();
       Integer deleteRule = fks.get(i).getDelete_rule();
       int enableValidateRely = (fks.get(i).isEnable_cstr() ? 4 : 0) +
@@ -3576,16 +3580,18 @@ public class ObjectStore implements RawStore, Configurable {
       mpkfks.add(mpkfk);
     }
     pm.makePersistentAll(mpkfks);
+    return fkNames;
   }
 
   @Override
-  public void addPrimaryKeys(List<SQLPrimaryKey> pks) throws InvalidObjectException,
+  public List<String> addPrimaryKeys(List<SQLPrimaryKey> pks) throws InvalidObjectException,
     MetaException {
-    addPrimaryKeys(pks, true);
+    return addPrimaryKeys(pks, true);
   }
 
-  private void addPrimaryKeys(List<SQLPrimaryKey> pks, boolean retrieveCD) throws InvalidObjectException,
+  private List<String> addPrimaryKeys(List<SQLPrimaryKey> pks, boolean retrieveCD) throws InvalidObjectException,
     MetaException {
+    List<String> pkNames = new ArrayList<String>();
     List<MConstraint> mpks = new ArrayList<MConstraint>();
     String constraintName = null;
 
@@ -3617,7 +3623,7 @@ public class ObjectStore implements RawStore, Configurable {
       } else {
         constraintName = pks.get(i).getPk_name();
       }
-
+      pkNames.add(constraintName);
       int enableValidateRely = (pks.get(i).isEnable_cstr() ? 4 : 0) +
       (pks.get(i).isValidate_cstr() ? 2 : 0) + (pks.get(i).isRely_cstr() ? 1 : 0);
       MConstraint mpk = new MConstraint(
@@ -3636,6 +3642,7 @@ public class ObjectStore implements RawStore, Configurable {
       mpks.add(mpk);
     }
     pm.makePersistentAll(mpks);
+    return pkNames;
   }
 
   @Override
@@ -8726,5 +8733,14 @@ public class ObjectStore implements RawStore, Configurable {
         rollbackTransaction();
       }
     }
+  }
+
+  /**
+   * To make possible to run multiple metastore in unit test
+   * @param twoMetastoreTesting if we are using multiple metastore in unit test
+   */
+  @VisibleForTesting
+  public static void setTwoMetastoreTesting(boolean twoMetastoreTesting) {
+    forTwoMetastoreTesting = twoMetastoreTesting;
   }
 }

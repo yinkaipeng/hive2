@@ -296,16 +296,19 @@ public class AlterTableDesc extends DDLDesc implements Serializable {
     this.numberBuckets = numBuckets;
   }
 
-  public AlterTableDesc(String tableName, String dropConstraintName) {
+  public AlterTableDesc(String tableName, String dropConstraintName, ReplicationSpec replicationSpec) {
     this.oldName = tableName;
     this.dropConstraintName = dropConstraintName;
+    this.replicationSpec = replicationSpec;
     op = AlterTableTypes.DROPCONSTRAINT;
   }
 
-  public AlterTableDesc(String tableName, List<SQLPrimaryKey> primaryKeyCols, List<SQLForeignKey> foreignKeyCols) {
+  public AlterTableDesc(String tableName, List<SQLPrimaryKey> primaryKeyCols, List<SQLForeignKey> foreignKeyCols,
+      ReplicationSpec replicationSpec) {
     this.oldName = tableName;
     this.primaryKeyCols = primaryKeyCols;
     this.foreignKeyCols = foreignKeyCols;
+    this.replicationSpec = replicationSpec;
     op = AlterTableTypes.ADDCONSTRAINT;
   }
 

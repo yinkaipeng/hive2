@@ -2684,10 +2684,11 @@ public class HBaseStore implements RawStore {
   }
 
   @Override
-  public void createTableWithConstraints(Table tbl,
+  public List<String> createTableWithConstraints(Table tbl,
     List<SQLPrimaryKey> primaryKeys, List<SQLForeignKey> foreignKeys)
     throws InvalidObjectException, MetaException {
     // TODO: WTF?
+    return null;
   }
 
   @Override
@@ -2697,15 +2698,17 @@ public class HBaseStore implements RawStore {
   }
 
   @Override
-  public void addPrimaryKeys(List<SQLPrimaryKey> pks)
+  public List<String> addPrimaryKeys(List<SQLPrimaryKey> pks)
     throws InvalidObjectException, MetaException {
     // TODO: WTF?
+    return null;
   }
 
   @Override
-  public void addForeignKeys(List<SQLForeignKey> fks)
+  public List<String> addForeignKeys(List<SQLForeignKey> fks)
     throws InvalidObjectException, MetaException {
     // TODO: WTF?
+    return null;
   }
 
   @Override
