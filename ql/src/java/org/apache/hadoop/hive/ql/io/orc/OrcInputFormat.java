@@ -1537,7 +1537,6 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
     CompletionService<AcidDirInfo> ecs = new ExecutorCompletionService<>(Context.threadPool);
     for (Path dir : paths) {
       FileSystem fs = dir.getFileSystem(conf);
-// TODO# HERE, not above
       FileGenerator fileGenerator = new FileGenerator(context, fs, dir, useFileIds, ugi);
       pathFutures.add(ecs.submit(fileGenerator));
     }
