@@ -1750,7 +1750,7 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
   private void analyzeAlterTableDropConstraint(ASTNode ast, String tableName)
     throws SemanticException {
     String dropConstraintName = unescapeIdentifier(ast.getChild(0).getText());
-    AlterTableDesc alterTblDesc = new AlterTableDesc(tableName, dropConstraintName);
+    AlterTableDesc alterTblDesc = new AlterTableDesc(tableName, dropConstraintName, (ReplicationSpec)null);
 
     rootTasks.add(TaskFactory.get(new DDLWork(getInputs(), getOutputs(),
         alterTblDesc), conf));
@@ -1768,7 +1768,7 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
     } else if (child.getToken().getType() == HiveParser.TOK_FOREIGN_KEY) {
       BaseSemanticAnalyzer.processForeignKeys(parent, child, foreignKeys);
     }
-    AlterTableDesc alterTblDesc = new AlterTableDesc(tableName, primaryKeys, foreignKeys);
+    AlterTableDesc alterTblDesc = new AlterTableDesc(tableName, primaryKeys, foreignKeys, null);
 
     rootTasks.add(TaskFactory.get(new DDLWork(getInputs(), getOutputs(),
         alterTblDesc), conf));

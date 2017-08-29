@@ -684,12 +684,12 @@ public interface RawStore extends Configurable {
     String parent_tbl_name, String foreign_db_name, String foreign_tbl_name)
     throws MetaException;
 
-  void createTableWithConstraints(Table tbl, List<SQLPrimaryKey> primaryKeys,
+  List<String> createTableWithConstraints(Table tbl, List<SQLPrimaryKey> primaryKeys,
     List<SQLForeignKey> foreignKeys) throws InvalidObjectException, MetaException;
 
   void dropConstraint(String dbName, String tableName, String constraintName) throws NoSuchObjectException;
 
-  void addPrimaryKeys(List<SQLPrimaryKey> pks) throws InvalidObjectException, MetaException;
+  List<String> addPrimaryKeys(List<SQLPrimaryKey> pks) throws InvalidObjectException, MetaException;
 
-  void addForeignKeys(List<SQLForeignKey> fks) throws InvalidObjectException, MetaException;
+  List<String> addForeignKeys(List<SQLForeignKey> fks) throws InvalidObjectException, MetaException;
 }

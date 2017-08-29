@@ -17,8 +17,11 @@
  */
 package org.apache.hadoop.hive.ql.parse.repl;
 
+import org.apache.hadoop.hive.ql.parse.repl.load.message.AddForeignKeyHandler;
+import org.apache.hadoop.hive.ql.parse.repl.load.message.AddPrimaryKeyHandler;
 import org.apache.hadoop.hive.ql.parse.repl.load.message.CreateFunctionHandler;
 import org.apache.hadoop.hive.ql.parse.repl.load.message.DefaultHandler;
+import org.apache.hadoop.hive.ql.parse.repl.load.message.DropConstraintHandler;
 import org.apache.hadoop.hive.ql.parse.repl.load.message.DropFunctionHandler;
 import org.apache.hadoop.hive.ql.parse.repl.load.message.DropPartitionHandler;
 import org.apache.hadoop.hive.ql.parse.repl.load.message.DropTableHandler;
@@ -102,6 +105,24 @@ public enum DumpType {
     @Override
     public MessageHandler handler() {
       return new InsertHandler();
+    }
+  },
+  EVENT_ADD_PRIMARYKEY("EVENT_ADD_PRIMARYKEY") {
+    @Override
+    public MessageHandler handler() {
+      return new AddPrimaryKeyHandler();
+    }
+  },
+  EVENT_ADD_FOREIGNKEY("EVENT_ADD_FOREIGNKEY") {
+    @Override
+    public MessageHandler handler() {
+      return new AddForeignKeyHandler();
+    }
+  },
+  EVENT_DROP_CONSTRAINT("EVENT_DROP_CONSTRAINT") {
+    @Override
+    public MessageHandler handler() {
+      return new DropConstraintHandler();
     }
   },
   EVENT_CREATE_FUNCTION("EVENT_CREATE_FUNCTION") {

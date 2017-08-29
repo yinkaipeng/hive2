@@ -51,8 +51,10 @@ import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.io.HdfsUtils;
 import org.apache.hadoop.hive.metastore.api.*;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.metastore.events.AddForeignKeyEvent;
 import org.apache.hadoop.hive.metastore.events.AddIndexEvent;
 import org.apache.hadoop.hive.metastore.events.AddPartitionEvent;
+import org.apache.hadoop.hive.metastore.events.AddPrimaryKeyEvent;
 import org.apache.hadoop.hive.metastore.events.AlterIndexEvent;
 import org.apache.hadoop.hive.metastore.events.AlterPartitionEvent;
 import org.apache.hadoop.hive.metastore.events.AlterTableEvent;
@@ -60,6 +62,7 @@ import org.apache.hadoop.hive.metastore.events.ConfigChangeEvent;
 import org.apache.hadoop.hive.metastore.events.CreateDatabaseEvent;
 import org.apache.hadoop.hive.metastore.events.CreateFunctionEvent;
 import org.apache.hadoop.hive.metastore.events.CreateTableEvent;
+import org.apache.hadoop.hive.metastore.events.DropConstraintEvent;
 import org.apache.hadoop.hive.metastore.events.DropDatabaseEvent;
 import org.apache.hadoop.hive.metastore.events.DropFunctionEvent;
 import org.apache.hadoop.hive.metastore.events.DropIndexEvent;
@@ -1468,7 +1471,26 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         if (primaryKeys == null && foreignKeys == null) {
           ms.createTable(tbl);
         } else {
-          ms.createTableWithConstraints(tbl, primaryKeys, foreignKeys);
+          // Set constraint name if null before sending to listener
+          List<String> constraintNames = ms.createTableWithConstraints(tbl, primaryKeys, foreignKeys);
+          int primaryKeySize = 0;
+          if (primaryKeys != null) {
+            primaryKeySize = primaryKeys.size();
+            for (int i = 0; i < primaryKeys.size(); i++) {
+              if (primaryKeys.get(i).getPk_name() == null) {
+                primaryKeys.get(i).setPk_name(constraintNames.get(i));
+              }
+            }
+          }
+          int foreignKeySize = 0;
+          if (foreignKeys != null) {
+            foreignKeySize = foreignKeys.size();
+            for (int i = 0; i < foreignKeySize; i++) {
+              if (foreignKeys.get(i).getFk_name() == null) {
+                foreignKeys.get(i).setFk_name(constraintNames.get(primaryKeySize + i));
+              }
+            }
+          }
         }
 
         if (!transactionalListeners.isEmpty()) {
@@ -1477,6 +1499,14 @@ public class HiveMetaStore extends ThriftHiveMetastore {
                                                     EventType.CREATE_TABLE,
                                                     new CreateTableEvent(tbl, true, this),
                                                     envContext);
+          if (primaryKeys != null && !primaryKeys.isEmpty()) {
+            MetaStoreListenerNotifier.notifyEvent(transactionalListeners, EventType.ADD_PRIMARYKEY,
+                new AddPrimaryKeyEvent(primaryKeys, true, this), envContext);
+          }
+          if (foreignKeys != null && !foreignKeys.isEmpty()) {
+            MetaStoreListenerNotifier.notifyEvent(transactionalListeners, EventType.ADD_FOREIGNKEY,
+                new AddForeignKeyEvent(foreignKeys, true, this), envContext);
+          }
         }
 
         success = ms.commitTransaction();
@@ -1493,6 +1523,14 @@ public class HiveMetaStore extends ThriftHiveMetastore {
                                                 new CreateTableEvent(tbl, success, this),
                                                 envContext,
                                                 transactionalListenerResponses);
+          if (primaryKeys != null && !primaryKeys.isEmpty()) {
+            MetaStoreListenerNotifier.notifyEvent(listeners, EventType.ADD_PRIMARYKEY,
+                new AddPrimaryKeyEvent(primaryKeys, success, this), envContext);
+          }
+          if (foreignKeys != null && !foreignKeys.isEmpty()) {
+            MetaStoreListenerNotifier.notifyEvent(listeners, EventType.ADD_FOREIGNKEY,
+                new AddForeignKeyEvent(foreignKeys, success, this), envContext);
+          }
         }
       }
     }
@@ -1570,9 +1608,18 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       startFunction("drop_constraint", ": " + constraintName.toString());
       boolean success = false;
       Exception ex = null;
+      RawStore ms = getMS();
       try {
-        getMS().dropConstraint(dbName, tableName, constraintName);
-        success = true;
+        ms.openTransaction();
+        ms.dropConstraint(dbName, tableName, constraintName);
+        if (transactionalListeners.size() > 0) {
+          DropConstraintEvent dropConstraintEvent = new DropConstraintEvent(dbName,
+              tableName, constraintName, true, this);
+          for (MetaStoreEventListener transactionalListener : transactionalListeners) {
+            transactionalListener.onDropConstraint(dropConstraintEvent);
+          }
+        }
+        success = ms.commitTransaction();
       } catch (NoSuchObjectException e) {
         ex = e;
         throw new InvalidObjectException(e.getMessage());
@@ -1586,6 +1633,15 @@ public class HiveMetaStore extends ThriftHiveMetastore {
           throw newMetaException(e);
         }
       } finally {
+        if (!success) {
+          ms.rollbackTransaction();
+        } else {
+          for (MetaStoreEventListener listener : listeners) {
+            DropConstraintEvent dropConstraintEvent = new DropConstraintEvent(dbName,
+                tableName, constraintName, true, this);
+            listener.onDropConstraint(dropConstraintEvent);
+          }
+        }
         endFunction("drop_constraint", success, ex, constraintName);
       }
     }
@@ -1599,9 +1655,27 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       startFunction("add_primary_key", ": " + constraintName);
       boolean success = false;
       Exception ex = null;
+      RawStore ms = getMS();
       try {
-        getMS().addPrimaryKeys(primaryKeyCols);
-        success = true;
+        ms.openTransaction();
+        List<String> constraintNames = ms.addPrimaryKeys(primaryKeyCols);
+        // Set primary key name if null before sending to listener
+        if (primaryKeyCols != null) {
+          for (int i = 0; i < primaryKeyCols.size(); i++) {
+            if (primaryKeyCols.get(i).getPk_name() == null) {
+              primaryKeyCols.get(i).setPk_name(constraintNames.get(i));
+            }
+          }
+        }
+        if (transactionalListeners.size() > 0) {
+          if (primaryKeyCols != null && primaryKeyCols.size() > 0) {
+            AddPrimaryKeyEvent addPrimaryKeyEvent = new AddPrimaryKeyEvent(primaryKeyCols, true, this);
+            for (MetaStoreEventListener transactionalListener : transactionalListeners) {
+              transactionalListener.onAddPrimaryKey(addPrimaryKeyEvent);
+            }
+          }
+        }
+        success = ms.commitTransaction();
       } catch (Exception e) {
         ex = e;
         if (e instanceof MetaException) {
@@ -1612,6 +1686,14 @@ public class HiveMetaStore extends ThriftHiveMetastore {
           throw newMetaException(e);
         }
       } finally {
+        if (!success) {
+          ms.rollbackTransaction();
+        } else if (primaryKeyCols != null && primaryKeyCols.size() > 0) {
+          for (MetaStoreEventListener listener : listeners) {
+            AddPrimaryKeyEvent addPrimaryKeyEvent = new AddPrimaryKeyEvent(primaryKeyCols, true, this);
+            listener.onAddPrimaryKey(addPrimaryKeyEvent);
+          }
+        }
         endFunction("add_primary_key", success, ex, constraintName);
       }
     }
@@ -1625,9 +1707,27 @@ public class HiveMetaStore extends ThriftHiveMetastore {
       startFunction("add_foreign_key", ": " + constraintName);
       boolean success = false;
       Exception ex = null;
+      RawStore ms = getMS();
       try {
-        getMS().addForeignKeys(foreignKeyCols);
-        success = true;
+        ms.openTransaction();
+        List<String> constraintNames = ms.addForeignKeys(foreignKeyCols);
+        // Set foreign key name if null before sending to listener
+        if (foreignKeyCols != null) {
+          for (int i = 0; i < foreignKeyCols.size(); i++) {
+            if (foreignKeyCols.get(i).getFk_name() == null) {
+              foreignKeyCols.get(i).setFk_name(constraintNames.get(i));
+            }
+          }
+        }
+        if (transactionalListeners.size() > 0) {
+          if (foreignKeyCols != null && foreignKeyCols.size() > 0) {
+            AddForeignKeyEvent addForeignKeyEvent = new AddForeignKeyEvent(foreignKeyCols, true, this);
+            for (MetaStoreEventListener transactionalListener : transactionalListeners) {
+              transactionalListener.onAddForeignKey(addForeignKeyEvent);
+            }
+          }
+        }
+        success = ms.commitTransaction();
       } catch (Exception e) {
         ex = e;
         if (e instanceof MetaException) {
@@ -1638,6 +1738,14 @@ public class HiveMetaStore extends ThriftHiveMetastore {
           throw newMetaException(e);
         }
       } finally {
+        if (!success) {
+          ms.rollbackTransaction();
+        } else if (foreignKeyCols != null && foreignKeyCols.size() > 0) {
+          for (MetaStoreEventListener listener : listeners) {
+            AddForeignKeyEvent addForeignKeyEvent = new AddForeignKeyEvent(foreignKeyCols, true, this);
+            listener.onAddForeignKey(addForeignKeyEvent);
+          }
+        }
         endFunction("add_foreign_key", success, ex, constraintName);
       }
     }
