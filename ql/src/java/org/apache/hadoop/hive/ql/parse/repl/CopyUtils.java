@@ -121,8 +121,8 @@ public class CopyUtils {
     return true;
   }
 
-  private boolean limitReachedForLocalCopy(long size, long numberOfFiles) {
-    boolean result = size > maxCopyFileSize || numberOfFiles > maxNumberOfFiles;
+  boolean limitReachedForLocalCopy(long size, long numberOfFiles) {
+    boolean result = size > maxCopyFileSize && numberOfFiles > maxNumberOfFiles;
     if (result) {
       LOG.info("Source is {} bytes. (MAX: {})", size, maxCopyFileSize);
       LOG.info("Source is {} files. (MAX: {})", numberOfFiles, maxNumberOfFiles);
