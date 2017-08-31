@@ -33,6 +33,7 @@ import com.google.common.collect.Collections2;
 import javax.annotation.Nullable;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 public class Utils {
@@ -66,15 +67,19 @@ public class Utils {
   public static Iterable<? extends String> matchesTbl(Hive db, String dbName, String tblPattern)
       throws HiveException {
     if (tblPattern == null) {
-      return Collections2.filter(db.getAllTables(dbName), new Predicate<String>() {
+      return getAllTables(db, dbName);
+    } else {
+      return db.getTablesByPattern(dbName, tblPattern);
+    }
+  }
+
+  public static Collection<String> getAllTables(Hive db, String dbName) throws HiveException {
+    return Collections2.filter(db.getAllTables(dbName), new Predicate<String>() {
         @Override
         public boolean apply(@Nullable String tableName) {
           assert tableName != null;
           return !tableName.toLowerCase().startsWith(SemanticAnalyzer.VALUES_TMP_TABLE_NAME_PREFIX.toLowerCase());
         }
       });
-    } else {
-      return db.getTablesByPattern(dbName, tblPattern);
-    }
   }
 }

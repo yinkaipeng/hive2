@@ -57,6 +57,10 @@ class DatabaseEventsIterator implements Iterator<BootstrapEvent> {
     remoteIterator = fileSystem.listFiles(dbLevelPath, true);
   }
 
+  public Path dbLevelPath() {
+    return this.dbLevelPath;
+  }
+
   @Override
   public boolean hasNext() {
     try {
