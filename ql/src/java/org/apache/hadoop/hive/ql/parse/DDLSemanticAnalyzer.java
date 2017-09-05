@@ -1659,7 +1659,7 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
       Path queryTmpdir = ctx.getExternalTmpPath(newTblPartLoc);
       mergeDesc.setOutputDir(queryTmpdir);
       LoadTableDesc ltd = new LoadTableDesc(queryTmpdir, tblDesc,
-          partSpec == null ? new HashMap<String, String>() : partSpec);
+          partSpec == null ? new HashMap<>() : partSpec);
       ltd.setLbCtx(lbCtx);
       Task<MoveWork> moveTsk = TaskFactory.get(new MoveWork(null, null, ltd, null, false),
           conf);
@@ -1669,8 +1669,8 @@ public class DDLSemanticAnalyzer extends BaseSemanticAnalyzer {
         StatsWork statDesc;
         if (oldTblPartLoc.equals(newTblPartLoc)) {
           // If we're merging to the same location, we can avoid some metastore calls
-          TableSpec tablepart = new TableSpec(db, conf, tableName, partSpec);
-          statDesc = new StatsWork(tablepart);
+          TableSpec tableSpec = new TableSpec(db, tableName, partSpec);
+          statDesc = new StatsWork(tableSpec);
         } else {
           statDesc = new StatsWork(ltd);
         }

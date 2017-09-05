@@ -20,6 +20,7 @@ package org.apache.hadoop.hive.ql.parse.repl.dump;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
+import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.hive.ql.parse.ReplicationSpec;
 
 /**
@@ -79,6 +80,10 @@ public class HiveWrapper {
     public Database fromMetaStore() throws HiveException {
       return db.getDatabase(dbName);
     }
+  }
+
+  public Tuple<Table> table(final String tableName) throws HiveException {
+    return new Tuple<>(functionForSpec, () -> db.getTable(dbName, tableName));
   }
 
   public static class Tuple<T> {
