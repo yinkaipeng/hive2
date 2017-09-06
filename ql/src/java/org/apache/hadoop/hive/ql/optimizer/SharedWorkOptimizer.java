@@ -593,7 +593,7 @@ public class SharedWorkOptimizer extends Transform {
       if (equalOp1 instanceof MapJoinOperator) {
         MapJoinOperator mop = (MapJoinOperator) equalOp1;
         dataSize = StatsUtils.safeAdd(dataSize, mop.getConf().getInMemoryDataSize());
-        maxDataSize = mop.getConf().getNoConditionalTaskSize();
+        maxDataSize = mop.getConf().getMemoryMonitorInfo().getAdjustedNoConditionalTaskSize();
       }
       if (currentOp1.getChildOperators().size() > 1 ||
               currentOp2.getChildOperators().size() > 1) {
@@ -611,7 +611,7 @@ public class SharedWorkOptimizer extends Transform {
       if (op instanceof MapJoinOperator && !retainableOps.contains(op)) {
         MapJoinOperator mop = (MapJoinOperator) op;
         dataSize = StatsUtils.safeAdd(dataSize, mop.getConf().getInMemoryDataSize());
-        maxDataSize = mop.getConf().getNoConditionalTaskSize();
+        maxDataSize = mop.getConf().getMemoryMonitorInfo().getAdjustedNoConditionalTaskSize();
       }
     }
     Set<Operator<?>> opsWork2 = findWorkOperators(optimizerCache, currentOp2);
@@ -619,7 +619,7 @@ public class SharedWorkOptimizer extends Transform {
       if (op instanceof MapJoinOperator && !discardableOps.contains(op)) {
         MapJoinOperator mop = (MapJoinOperator) op;
         dataSize = StatsUtils.safeAdd(dataSize, mop.getConf().getInMemoryDataSize());
-        maxDataSize = mop.getConf().getNoConditionalTaskSize();
+        maxDataSize = mop.getConf().getMemoryMonitorInfo().getAdjustedNoConditionalTaskSize();
       }
     }
 
