@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.hadoop.hive.ql.plan.Explain.Level;
+import org.apache.hadoop.hive.ql.exec.MemoryMonitorInfo;
 
 /**
  * Map Join operator Descriptor implementation.
@@ -107,8 +108,8 @@ public class MapJoinDesc extends JoinDesc implements Serializable {
       final List<TableDesc> valueTblDescs,final List<TableDesc> valueFilteredTblDescs,  List<String> outputColumnNames,
       final int posBigTable, final JoinCondDesc[] conds,
       final Map<Byte, List<ExprNodeDesc>> filters, boolean noOuterJoin, String dumpFilePrefix,
-      final long noConditionalTaskSize, final long inMemoryDataSize) {
-    super(values, outputColumnNames, noOuterJoin, conds, filters, null, noConditionalTaskSize);
+      final MemoryMonitorInfo memoryMonitorInfo, final long inMemoryDataSize) {
+    super(values, outputColumnNames, noOuterJoin, conds, filters, null, memoryMonitorInfo);
     vectorDesc = new VectorMapJoinDesc();
     this.keys = keys;
     this.keyTblDesc = keyTblDesc;
