@@ -3440,6 +3440,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     Map<ColumnInfo, ColumnInfo> inputColsProcessed = new HashMap<ColumnInfo, ColumnInfo>();
     // For expr "*", aliases should be iterated in the order they are specified
     // in the query.
+
     for (String alias : aliases) {
       HashMap<String, ColumnInfo> fMap = colSrcRR.getFieldMap(alias);
       if (fMap == null) {
@@ -3516,7 +3517,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         pos = Integer.valueOf(pos.intValue() + 1);
         matched++;
 
-        if (unparseTranslator.isEnabled() || tableMask.isEnabled()) {
+        if (unparseTranslator.isEnabled() || (tableMask.isEnabled() && analyzeRewrite == null)) {
           if (replacementText.length() > 0) {
             replacementText.append(", ");
           }
@@ -11152,7 +11153,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     // 2. Gen OP Tree from resolved Parse Tree
     Operator sinkOp = genOPTree(ast, plannerCtx);
 
-    if (!unparseTranslator.isEnabled() && tableMask.isEnabled()) {
+    if (!unparseTranslator.isEnabled() &&
+            (tableMask.isEnabled() && analyzeRewrite == null)) {
       // Here we rewrite the * and also the masking table
       ASTNode tree = rewriteASTWithMaskAndFilter(ast);
       if (tree != ast) {
