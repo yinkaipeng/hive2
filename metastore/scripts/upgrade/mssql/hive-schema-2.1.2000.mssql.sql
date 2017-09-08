@@ -1019,4 +1019,4 @@ CREATE TABLE WRITE_SET (
 -- -----------------------------------------------------------------
 -- Record schema version. Should be the last step in the init script
 -- -----------------------------------------------------------------
-INSERT INTO VERSION (VER_ID, SCHEMA_VERSION, VERSION_COMMENT) VALUES (1, '2.1.1000', 'Hive release version 2.1.1000');
+INSERT INTO VERSION (VER_ID, SCHEMA_VERSION, VERSION_COMMENT) VALUES (1, '2.1.2000', 'Hive release version 2.1.2000');

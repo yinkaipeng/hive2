@@ -1782,14 +1782,14 @@ END
 DECLARE @version [nvarchar](127);
 IF NOT EXISTS (SELECT * FROM [dbo].[VERSION] WHERE VER_ID = 1)
 BEGIN
-INSERT INTO [dbo].[VERSION] (VER_ID, SCHEMA_VERSION, VERSION_COMMENT) VALUES (1, '2.1.1000', 'Hive release version 2.1.1000');
+INSERT INTO [dbo].[VERSION] (VER_ID, SCHEMA_VERSION, VERSION_COMMENT) VALUES (1, '2.1.2000', 'Hive release version 2.1.2000');
 END
 ELSE
 BEGIN
 SELECT @version = [SCHEMA_VERSION] from [dbo].[VERSION] WHERE VER_ID = 1
-IF(@version < '2.1.1000')
+IF(@version < '2.1.2000')
 BEGIN
-UPDATE [dbo].[VERSION] SET SCHEMA_VERSION='2.1.1000', VERSION_COMMENT='Hive release version 2.1.1000' where VER_ID = 1;
+UPDATE [dbo].[VERSION] SET SCHEMA_VERSION='2.1.2000', VERSION_COMMENT='Hive release version 2.1.2000' where VER_ID = 1;
 END
 END
 /*==================End: Upgrade to 2.1.1000 ========================*/
