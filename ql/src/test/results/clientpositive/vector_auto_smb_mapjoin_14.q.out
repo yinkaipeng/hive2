@@ -344,7 +344,7 @@ STAGE PLANS:
             1 _col0 (type: int)
           outputColumnNames: _col0, _col1, _col3
           Select Operator
-            expressions: _col0 (type: int), _col1 (type: bigint), _col3 (type: bigint)
+            expressions: _col0 (type: int), _col3 (type: bigint), _col1 (type: bigint)
             outputColumnNames: _col0, _col1, _col2
             File Output Operator
               compressed: false
