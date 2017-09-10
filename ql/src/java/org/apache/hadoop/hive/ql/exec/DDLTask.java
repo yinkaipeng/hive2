@@ -80,6 +80,7 @@ import org.apache.hadoop.hive.metastore.api.EnvironmentContext;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.GetOpenTxnsInfoResponse;
 import org.apache.hadoop.hive.metastore.api.Index;
+import org.apache.hadoop.hive.metastore.api.InvalidObjectException;
 import org.apache.hadoop.hive.metastore.api.InvalidOperationException;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
@@ -3907,12 +3908,24 @@ public class DDLTask extends Task<DDLWork> implements Serializable {
    private int addConstraint(Hive db, AlterTableDesc alterTbl)
     throws SemanticException, HiveException {
     try {
-    // This is either an alter table add foreign key or add primary key command.
-    if (!alterTbl.getForeignKeyCols().isEmpty()) {
-       db.addForeignKey(alterTbl.getForeignKeyCols());
-     } else if (!alterTbl.getPrimaryKeyCols().isEmpty()) {
-       db.addPrimaryKey(alterTbl.getPrimaryKeyCols());
-     }
+      // This is either an alter table add foreign key or add primary key command.
+      if (alterTbl.getPrimaryKeyCols() != null && !alterTbl.getPrimaryKeyCols().isEmpty()) {
+        db.addPrimaryKey(alterTbl.getPrimaryKeyCols());
+      }
+      if (alterTbl.getForeignKeyCols() != null && !alterTbl.getForeignKeyCols().isEmpty()) {
+        try {
+          db.addForeignKey(alterTbl.getForeignKeyCols());
+        } catch (HiveException e) {
+          if (e.getCause() instanceof InvalidObjectException
+              && alterTbl.getReplicationSpec()!= null && alterTbl.getReplicationSpec().isInReplicationScope()) {
+          // During repl load, NoSuchObjectException in foreign key shall
+          // ignore as the foreign table may not be part of the replication
+          LOG.debug(e.getMessage());
+          } else {
+            throw e;
+          }
+        }
+      }
     } catch (NoSuchObjectException e) {
       throw new HiveException(e);
     }

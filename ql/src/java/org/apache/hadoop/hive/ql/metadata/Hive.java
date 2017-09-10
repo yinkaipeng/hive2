@@ -4020,6 +4020,28 @@ private void constructOneLBLocationMap(FileStatus fSta,
     throws HiveException, NoSuchObjectException {
     try {
       getMSC().dropConstraint(dbName, tableName, constraintName);
+    } catch (NoSuchObjectException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new HiveException(e);
+    }
+  }
+
+  public List<SQLPrimaryKey> getPrimaryKeyList(String dbName, String tblName) throws HiveException, NoSuchObjectException {
+    try {
+      return getMSC().getPrimaryKeys(new PrimaryKeysRequest(dbName, tblName));
+    } catch (NoSuchObjectException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new HiveException(e);
+    }
+  }
+
+  public List<SQLForeignKey> getForeignKeyList(String dbName, String tblName) throws HiveException, NoSuchObjectException {
+    try {
+      return getMSC().getForeignKeys(new ForeignKeysRequest(null, null, dbName, tblName));
+    } catch (NoSuchObjectException e) {
+      throw e;
     } catch (Exception e) {
       throw new HiveException(e);
     }

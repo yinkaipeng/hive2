@@ -2755,9 +2755,9 @@ public class TestReplicationScenarios {
     // bootstrap replication for constraint is not implemented. Will verify it works once done
     try {
       List<SQLPrimaryKey> pks = metaStoreClientMirror.getPrimaryKeys(new PrimaryKeysRequest(dbName+ "_dupe" , "tbl1"));
-      assertTrue(pks.isEmpty());
+      assertEquals(pks.size(), 1);
       List<SQLForeignKey> fks = metaStoreClientMirror.getForeignKeys(new ForeignKeysRequest(null, null, dbName+ "_dupe" , "tbl2"));
-      assertTrue(fks.isEmpty());
+      assertEquals(fks.size(), 1);
     } catch (TException te) {
       assertNull(te);
     }
