@@ -64,6 +64,8 @@ import org.apache.hadoop.hive.metastore.cache.CacheUtils;
 import org.apache.hadoop.hive.metastore.cache.CachedStore;
 import org.apache.hadoop.hive.metastore.model.MConstraint;
 import org.apache.hadoop.hive.metastore.model.MDatabase;
+import org.apache.hadoop.hive.metastore.model.MNotificationLog;
+import org.apache.hadoop.hive.metastore.model.MNotificationNextId;
 import org.apache.hadoop.hive.metastore.model.MPartitionColumnStatistics;
 import org.apache.hadoop.hive.metastore.model.MTableColumnStatistics;
 import org.apache.hadoop.hive.metastore.parser.ExpressionTree;
@@ -141,7 +143,7 @@ class MetaStoreDirectSql {
   public MetaStoreDirectSql(PersistenceManager pm, Configuration conf, String schema) {
     this.pm = pm;
     this.schema = schema;
-    this.dbType = determineDbType();
+    this.dbType = determineDbType(pm);
     int batchSize = HiveConf.getIntVar(conf, ConfVars.METASTORE_DIRECT_SQL_PARTITION_BATCH_SIZE);
     if (batchSize == DETECT_BATCHING) {
       batchSize = (dbType == DB.ORACLE || dbType == DB.MSSQL) ? 1000 : NO_BATCHING;
@@ -178,9 +180,9 @@ class MetaStoreDirectSql {
     }
   }
 
-  private DB determineDbType() {
+  private DB determineDbType(PersistenceManager pm) {
     DB dbType = DB.OTHER;
-    String productName = getProductName();
+    String productName = getProductName(pm);
     if (productName != null) {
       productName = productName.toLowerCase();
       if (productName.contains("mysql")) {
@@ -205,7 +207,7 @@ class MetaStoreDirectSql {
     this(pm, conf, "");
   }
 
-  private String getProductName() {
+  static String getProductName(PersistenceManager pm) {
     JDOConnection jdoConn = pm.getDataStoreConnection();
     try {
       return ((Connection)jdoConn.getNativeConnection()).getMetaData().getDatabaseProductName();
@@ -236,6 +238,17 @@ class MetaStoreDirectSql {
 
       partColumnQuery = pm.newQuery(MPartitionColumnStatistics.class, "dbName == ''");
       partColumnQuery.execute();
+
+      /*
+        these queries for the notification related tables have to be executed so
+        that the tables are created. This was not required earlier because we were
+        interacting with these tables via DataNucleus so it would create them if
+        they did not exist (mostly used in test, schematool should be used for production).
+        however this has been changed and we used direct SQL
+        queries via DataNucleus to interact with them now.
+       */
+      pm.newQuery(MNotificationLog.class, "dbName == ''").execute();
+      pm.newQuery(MNotificationNextId.class, "nextEventId < -1").execute();
 
       return true;
     } catch (Exception ex) {
