@@ -46,6 +46,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+import static org.apache.hadoop.hive.ql.exec.Utilities.COPY_KEYWORD;
+
 /**
  * Utilities that are shared by all of the ACID input and output formats. They
  * are used by the compactor and cleaner and thus must be format agnostic.
@@ -102,10 +104,16 @@ public class AcidUtils {
   }
   private static final Logger LOG = LoggerFactory.getLogger(AcidUtils.class);
 
-  private static final Pattern ORIGINAL_PATTERN =
+  public static final Pattern ORIGINAL_PATTERN =
       Pattern.compile("[0-9]+_[0-9]+");
 
-  public static final PathFilter hiddenFileFilter = new PathFilter(){
+   /**
+    * @see org.apache.hadoop.hive.ql.exec.Utilities#COPY_KEYWORD
+    */
+   public static final Pattern ORIGINAL_PATTERN_COPY =
+	        Pattern.compile("[0-9]+_[0-9]+" + COPY_KEYWORD + "[0-9]+");
+
+   public static final PathFilter hiddenFileFilter = new PathFilter(){
     @Override
     public boolean accept(Path p){
       String name = p.getName();
