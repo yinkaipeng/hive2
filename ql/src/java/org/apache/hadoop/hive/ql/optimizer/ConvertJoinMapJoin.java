@@ -111,7 +111,9 @@ public class ConvertJoinMapJoin implements NodeProcessor {
     }
 
     TezBucketJoinProcCtx tezBucketJoinProcCtx = new TezBucketJoinProcCtx(context.conf);
-    if (!context.conf.getBoolVar(HiveConf.ConfVars.HIVECONVERTJOIN)) {
+    boolean hiveConvertJoin = context.conf.getBoolVar(HiveConf.ConfVars.HIVECONVERTJOIN) &
+            !context.parseContext.getDisableMapJoin();
+    if (!hiveConvertJoin) {
       // we are just converting to a common merge join operator. The shuffle
       // join in map-reduce case.
       Object retval = checkAndConvertSMBJoin(context, joinOp, tezBucketJoinProcCtx, maxSize);
