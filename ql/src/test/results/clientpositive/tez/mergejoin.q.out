@@ -61,7 +61,7 @@ STAGE PLANS:
                         outputColumnNames: _col0
                         Statistics: Num rows: 25 Data size: 191 Basic stats: COMPLETE Column stats: NONE
                         Group By Operator
-                          aggregations: min(_col0), max(_col0), bloom_filter(_col0, expectedEntries=50)
+                          aggregations: min(_col0), max(_col0), bloom_filter(_col0, expectedEntries=25)
                           mode: hash
                           outputColumnNames: _col0, _col1, _col2
                           Statistics: Num rows: 1 Data size: 552 Basic stats: COMPLETE Column stats: NONE
@@ -90,7 +90,7 @@ STAGE PLANS:
             Execution mode: vectorized
             Reduce Operator Tree:
               Group By Operator
-                aggregations: min(VALUE._col0), max(VALUE._col1), bloom_filter(VALUE._col2, expectedEntries=50)
+                aggregations: min(VALUE._col0), max(VALUE._col1), bloom_filter(VALUE._col2, expectedEntries=25)
                 mode: final
                 outputColumnNames: _col0, _col1, _col2
                 Statistics: Num rows: 1 Data size: 552 Basic stats: COMPLETE Column stats: NONE
@@ -1736,7 +1736,7 @@ STAGE PLANS:
                         outputColumnNames: _col0
                         Statistics: Num rows: 25 Data size: 191 Basic stats: COMPLETE Column stats: NONE
                         Group By Operator
-                          aggregations: min(_col0), max(_col0), bloom_filter(_col0, expectedEntries=50)
+                          aggregations: min(_col0), max(_col0), bloom_filter(_col0, expectedEntries=25)
                           mode: hash
                           outputColumnNames: _col0, _col1, _col2
                           Statistics: Num rows: 1 Data size: 552 Basic stats: COMPLETE Column stats: NONE
@@ -1815,7 +1815,7 @@ STAGE PLANS:
             Execution mode: vectorized
             Reduce Operator Tree:
               Group By Operator
-                aggregations: min(VALUE._col0), max(VALUE._col1), bloom_filter(VALUE._col2, expectedEntries=50)
+                aggregations: min(VALUE._col0), max(VALUE._col1), bloom_filter(VALUE._col2, expectedEntries=25)
                 mode: final
                 outputColumnNames: _col0, _col1, _col2
                 Statistics: Num rows: 1 Data size: 552 Basic stats: COMPLETE Column stats: NONE
@@ -2290,7 +2290,7 @@ STAGE PLANS:
                         outputColumnNames: _col0
                         Statistics: Num rows: 25 Data size: 191 Basic stats: COMPLETE Column stats: NONE
                         Group By Operator
-                          aggregations: min(_col0), max(_col0), bloom_filter(_col0, expectedEntries=50)
+                          aggregations: min(_col0), max(_col0), bloom_filter(_col0, expectedEntries=25)
                           mode: hash
                           outputColumnNames: _col0, _col1, _col2
                           Statistics: Num rows: 1 Data size: 552 Basic stats: COMPLETE Column stats: NONE
@@ -2369,7 +2369,7 @@ STAGE PLANS:
             Execution mode: vectorized
             Reduce Operator Tree:
               Group By Operator
-                aggregations: min(VALUE._col0), max(VALUE._col1), bloom_filter(VALUE._col2, expectedEntries=50)
+                aggregations: min(VALUE._col0), max(VALUE._col1), bloom_filter(VALUE._col2, expectedEntries=25)
                 mode: final
                 outputColumnNames: _col0, _col1, _col2
                 Statistics: Num rows: 1 Data size: 552 Basic stats: COMPLETE Column stats: NONE
