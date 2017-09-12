@@ -19,7 +19,7 @@ package org.apache.hadoop.hive.hbase;
 
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HConnection;
-import org.apache.hadoop.hbase.protobuf.generated.SnapshotProtos;
+import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos;
 import org.apache.hadoop.hive.metastore.MetaStoreUtils;
 import org.apache.hadoop.hive.ql.QTestUtil;
 
@@ -56,9 +56,9 @@ public class HBaseQTestUtil extends QTestUtil {
   /** return true when HBase table snapshot exists, false otherwise. */
   private static boolean hbaseTableSnapshotExists(HBaseAdmin admin, String snapshotName) throws
       Exception {
-    List<SnapshotProtos.SnapshotDescription> snapshots =
+    List<HBaseProtos.SnapshotDescription> snapshots =
       admin.listSnapshots(".*" + snapshotName + ".*");
-    for (SnapshotProtos.SnapshotDescription sn : snapshots) {
+    for (HBaseProtos.SnapshotDescription sn : snapshots) {
       if (sn.getName().equals(HBASE_SRC_SNAPSHOT_NAME)) {
         return true;
       }
