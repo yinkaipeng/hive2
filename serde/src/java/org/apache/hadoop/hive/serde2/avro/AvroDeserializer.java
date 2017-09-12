@@ -202,7 +202,7 @@ class AvroDeserializer {
     // Avro requires NULLable types to be defined as unions of some type T
     // and NULL.  This is annoying and we're going to hide it from the user.
     if(AvroSerdeUtils.isNullableType(recordSchema)) {
-      return deserializeNullableUnion(datum, fileSchema, recordSchema);
+      return deserializeNullableUnion(datum, fileSchema, recordSchema, columnType);
     }
 
     switch(columnType.getCategory()) {
@@ -304,7 +304,7 @@ class AvroDeserializer {
    * Extract either a null or the correct type from a Nullable type.  This is
    * horrible in that we rebuild the TypeInfo every time.
    */
-  private Object deserializeNullableUnion(Object datum, Schema fileSchema, Schema recordSchema)
+  private Object deserializeNullableUnion(Object datum, Schema fileSchema, Schema recordSchema, TypeInfo columnType)
                                             throws AvroSerdeException {
     int tag = GenericData.get().resolveUnion(recordSchema, datum); // Determine index of value
     Schema schema = recordSchema.getTypes().get(tag);
@@ -342,8 +342,7 @@ class AvroDeserializer {
         currentFileSchema = fileSchema;
       }
     }
-    return worker(datum, currentFileSchema, schema,
-      SchemaToTypeInfo.generateTypeInfo(schema, null));
+    return worker(datum, currentFileSchema, schema, columnType);
 
   }
 
