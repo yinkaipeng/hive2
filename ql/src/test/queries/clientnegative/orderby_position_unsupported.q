@@ -1,3 +1,4 @@
 set hive.groupby.orderby.position.alias=true;
 
-SELECT src.* FROM src ORDER BY 3;
+-- position alias is not supported when SELECT *
+SELECT src.* FROM src ORDER BY 1;
