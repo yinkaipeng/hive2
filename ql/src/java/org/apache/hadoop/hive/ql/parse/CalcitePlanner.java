@@ -3524,7 +3524,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
           String msg = String.format("Hint specified for %s."
                   + " Currently we don't support hints in CBO, turn off cbo to use hints.", hint);
           LOG.debug(msg);
-          throw new CalciteSemanticException(msg, UnsupportedFeature.Hint);
+          SessionState.getConsole().printInfo("Warning " + msg);
         }
       }
 
