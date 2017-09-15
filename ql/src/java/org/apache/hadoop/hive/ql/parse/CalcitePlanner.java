@@ -3506,6 +3506,16 @@ public class CalcitePlanner extends SemanticAnalyzer {
         ASTNode hint = (ASTNode) hintNode;
         if (hint.getChild(0).getType() == HiveParser.TOK_LEFTSEMIJOIN) {
           semijoin = true;
+        } else if (hint.getChild(0).getType() == HiveParser.TOK_MAPJOIN) {
+          Tree args = hint.getChild(1);
+          if (args.getChildCount() == 1) {
+            String text = args.getChild(0).getText();
+            if (text.equalsIgnoreCase("None")) {
+              // Hint to disable mapjoin. Nothing to do here, return.
+              return;
+            }
+          }
+          otherHints = true;
         } else {
           otherHints = true;
         }
@@ -3524,7 +3534,7 @@ public class CalcitePlanner extends SemanticAnalyzer {
           String msg = String.format("Hint specified for %s."
                   + " Currently we don't support hints in CBO, turn off cbo to use hints.", hint);
           LOG.debug(msg);
-          SessionState.getConsole().printInfo("Warning " + msg);
+          throw new CalciteSemanticException(msg, UnsupportedFeature.Hint);
         }
       }
 
