@@ -96,7 +96,7 @@ public class LlapBaseInputFormat<V extends WritableComparable<?>>
   private static final Logger LOG = LoggerFactory.getLogger(LlapBaseInputFormat.class);
 
   private static String driverName = "org.apache.hive.jdbc.HiveDriver";
-  private static final Map<String, Connection> connectionMap = new ConcurrentHashMap<String, Connection>();
+  private static final ConcurrentHashMap<String, Connection> connectionMap = new ConcurrentHashMap<String, Connection>();
 
   private String url;  // "jdbc:hive2://localhost:10000/default"
   private String user; // "hive",

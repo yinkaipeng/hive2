@@ -1336,10 +1336,12 @@ public class TezCompiler extends TaskCompiler {
     for (ReduceSinkOperator rs : map.keySet()) {
       SemiJoinBranchInfo sjInfo = map.get(rs);
       TableScanOperator ts = sjInfo.getTsOp();
-      TableScanOperator tsInMap = tsOps.putIfAbsent(ts, ts);
+      TableScanOperator tsInMap = tsOps.get(ts);
       if (tsInMap != null) {
         // Already processed, skip
         continue;
+      } else {
+        tsOps.put(ts, ts);
       }
 
       if (sjInfo.getIsHint() || !sjInfo.getShouldRemove()) {
