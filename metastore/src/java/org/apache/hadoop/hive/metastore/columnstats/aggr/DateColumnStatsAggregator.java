@@ -28,7 +28,7 @@ import java.util.Map;
 
 import org.apache.hadoop.hive.common.ndv.NumDistinctValueEstimator;
 import org.apache.hadoop.hive.common.ndv.NumDistinctValueEstimatorFactory;
-import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
+import org.apache.hadoop.hive.metastore.MetaStoreUtils.ColStatsObjWithSourceInfo;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsData;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
 import org.apache.hadoop.hive.metastore.api.Date;
@@ -44,30 +44,26 @@ public class DateColumnStatsAggregator extends ColumnStatsAggregator implements
   private static final Logger LOG = LoggerFactory.getLogger(DateColumnStatsAggregator.class);
 
   @Override
-  public ColumnStatisticsObj aggregate(String colName, List<String> partNames,
-      List<ColumnStatistics> css) throws MetaException {
+  public ColumnStatisticsObj aggregate(List<ColStatsObjWithSourceInfo> colStatsWithSourceInfo,
+      List<String> partNames, boolean areAllPartsFound) throws MetaException {
     ColumnStatisticsObj statsObj = null;
-
+    boolean doAllPartitionContainStats = partNames.size() == colStatsWithSourceInfo.size();
+    String colType = null;
+    String colName = null;
     // check if all the ColumnStatisticsObjs contain stats and all the ndv are
     // bitvectors
-    boolean doAllPartitionContainStats = partNames.size() == css.size();
-    LOG.debug("doAllPartitionContainStats for " + colName + " is " + doAllPartitionContainStats);
     NumDistinctValueEstimator ndvEstimator = null;
-    String colType = null;
-    for (ColumnStatistics cs : css) {
-      if (cs.getStatsObjSize() != 1) {
-        throw new MetaException(
-            "The number of columns should be exactly one in aggrStats, but found "
-                + cs.getStatsObjSize());
-      }
-      ColumnStatisticsObj cso = cs.getStatsObjIterator().next();
+    for (ColStatsObjWithSourceInfo csp : colStatsWithSourceInfo) {
+      ColumnStatisticsObj cso = csp.getColStatsObj();
       if (statsObj == null) {
+        colName = cso.getColName();
         colType = cso.getColType();
         statsObj = ColumnStatsAggregatorFactory.newColumnStaticsObj(colName, colType, cso
             .getStatsData().getSetField());
+        LOG.trace("doAllPartitionContainStats for " + colName + " is " + doAllPartitionContainStats);
       }
-      DateColumnStatsDataInspector dateColumnStats =
-          (DateColumnStatsDataInspector) cso.getStatsData().getDateStats();
+      DateColumnStatsDataInspector dateColumnStats = (DateColumnStatsDataInspector) cso
+          .getStatsData().getDateStats();
       if (dateColumnStats.getNdvEstimator() == null) {
         ndvEstimator = null;
         break;
@@ -92,15 +88,15 @@ public class DateColumnStatsAggregator extends ColumnStatsAggregator implements
     }
     LOG.debug("all of the bit vectors can merge for " + colName + " is " + (ndvEstimator != null));
     ColumnStatisticsData columnStatisticsData = new ColumnStatisticsData();
-    if (doAllPartitionContainStats || css.size() < 2) {
+    if (doAllPartitionContainStats || colStatsWithSourceInfo.size() < 2) {
       DateColumnStatsDataInspector aggregateData = null;
       long lowerBound = 0;
       long higherBound = 0;
       double densityAvgSum = 0.0;
-      for (ColumnStatistics cs : css) {
-        ColumnStatisticsObj cso = cs.getStatsObjIterator().next();
-        DateColumnStatsDataInspector newData =
-            (DateColumnStatsDataInspector) cso.getStatsData().getDateStats();
+      for (ColStatsObjWithSourceInfo csp : colStatsWithSourceInfo) {
+        ColumnStatisticsObj cso = csp.getColStatsObj();
+        DateColumnStatsDataInspector newData = (DateColumnStatsDataInspector) cso.getStatsData()
+            .getDateStats();
         lowerBound = Math.max(lowerBound, newData.getNumDVs());
         higherBound += newData.getNumDVs();
         densityAvgSum += (diff(newData.getHighValue(), newData.getLowValue()))
@@ -112,8 +108,7 @@ public class DateColumnStatsAggregator extends ColumnStatsAggregator implements
           aggregateData = newData.deepCopy();
         } else {
           aggregateData.setLowValue(min(aggregateData.getLowValue(), newData.getLowValue()));
-          aggregateData
-              .setHighValue(max(aggregateData.getHighValue(), newData.getHighValue()));
+          aggregateData.setHighValue(max(aggregateData.getHighValue(), newData.getHighValue()));
           aggregateData.setNumNulls(aggregateData.getNumNulls() + newData.getNumNulls());
           aggregateData.setNumDVs(Math.max(aggregateData.getNumDVs(), newData.getNumDVs()));
         }
@@ -157,12 +152,13 @@ public class DateColumnStatsAggregator extends ColumnStatsAggregator implements
       if (ndvEstimator == null) {
         // if not every partition uses bitvector for ndv, we just fall back to
         // the traditional extrapolation methods.
-        for (ColumnStatistics cs : css) {
-          String partName = cs.getStatsDesc().getPartName();
-          ColumnStatisticsObj cso = cs.getStatsObjIterator().next();
+        for (ColStatsObjWithSourceInfo csp : colStatsWithSourceInfo) {
+          ColumnStatisticsObj cso = csp.getColStatsObj();
+          String partName = csp.getPartName();
           DateColumnStatsData newData = cso.getStatsData().getDateStats();
           if (useDensityFunctionForNDVEstimation) {
-            densityAvgSum += diff(newData.getHighValue(), newData.getLowValue()) / newData.getNumDVs();
+            densityAvgSum += diff(newData.getHighValue(), newData.getLowValue())
+                / newData.getNumDVs();
           }
           adjustedIndexMap.put(partName, (double) indexMap.get(partName));
           adjustedStatsMap.put(partName, cso.getStatsData());
@@ -175,11 +171,11 @@ public class DateColumnStatsAggregator extends ColumnStatsAggregator implements
         int length = 0;
         int curIndex = -1;
         DateColumnStatsDataInspector aggregateData = null;
-        for (ColumnStatistics cs : css) {
-          String partName = cs.getStatsDesc().getPartName();
-          ColumnStatisticsObj cso = cs.getStatsObjIterator().next();
-          DateColumnStatsDataInspector newData =
-              (DateColumnStatsDataInspector) cso.getStatsData().getDateStats();
+        for (ColStatsObjWithSourceInfo csp : colStatsWithSourceInfo) {
+          ColumnStatisticsObj cso = csp.getColStatsObj();
+          String partName = csp.getPartName();
+          DateColumnStatsDataInspector newData = (DateColumnStatsDataInspector) cso.getStatsData()
+              .getDateStats();
           // newData.isSetBitVectors() should be true for sure because we
           // already checked it before.
           if (indexMap.get(partName) != curIndex) {
@@ -199,7 +195,8 @@ public class DateColumnStatsAggregator extends ColumnStatsAggregator implements
               pseudoPartName = new StringBuilder();
               pseudoIndexSum = 0;
               length = 0;
-              ndvEstimator = NumDistinctValueEstimatorFactory.getEmptyNumDistinctValueEstimator(ndvEstimator);
+              ndvEstimator = NumDistinctValueEstimatorFactory
+                  .getEmptyNumDistinctValueEstimator(ndvEstimator);
             }
             aggregateData = null;
           }
@@ -230,11 +227,13 @@ public class DateColumnStatsAggregator extends ColumnStatsAggregator implements
           }
         }
       }
-      extrapolate(columnStatisticsData, partNames.size(), css.size(), adjustedIndexMap,
-          adjustedStatsMap, densityAvgSum / adjustedStatsMap.size());
+      extrapolate(columnStatisticsData, partNames.size(), colStatsWithSourceInfo.size(),
+          adjustedIndexMap, adjustedStatsMap, densityAvgSum / adjustedStatsMap.size());
     }
-    LOG.debug("Ndv estimatation for {} is {} # of partitions requested: {} # of partitions found: {}", colName,
-        columnStatisticsData.getDateStats().getNumDVs(),partNames.size(), css.size());
+    LOG.debug(
+        "Ndv estimatation for {} is {} # of partitions requested: {} # of partitions found: {}",
+        colName, columnStatisticsData.getDateStats().getNumDVs(), partNames.size(),
+        colStatsWithSourceInfo.size());
     statsObj.setStatsData(columnStatisticsData);
     return statsObj;
   }

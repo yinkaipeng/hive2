@@ -30,6 +30,7 @@ import org.apache.hadoop.hive.common.StatsSetupConst;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.FileMetadataHandler;
 import org.apache.hadoop.hive.metastore.HiveMetaStore;
+import org.apache.hadoop.hive.metastore.MetaStoreUtils.ColStatsObjWithSourceInfo;
 import org.apache.hadoop.hive.metastore.PartFilterExprUtil;
 import org.apache.hadoop.hive.metastore.PartitionExpressionProxy;
 import org.apache.hadoop.hive.metastore.RawStore;
@@ -2719,9 +2720,9 @@ public class HBaseStore implements RawStore {
   }
 
   @Override
-  public Map<String, List<ColumnStatisticsObj>> getColStatsForTablePartitions(String dbName,
-      String tableName) throws MetaException, NoSuchObjectException {
-    // TODO: see if it makes sense to implement this here
+  public List<ColStatsObjWithSourceInfo> getPartitionColStatsForDatabase(String dbName)
+      throws MetaException, NoSuchObjectException {
+    // TODO Auto-generated method stub
     return null;
   }
 }
