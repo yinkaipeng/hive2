@@ -33,15 +33,7 @@ import org.apache.hive.common.util.HiveStringUtils;
 
 public class CacheUtils {
   private static final String delimit = "\u0001";
-  
-  public static String buildKey(String dbName) {
-    return dbName;
-  }
-  
-  public static String buildKeyWithDelimit(String dbName) {
-    return buildKey(dbName) + delimit;
-  }
-  
+
   public static String buildKey(String dbName, String tableName) {
     return dbName + delimit + tableName;
   }
@@ -94,10 +86,6 @@ public class CacheUtils {
     result[2] = vals;
     result[3] = comps[comps.length-1];
     return result;
-  }
-  
-  public static Object[] splitAggrColStats(String key) {
-    return key.split(delimit);
   }
 
   public static Table assemble(TableWrapper wrapper) {

@@ -27,8 +27,8 @@ import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.common.HiveStatsUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.metastore.MetaStoreUtils.ColStatsObjWithSourceInfo;
 import org.apache.hadoop.hive.metastore.api.AggrStats;
 import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
@@ -41,7 +41,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -100,17 +99,6 @@ class StatsCache {
                   key.partNames, HBaseStore.partNameListToValsList(key.partNames),
                   Collections.singletonList(key.colName));
               if (css != null && css.size() > 0) {
-                    List<ColStatsObjWithSourceInfo> colStatsWithSourceInfoList = new ArrayList<ColStatsObjWithSourceInfo>();
-                    for (ColumnStatistics cs : css) {
-                      Iterator<ColumnStatisticsObj> csoIter = cs.getStatsObj().iterator();
-                      if (csoIter.hasNext()) {
-                        ColumnStatisticsObj colStatsForPart = csoIter.next();
-                        String partName = cs.getStatsDesc().getPartName();
-                        colStatsWithSourceInfoList.add(new ColStatsObjWithSourceInfo(colStatsForPart,
-                            cs.getStatsDesc().getDbName(), cs.getStatsDesc().getTableName(),
-                            partName));
-                      }
-                    }
                 aggrStats.setPartsFound(css.size());
                 if (aggregator == null) {
                   aggregator = ColumnStatsAggregatorFactory.getColumnStatsAggregator(css.iterator()
@@ -118,7 +106,7 @@ class StatsCache {
                       useDensityFunctionForNDVEstimation, ndvTuner);
                 }
                 ColumnStatisticsObj statsObj = aggregator
-                    .aggregate(colStatsWithSourceInfoList, key.partNames, (css.size() == key.partNames.size()));
+                    .aggregate(key.colName, key.partNames, css);
                 aggrStats.addToColStats(statsObj);
                 me.put(key, aggrStats);
               }

@@ -44,7 +44,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.metastore.AggregateStatsCache.AggrColStats;
-import org.apache.hadoop.hive.metastore.MetaStoreUtils.ColStatsObjWithSourceInfo;
 import org.apache.hadoop.hive.metastore.api.AggrStats;
 import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsData;
@@ -62,6 +61,10 @@ import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.metastore.api.SkewedInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.metastore.cache.CacheUtils;
+import org.apache.hadoop.hive.metastore.cache.CachedStore;
+import org.apache.hadoop.hive.metastore.columnstats.aggr.ColumnStatsAggregator;
+import org.apache.hadoop.hive.metastore.columnstats.aggr.ColumnStatsAggregatorFactory;
 import org.apache.hadoop.hive.metastore.model.MConstraint;
 import org.apache.hadoop.hive.metastore.model.MDatabase;
 import org.apache.hadoop.hive.metastore.model.MPartitionColumnStatistics;
@@ -80,6 +83,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 /**
  * This class contains the optimizations for MetaStore that rely on direct SQL access to
@@ -1408,65 +1412,84 @@ class MetaStoreDirectSql {
       }
     });
   }
-  
-  public List<ColStatsObjWithSourceInfo> getColStatsForAllTablePartitions(String dbName,
-      boolean enableBitVector) throws MetaException {
-    String queryText = "select \"TABLE_NAME\", \"PARTITION_NAME\", "
-        + getStatsList(enableBitVector) + " from " + " " + PART_COL_STATS
-        + " where \"DB_NAME\" = ?";
+
+  // Get aggregated column stats for a table per partition for all columns in the partition
+  // This is primarily used to populate stats object when using CachedStore (Check CachedStore#prewarm)
+  public Map<String, List<ColumnStatisticsObj>> getColStatsForTablePartitions(String dbName,
+      String tblName, boolean enableBitVector) throws MetaException {
+    String queryText = "select \"PARTITION_NAME\", " + getStatsList(enableBitVector) + " from "
+        + " " + PART_COL_STATS + " where \"DB_NAME\" = ? and \"TABLE_NAME\" = ?"
+        + " order by \"PARTITION_NAME\"";
     long start = 0;
     long end = 0;
     Query query = null;
     boolean doTrace = LOG.isDebugEnabled();
     Object qResult = null;
     start = doTrace ? System.nanoTime() : 0;
-    List<ColStatsObjWithSourceInfo> colStatsForDB = new ArrayList<ColStatsObjWithSourceInfo>();
-    try {
-      query = pm.newQuery("javax.jdo.query.SQL", queryText);
-      qResult = executeWithArray(query, new Object[] { dbName }, queryText);
-      if (qResult == null) {
-        query.closeAll();
-        return colStatsForDB;
-      }
-      end = doTrace ? System.nanoTime() : 0;
-      timingTrace(doTrace, queryText, start, end);
-      List<Object[]> list = ensureList(qResult);
-      for (Object[] row : list) {
-        String tblName = (String) row[0];
-        String partName = (String) row[1];
-        ColumnStatisticsObj colStatObj = prepareCSObj(row, 2);
-        colStatsForDB.add(new ColStatsObjWithSourceInfo(colStatObj, dbName, tblName, partName));
-        Deadline.checkTimeout();
-      }
-    } finally {
+    query = pm.newQuery("javax.jdo.query.SQL", queryText);
+    qResult =
+        executeWithArray(query,
+            prepareParams(dbName, tblName, new ArrayList<String>(), new ArrayList<String>()),
+            queryText);
+    if (qResult == null) {
       query.closeAll();
+      return Maps.newHashMap();
     }
-    return colStatsForDB;
+    end = doTrace ? System.nanoTime() : 0;
+    timingTrace(doTrace, queryText, start, end);
+    List<Object[]> list = ensureList(qResult);
+    Map<String, List<ColumnStatisticsObj>> partColStatsMap =
+        new HashMap<String, List<ColumnStatisticsObj>>();
+    String partNameCurrent = null;
+    List<ColumnStatisticsObj> partColStatsList = new ArrayList<ColumnStatisticsObj>();
+    for (Object[] row : list) {
+      String partName = (String) row[0];
+      if (partNameCurrent == null) {
+        // Update the current partition we are working on
+        partNameCurrent = partName;
+        // Create a new list for this new partition
+        partColStatsList = new ArrayList<ColumnStatisticsObj>();
+        // Add the col stat for the current column
+        partColStatsList.add(prepareCSObj(row, 1));
+      } else if (!partNameCurrent.equalsIgnoreCase(partName)) {
+        // Save the previous partition and its col stat list
+        partColStatsMap.put(partNameCurrent, partColStatsList);
+        // Update the current partition we are working on
+        partNameCurrent = partName;
+        // Create a new list for this new partition
+        partColStatsList = new ArrayList<ColumnStatisticsObj>();
+        // Add the col stat for the current column
+        partColStatsList.add(prepareCSObj(row, 1));
+      } else {
+        partColStatsList.add(prepareCSObj(row, 1));
+      }
+      Deadline.checkTimeout();
+    }
+    query.closeAll();
+    return partColStatsMap;
   }
 
   /** Should be called with the list short enough to not trip up Oracle/etc. */
   private List<ColumnStatisticsObj> columnStatisticsObjForPartitionsBatch(String dbName,
       String tableName, List<String> partNames, List<String> colNames, boolean areAllPartsFound,
-      boolean useDensityFunctionForNDVEstimation, double ndvTuner, boolean enableBitVector)
-      throws MetaException {
-    if (enableBitVector) {
-      return aggrStatsUseJava(dbName, tableName, partNames, colNames, areAllPartsFound,
-          useDensityFunctionForNDVEstimation, ndvTuner);
-    } else {
-      return aggrStatsUseDB(dbName, tableName, partNames, colNames, areAllPartsFound,
-          useDensityFunctionForNDVEstimation, ndvTuner);
+      boolean useDensityFunctionForNDVEstimation, double ndvTuner, boolean enableBitVector) throws MetaException {
+    if(enableBitVector) {
+      return aggrStatsUseJava(dbName, tableName, partNames, colNames, useDensityFunctionForNDVEstimation, ndvTuner);
+    }
+    else {
+      return aggrStatsUseDB(dbName, tableName, partNames, colNames, areAllPartsFound, useDensityFunctionForNDVEstimation, ndvTuner);
     }
   }
 
   private List<ColumnStatisticsObj> aggrStatsUseJava(String dbName, String tableName,
-      List<String> partNames, List<String> colNames, boolean areAllPartsFound,
+      List<String> partNames, List<String> colNames,
       boolean useDensityFunctionForNDVEstimation, double ndvTuner) throws MetaException {
     // 1. get all the stats for colNames in partNames;
     List<ColumnStatistics> partStats = getPartitionStats(dbName, tableName, partNames, colNames,
         true);
     // 2. use util function to aggr stats
     return MetaStoreUtils.aggrPartitionStats(partStats, dbName, tableName, partNames, colNames,
-        areAllPartsFound, useDensityFunctionForNDVEstimation, ndvTuner);
+        useDensityFunctionForNDVEstimation, ndvTuner);
   }
 
   private List<ColumnStatisticsObj> aggrStatsUseDB(String dbName,

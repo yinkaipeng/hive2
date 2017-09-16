@@ -27,7 +27,6 @@ import java.util.Map;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.FileMetadataHandler;
-import org.apache.hadoop.hive.metastore.MetaStoreUtils.ColStatsObjWithSourceInfo;
 import org.apache.hadoop.hive.metastore.ObjectStore;
 import org.apache.hadoop.hive.metastore.RawStore;
 import org.apache.hadoop.hive.metastore.TableType;
@@ -914,9 +913,8 @@ public class DummyRawStoreFailEvent implements RawStore, Configurable {
   }
 
   @Override
-  public List<ColStatsObjWithSourceInfo> getPartitionColStatsForDatabase(String dbName)
-      throws MetaException, NoSuchObjectException {
-    // TODO Auto-generated method stub
-    return null;
+  public Map<String, List<ColumnStatisticsObj>> getColStatsForTablePartitions(String dbName,
+      String tableName) throws MetaException, NoSuchObjectException {
+    return objectStore.getColStatsForTablePartitions(dbName, tableName);
   }
 }

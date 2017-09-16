@@ -21,15 +21,13 @@ package org.apache.hadoop.hive.metastore.columnstats.aggr;
 
 import java.util.List;
 
-import org.apache.hadoop.hive.metastore.MetaStoreUtils.ColStatsObjWithSourceInfo;
+import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 
 public abstract class ColumnStatsAggregator {
   public boolean useDensityFunctionForNDVEstimation;
   public double ndvTuner;
-
-  public abstract ColumnStatisticsObj aggregate(
-      List<ColStatsObjWithSourceInfo> colStatsWithSourceInfo, List<String> partNames,
-      boolean areAllPartsFound) throws MetaException;
+  public abstract ColumnStatisticsObj aggregate(String colName, List<String> partNames,
+      List<ColumnStatistics> css) throws MetaException;
 }

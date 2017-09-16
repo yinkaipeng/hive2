@@ -28,9 +28,9 @@ import java.util.Map;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.hive.common.classification.InterfaceStability;
-import org.apache.hadoop.hive.metastore.MetaStoreUtils.ColStatsObjWithSourceInfo;
 import org.apache.hadoop.hive.metastore.api.AggrStats;
 import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
+import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
 import org.apache.hadoop.hive.metastore.api.CurrentNotificationEventId;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.FileMetadataExprType;
@@ -573,18 +573,19 @@ public interface RawStore extends Configurable {
 
   public AggrStats get_aggr_stats_for(String dbName, String tblName,
     List<String> partNames, List<String> colNames) throws MetaException, NoSuchObjectException;
-  
+
   /**
-   * Get column stats for all partitions of all tables in the database
-   * 
+   * Get all partition column statistics for a table in a db
+   *
    * @param dbName
-   * @return List of column stats objects for all partitions of all tables in
-   *         the database
-   * @throws NoSuchObjectException
+   * @param tableName
+   * @return Map of partition column statistics. Key in the map is partition name. Value is a list
+   *         of column stat object for each column in the partition
    * @throws MetaException
+   * @throws NoSuchObjectException
    */
-  public abstract List<ColStatsObjWithSourceInfo> getPartitionColStatsForDatabase(String dbName)
-      throws MetaException, NoSuchObjectException;
+  public Map<String, List<ColumnStatisticsObj>> getColStatsForTablePartitions(String dbName,
+      String tableName) throws MetaException, NoSuchObjectException;
 
   /**
    * Get the next notification event.

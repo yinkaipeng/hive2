@@ -21,8 +21,8 @@ package org.apache.hadoop.hive.metastore.columnstats.aggr;
 
 import java.util.List;
 
-import org.apache.hadoop.hive.metastore.MetaStoreUtils.ColStatsObjWithSourceInfo;
 import org.apache.hadoop.hive.metastore.api.BinaryColumnStatsData;
+import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsData;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsObj;
 import org.apache.hadoop.hive.metastore.api.MetaException;
@@ -30,16 +30,19 @@ import org.apache.hadoop.hive.metastore.api.MetaException;
 public class BinaryColumnStatsAggregator extends ColumnStatsAggregator {
 
   @Override
-  public ColumnStatisticsObj aggregate(List<ColStatsObjWithSourceInfo> colStatsWithSourceInfo,
-      List<String> partNames, boolean areAllPartsFound) throws MetaException {
+  public ColumnStatisticsObj aggregate(String colName, List<String> partNames,
+      List<ColumnStatistics> css) throws MetaException {
     ColumnStatisticsObj statsObj = null;
-    String colType = null;
-    String colName = null;
     BinaryColumnStatsData aggregateData = null;
-    for (ColStatsObjWithSourceInfo csp : colStatsWithSourceInfo) {
-      ColumnStatisticsObj cso = csp.getColStatsObj();
+    String colType = null;
+    for (ColumnStatistics cs : css) {
+      if (cs.getStatsObjSize() != 1) {
+        throw new MetaException(
+            "The number of columns should be exactly one in aggrStats, but found "
+                + cs.getStatsObjSize());
+      }
+      ColumnStatisticsObj cso = cs.getStatsObjIterator().next();
       if (statsObj == null) {
-        colName = cso.getColName();
         colType = cso.getColType();
         statsObj = ColumnStatsAggregatorFactory.newColumnStaticsObj(colName, colType, cso
             .getStatsData().getSetField());

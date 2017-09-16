@@ -1900,85 +1900,71 @@ public class MetaStoreUtils {
     return colNames;
   }
 
-  // Given a list of partStats, this function will give you an aggr stats
+  // given a list of partStats, this function will give you an aggr stats
   public static List<ColumnStatisticsObj> aggrPartitionStats(List<ColumnStatistics> partStats,
       String dbName, String tableName, List<String> partNames, List<String> colNames,
-      boolean areAllPartsFound, boolean useDensityFunctionForNDVEstimation, double ndvTuner)
+      boolean useDensityFunctionForNDVEstimation, double ndvTuner)
       throws MetaException {
-    Map<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>> colStatsMap = 
-        new HashMap<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>>();
-    // Group stats by colName for each partition
+    // 1. group by the stats by colNames
+    // map the colName to List<ColumnStatistics>
+    Map<String, List<ColumnStatistics>> map = new HashMap<>();
     for (ColumnStatistics css : partStats) {
       List<ColumnStatisticsObj> objs = css.getStatsObj();
-      String partName = css.getStatsDesc().getPartName();
       for (ColumnStatisticsObj obj : objs) {
-        ColumnStatsAggregator colStatsAggregator = ColumnStatsAggregatorFactory
-            .getColumnStatsAggregator(obj.getStatsData().getSetField(),
-                useDensityFunctionForNDVEstimation, ndvTuner);
-        if (!colStatsMap.containsKey(colStatsAggregator)) {
-          colStatsMap.put(colStatsAggregator, new ArrayList<ColStatsObjWithSourceInfo>());
+        List<ColumnStatisticsObj> singleObj = new ArrayList<>();
+        singleObj.add(obj);
+        ColumnStatistics singleCS = new ColumnStatistics(css.getStatsDesc(), singleObj);
+        if (!map.containsKey(obj.getColName())) {
+          map.put(obj.getColName(), new ArrayList<ColumnStatistics>());
         }
-        colStatsMap.get(colStatsAggregator).add(
-            new ColStatsObjWithSourceInfo(obj, dbName, tableName, partName));
+        map.get(obj.getColName()).add(singleCS);
       }
     }
-    if (colStatsMap.size() < 1) {
-      LOG.debug("No stats data found for: dbName= {},  tblName= {}, partNames= {}, colNames= {}",
-          dbName, tableName, partNames, colNames);
-      return new ArrayList<ColumnStatisticsObj>();
-    }
-    return aggrPartitionStats(colStatsMap, partNames, areAllPartsFound,
-        useDensityFunctionForNDVEstimation, ndvTuner);
+    return aggrPartitionStats(map,dbName,tableName,partNames,colNames,useDensityFunctionForNDVEstimation, ndvTuner);
   }
 
   public static List<ColumnStatisticsObj> aggrPartitionStats(
-      Map<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>> colStatsMap,
-      final List<String> partNames, final boolean areAllPartsFound,
-      final boolean useDensityFunctionForNDVEstimation, final double ndvTuner) throws MetaException {
-    List<ColumnStatisticsObj> aggrColStatObjs = new ArrayList<ColumnStatisticsObj>();
-    int numProcessors = Runtime.getRuntime().availableProcessors();
-    final ExecutorService pool = Executors.newFixedThreadPool(Math.min(colStatsMap.size(),
-        numProcessors), new ThreadFactoryBuilder().setDaemon(true).setNameFormat(
-        "aggr-col-stats-%d").build());
+      Map<String, List<ColumnStatistics>> map, String dbName, String tableName,
+      final List<String> partNames, List<String> colNames,
+      final boolean useDensityFunctionForNDVEstimation,final double ndvTuner) throws MetaException {
+    List<ColumnStatisticsObj> colStats = new ArrayList<>();
+    // 2. Aggregate stats for each column in a separate thread
+    if (map.size()< 1) {
+      //stats are absent in RDBMS
+      LOG.debug("No stats data found for: dbName=" +dbName +" tblName=" + tableName +
+          " partNames= " + partNames + " colNames=" + colNames );
+      return colStats;
+    }
+    final ExecutorService pool = Executors.newFixedThreadPool(Math.min(map.size(), 16),
+        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("aggr-col-stats-%d").build());
     final List<Future<ColumnStatisticsObj>> futures = Lists.newLinkedList();
-    LOG.debug("Aggregating column stats. Threads used: "
-        + Math.min(colStatsMap.size(), numProcessors));
+
     long start = System.currentTimeMillis();
-    for (final Entry<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>> entry : colStatsMap
-        .entrySet()) {
+    for (final Entry<String, List<ColumnStatistics>> entry : map.entrySet()) {
       futures.add(pool.submit(new Callable<ColumnStatisticsObj>() {
         @Override
-        public ColumnStatisticsObj call() throws MetaException {
-          List<ColStatsObjWithSourceInfo> colStatWithSourceInfo = entry.getValue();
-          ColumnStatsAggregator aggregator = entry.getKey();
-          try {
-            ColumnStatisticsObj statsObj = aggregator.aggregate(colStatWithSourceInfo, partNames,
-                areAllPartsFound);
-            return statsObj;
-          } catch (MetaException e) {
-            LOG.debug(e.getMessage());
-            throw e;
-          }
-        }
-      }));
+        public ColumnStatisticsObj call() throws Exception {
+          List<ColumnStatistics> css = entry.getValue();
+          ColumnStatsAggregator aggregator = ColumnStatsAggregatorFactory.getColumnStatsAggregator(css
+              .iterator().next().getStatsObj().iterator().next().getStatsData().getSetField(),
+              useDensityFunctionForNDVEstimation, ndvTuner);
+          ColumnStatisticsObj statsObj = aggregator.aggregate(entry.getKey(), partNames, css);
+          return statsObj;
+        }}));
     }
     pool.shutdown();
-    if (!futures.isEmpty()) {
-      for (Future<ColumnStatisticsObj> future : futures) {
-        try {
-          if (future.get() != null) {
-            aggrColStatObjs.add(future.get());
-          }
-        } catch (InterruptedException | ExecutionException e) {
-          LOG.debug(e.getMessage());
-          pool.shutdownNow();
-          throw new MetaException(e.toString());
-        }
+    for (Future<ColumnStatisticsObj> future : futures) {
+      try {
+        colStats.add(future.get());
+      } catch (InterruptedException | ExecutionException e) {
+        pool.shutdownNow();
+        LOG.debug(e.toString());
+        throw new MetaException(e.toString());
       }
     }
-    LOG.debug("Time for aggr col stats in seconds: {} Threads used: {}", ((System
-        .currentTimeMillis() - (double) start)) / 1000, Math.min(colStatsMap.size(), numProcessors));
-    return aggrColStatObjs;
+    LOG.debug("Time for aggr col stats in seconds: {} Threads used: {}",
+      ((System.currentTimeMillis() - (double)start))/1000, Math.min(map.size(), 16));
+    return colStats;
   }
 
   public static double decimalToDouble(Decimal decimal) {
@@ -2006,38 +1992,6 @@ public class MetaStoreUtils {
       metaException.initCause(e);
     }
     return metaException;
-  }
-  
-  // ColumnStatisticsObj with info about its db, table, partition (if table is partitioned)
-  public static class ColStatsObjWithSourceInfo {
-    private final ColumnStatisticsObj colStatsObj;
-    private final String dbName;
-    private final String tblName;
-    private final String partName;
-
-    public ColStatsObjWithSourceInfo(ColumnStatisticsObj colStatsObj, String dbName,
-        String tblName, String partName) {
-      this.colStatsObj = colStatsObj;
-      this.dbName = dbName;
-      this.tblName = tblName;
-      this.partName = partName;
-    }
-
-    public ColumnStatisticsObj getColStatsObj() {
-      return colStatsObj;
-    }
-
-    public String getDbName() {
-      return dbName;
-    }
-
-    public String getTblName() {
-      return tblName;
-    }
-
-    public String getPartName() {
-      return partName;
-    }
   }
 
 }

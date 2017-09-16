@@ -57,7 +57,6 @@ import javax.jdo.datastore.DataStoreCache;
 import javax.jdo.identity.IntIdentity;
 
 import com.google.common.collect.Maps;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -73,7 +72,6 @@ import org.apache.hadoop.hive.common.metrics.common.MetricsFactory;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.metastore.MetaStoreDirectSql.SqlFilterForPushdown;
-import org.apache.hadoop.hive.metastore.MetaStoreUtils.ColStatsObjWithSourceInfo;
 import org.apache.hadoop.hive.metastore.api.AggrStats;
 import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
 import org.apache.hadoop.hive.metastore.api.ColumnStatisticsDesc;
@@ -7283,27 +7281,27 @@ public class ObjectStore implements RawStore, Configurable {
       }
     }.run(true);
   }
-  
+
   @Override
-  public List<ColStatsObjWithSourceInfo> getPartitionColStatsForDatabase(String dbName)
-      throws MetaException, NoSuchObjectException {
+  public Map<String, List<ColumnStatisticsObj>> getColStatsForTablePartitions(String dbName,
+      String tableName) throws MetaException, NoSuchObjectException {
     final boolean enableBitVector = HiveConf.getBoolVar(getConf(),
         HiveConf.ConfVars.HIVE_STATS_FETCH_BITVECTOR);
-    return new GetHelper<List<ColStatsObjWithSourceInfo>>(dbName, null, true, false) {
+    return new GetHelper<Map<String, List<ColumnStatisticsObj>>>(dbName, tableName, true, false) {
       @Override
-      protected List<ColStatsObjWithSourceInfo> getSqlResult(
-          GetHelper<List<ColStatsObjWithSourceInfo>> ctx) throws MetaException {
-        return directSql.getColStatsForAllTablePartitions(dbName, enableBitVector);
+      protected Map<String, List<ColumnStatisticsObj>> getSqlResult(
+          GetHelper<Map<String, List<ColumnStatisticsObj>>> ctx) throws MetaException {
+        return directSql.getColStatsForTablePartitions(dbName, tblName, enableBitVector);
       }
 
       @Override
-      protected List<ColStatsObjWithSourceInfo> getJdoResult(
-          GetHelper<List<ColStatsObjWithSourceInfo>> ctx) throws MetaException,
+      protected Map<String, List<ColumnStatisticsObj>> getJdoResult(
+          GetHelper<Map<String, List<ColumnStatisticsObj>>> ctx) throws MetaException,
           NoSuchObjectException {
         // This is fast path for query optimizations, if we can find this info
         // quickly using directSql, do it. No point in failing back to slow path
         // here.
-        throw new MetaException("Jdo path is not implemented for getPartitionColStatsForDatabase.");
+        throw new MetaException("Jdo path is not implemented for stats aggr.");
       }
 
       @Override
