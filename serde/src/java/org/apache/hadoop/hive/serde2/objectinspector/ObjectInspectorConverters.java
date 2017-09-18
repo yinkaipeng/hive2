@@ -463,7 +463,7 @@ public final class ObjectInspectorConverters {
       }
 
       Object inputFieldValue = inputOI.getField(input);
-      Object inputFieldTag = inputOI.getTag(input);
+      byte inputFieldTag = inputOI.getTag(input);
       Object outputFieldValue = null;
 
       int inputFieldTagIndex = ((Byte)inputFieldTag).intValue();
@@ -472,7 +472,7 @@ public final class ObjectInspectorConverters {
          outputFieldValue = fieldConverters.get(inputFieldTagIndex).convert(inputFieldValue);
       }
 
-      outputOI.addField(output, outputFieldValue);
+      outputOI.setFieldAndTag(output, outputFieldValue, inputFieldTag);
 
       return output;
     }
