@@ -157,6 +157,11 @@ public class ParseDriver {
     };
   };
 
+  @Deprecated
+  public ASTNode parse(String command, Context ctx, boolean setTokenRewriteStream) throws ParseException {
+    return parse(command, ctx, null);
+  }
+
   public ASTNode parse(String command) throws ParseException {
     return parse(command, null);
   }
