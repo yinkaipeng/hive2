@@ -89,6 +89,7 @@ import org.apache.hadoop.hive.metastore.events.PreReadDatabaseEvent;
 import org.apache.hadoop.hive.metastore.events.PreReadTableEvent;
 import org.apache.hadoop.hive.metastore.filemeta.OrcFileMetadataHandler;
 import org.apache.hadoop.hive.metastore.messaging.EventMessage.EventType;
+import org.apache.hadoop.hive.metastore.repl.DumpDirCleanerTask;
 import org.apache.hadoop.hive.metastore.partition.spec.PartitionSpecProxy;
 import org.apache.hadoop.hive.metastore.txn.TxnStore;
 import org.apache.hadoop.hive.metastore.txn.TxnUtils;
@@ -502,6 +503,12 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         cleaner.schedule(new EventCleanerTask(this), cleanFreq, cleanFreq);
       }
 
+      cleanFreq = hiveConf.getTimeVar(ConfVars.REPL_DUMPDIR_CLEAN_FREQ, TimeUnit.MILLISECONDS);
+      if (cleanFreq > 0) {
+        // In default config, there is no timer.
+        Timer cleaner = new Timer("Repl Dump Dir Cleaner Thread", true);
+        cleaner.schedule(new DumpDirCleanerTask(hiveConf), cleanFreq, cleanFreq);
+      }
       expressionProxy = PartFilterExprUtil.createExpressionProxy(hiveConf);
       fileMetadataManager = new FileMetadataManager((ThreadLocalRawStore)this, hiveConf);
     }
