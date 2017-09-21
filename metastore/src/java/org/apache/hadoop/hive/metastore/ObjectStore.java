@@ -156,7 +156,6 @@ import org.apache.hadoop.hive.metastore.partition.spec.PartitionSpecProxy;
 import org.apache.hadoop.hive.serde2.typeinfo.PrimitiveTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.hadoop.hive.shims.ShimLoader;
-import org.apache.hadoop.hive.metastore.tools.SQLGenerator;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hive.common.util.HiveStringUtils;
 import org.apache.thrift.TException;
@@ -167,6 +166,7 @@ import org.datanucleus.NucleusContext;
 import org.datanucleus.api.jdo.JDOPersistenceManager;
 import org.datanucleus.api.jdo.JDOPersistenceManagerFactory;
 import org.datanucleus.store.rdbms.exceptions.MissingTableException;
+import org.datanucleus.store.rdbms.scostore.BaseContainerStore;
 import org.datanucleus.store.scostore.Store;
 import org.datanucleus.util.WeakValueMap;
 import org.slf4j.Logger;
@@ -230,7 +230,6 @@ public class ObjectStore implements RawStore, Configurable {
 
   private boolean isInitialized = false;
   private PersistenceManager pm = null;
-  private SQLGenerator sqlGenerator = null;
   private MetaStoreDirectSql directSql = null;
   private PartitionExpressionProxy expressionProxy = null;
   private Configuration hiveConf;
@@ -411,10 +410,6 @@ public class ObjectStore implements RawStore, Configurable {
     LOG.info("ObjectStore, initialize called");
     prop = dsProps;
     pm = getPersistenceManager();
-    String productName = MetaStoreDirectSql.getProductName(pm);
-    sqlGenerator = new SQLGenerator(
-        DatabaseProduct.determineDatabaseProduct(productName),
-        new HiveConf(hiveConf, ObjectStore.class));
     isInitialized = pm != null;
     if (isInitialized) {
       expressionProxy = createExpressionProxy(hiveConf);
@@ -8234,7 +8229,7 @@ public class ObjectStore implements RawStore, Configurable {
       }
       Iterator<MNotificationLog> i = events.iterator();
       NotificationEventResponse result = new NotificationEventResponse();
-      result.setEvents(new ArrayList<>());
+      result.setEvents(new ArrayList<NotificationEvent>());
       int maxEvents = rqst.getMaxEvents() > 0 ? rqst.getMaxEvents() : Integer.MAX_VALUE;
       int numEvents = 0;
       while (i.hasNext() && numEvents++ < maxEvents) {
@@ -8252,99 +8247,29 @@ public class ObjectStore implements RawStore, Configurable {
     }
   }
 
-  private void lockForUpdate() throws MetaException {
-    String selectQuery = "select NEXT_EVENT_ID from NOTIFICATION_SEQUENCE";
-    String selectForUpdateQuery = sqlGenerator.addForUpdateClause(selectQuery);
-    new RetryingExecutor(hiveConf, () -> {
-      Query query = pm.newQuery("javax.jdo.query.SQL", selectForUpdateQuery);
-      query.setUnique(true);
-      // only need to execute it to get db Lock
-      query.execute();
-    }).run();
-  }
-
-  static class RetryingExecutor {
-    interface Command {
-      void process() throws Exception;
-    }
-
-    private static Logger LOG = LoggerFactory.getLogger(RetryingExecutor.class);
-    private final int maxRetries;
-    private final long sleepInterval;
-    private int currentRetries = 0;
-    private final Command command;
-
-    RetryingExecutor(Configuration config, Command command) {
-      this.maxRetries = config.getInt(ConfVars.NOTIFICATION_SEQUENCE_LOCK_MAX_RETRIES.name(),
-          ConfVars.NOTIFICATION_SEQUENCE_LOCK_MAX_RETRIES.defaultIntVal);
-      this.sleepInterval = config.getTimeDuration(
-          ConfVars.NOTIFICATION_SEQUENCE_LOCK_RETRY_SLEEP_INTERVAL.name(),
-          ConfVars.NOTIFICATION_SEQUENCE_LOCK_RETRY_SLEEP_INTERVAL.defaultLongVal,
-          TimeUnit.MILLISECONDS
-      );
-      this.command = command;
-    }
-
-    public void run() throws MetaException {
-      while (true) {
-        try {
-          command.process();
-          break;
-        } catch (Exception e) {
-          LOG.info(
-              "Attempting to acquire the DB log notification lock: " + currentRetries + " out of "
-                  + maxRetries + " retries", e);
-          if (currentRetries >= maxRetries) {
-            String message =
-                "Couldn't acquire the DB log notification lock because we reached the maximum"
-                    + " # of retries: " + maxRetries
-                    + " retries. If this happens too often, then is recommended to "
-                    + "increase the maximum number of retries on the"
-                    + " hive.notification.sequence.lock.max.retries configuration";
-            LOG.error(message, e);
-            throw new MetaException(message + " :: " + e.getMessage());
-          }
-          currentRetries++;
-          try {
-            Thread.sleep(sleepInterval);
-          } catch (InterruptedException e1) {
-            String msg = "Couldn't acquire the DB notification log lock on " + currentRetries
-                + " retry, because the following error: ";
-            LOG.error(msg, e1);
-            throw new MetaException(msg + e1.getMessage());
-          }
-        }
-      }
-    }
-  }
-
   @Override
   public void addNotificationEvent(NotificationEvent entry) {
     boolean commited = false;
     Query query = null;
     try {
       openTransaction();
-      lockForUpdate();
-      Query objectQuery = pm.newQuery(MNotificationNextId.class);
-      Collection<MNotificationNextId> ids = (Collection) objectQuery.execute();
-      MNotificationNextId mNotificationNextId = null;
+      query = pm.newQuery(MNotificationNextId.class);
+      Collection<MNotificationNextId> ids = (Collection) query.execute();
+      MNotificationNextId id = null;
       boolean needToPersistId;
       if (ids == null || ids.size() == 0) {
-        mNotificationNextId = new MNotificationNextId(1L);
+        id = new MNotificationNextId(1L);
         needToPersistId = true;
       } else {
-        mNotificationNextId = ids.iterator().next();
+        id = ids.iterator().next();
         needToPersistId = false;
       }
-      entry.setEventId(mNotificationNextId.getNextEventId());
-      mNotificationNextId.incrementEventId();
-      if (needToPersistId) {
-        pm.makePersistent(mNotificationNextId);
-      }
+      entry.setEventId(id.getNextEventId());
+      id.incrementEventId();
+      if (needToPersistId)
+        pm.makePersistent(id);
       pm.makePersistent(translateThriftToDb(entry));
       commited = commitTransaction();
-    } catch (Exception e) {
-      LOG.error("couldnot get lock for update", e);
     } finally {
       if (!commited) {
         rollbackTransaction();
