@@ -83,7 +83,7 @@ STAGE PLANS:
             druid.query.type timeseries
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: $f0 (type: float), $f1 (type: float)
+            expressions: $f0 (type: double), $f1 (type: double)
             outputColumnNames: _col0, _col1
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -113,7 +113,7 @@ STAGE PLANS:
             druid.query.type groupBy
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: extract (type: timestamp), $f1 (type: float), $f2 (type: float)
+            expressions: extract (type: timestamp), $f1 (type: double), $f2 (type: double)
             outputColumnNames: _col0, _col1, _col2
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -143,7 +143,7 @@ STAGE PLANS:
             druid.query.type timeseries
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: __time (type: timestamp), $f1 (type: float), $f2 (type: float)
+            expressions: __time (type: timestamp), $f1 (type: double), $f2 (type: double)
             outputColumnNames: _col0, _col1, _col2
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -173,7 +173,7 @@ STAGE PLANS:
             druid.query.type timeseries
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: __time (type: timestamp), $f1 (type: float), $f2 (type: float)
+            expressions: __time (type: timestamp), $f1 (type: double), $f2 (type: double)
             outputColumnNames: _col0, _col1, _col2
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -203,7 +203,7 @@ STAGE PLANS:
             druid.query.type timeseries
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: __time (type: timestamp), $f1 (type: float), $f2 (type: float)
+            expressions: __time (type: timestamp), $f1 (type: double), $f2 (type: double)
             outputColumnNames: _col0, _col1, _col2
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -233,7 +233,7 @@ STAGE PLANS:
             druid.query.type timeseries
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: __time (type: timestamp), $f1 (type: float), $f2 (type: float)
+            expressions: __time (type: timestamp), $f1 (type: double), $f2 (type: double)
             outputColumnNames: _col0, _col1, _col2
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -263,7 +263,7 @@ STAGE PLANS:
             druid.query.type timeseries
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: __time (type: timestamp), $f1 (type: float), $f2 (type: float)
+            expressions: __time (type: timestamp), $f1 (type: double), $f2 (type: double)
             outputColumnNames: _col0, _col1, _col2
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -293,7 +293,7 @@ STAGE PLANS:
             druid.query.type timeseries
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: __time (type: timestamp), $f1 (type: float), $f2 (type: float)
+            expressions: __time (type: timestamp), $f1 (type: double), $f2 (type: double)
             outputColumnNames: _col0, _col1, _col2
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -323,7 +323,7 @@ STAGE PLANS:
             druid.query.type timeseries
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: __time (type: timestamp), $f1 (type: float), $f2 (type: float)
+            expressions: __time (type: timestamp), $f1 (type: double), $f2 (type: double)
             outputColumnNames: _col0, _col1, _col2
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -353,7 +353,7 @@ STAGE PLANS:
             druid.query.type timeseries
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: __time (type: timestamp), $f1 (type: float), $f2 (type: float)
+            expressions: __time (type: timestamp), $f1 (type: double), $f2 (type: double)
             outputColumnNames: _col0, _col1, _col2
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
@@ -385,7 +385,7 @@ STAGE PLANS:
             druid.query.type timeseries
           Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
           Select Operator
-            expressions: __time (type: timestamp), $f1 (type: float), $f2 (type: float)
+            expressions: __time (type: timestamp), $f1 (type: double), $f2 (type: double)
             outputColumnNames: _col0, _col1, _col2
             Statistics: Num rows: 1 Data size: 0 Basic stats: PARTIAL Column stats: NONE
             ListSink
