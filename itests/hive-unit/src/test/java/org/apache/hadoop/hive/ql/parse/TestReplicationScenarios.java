@@ -2070,6 +2070,21 @@ public class TestReplicationScenarios {
     // view is referring to old database, so no data
     verifyRun("SELECT * from " + dbName + "_dupe.virtual_view2", empty, driverMirror);
     //verifyRun("SELECT * from " + dbName + "_dupe.mat_view2", unptn_data, driverMirror);
+
+    // Test "DROP VIEW"
+    run("DROP VIEW " + dbName + ".virtual_view", driver);
+    verifyIfTableNotExist(dbName, "virtual_view", metaStoreClient);
+
+    // Perform REPL-DUMP/LOAD
+    advanceDumpDir();
+    run("REPL DUMP " + dbName + " FROM " + incrementalDumpId, driver);
+    incrementalDumpLocn = getResult(0, 0, driver);
+    incrementalDumpId = getResult(0, 1, true, driver);
+    LOG.info("Incremental-dump: Dumped to {} with id {}", incrementalDumpLocn, incrementalDumpId);
+    run("EXPLAIN REPL LOAD " + dbName + "_dupe FROM '" + incrementalDumpLocn + "'", driverMirror);
+    printOutput(driverMirror);
+    run("REPL LOAD " + dbName + "_dupe FROM '" + incrementalDumpLocn + "'", driverMirror);
+    verifyIfTableNotExist(dbName + "_dupe", "virtual_view", metaStoreClientMirror);
   }
 
   @Test

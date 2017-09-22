@@ -37,7 +37,7 @@ public class DropTableHandler extends AbstractMessageHandler {
     String actualTblName = context.isTableNameEmpty() ? msg.getTable() : context.tableName;
     DropTableDesc dropTableDesc = new DropTableDesc(
         actualDbName + "." + actualTblName,
-        false, true, true, context.eventOnlyReplicationSpec()
+        false, true, true, context.eventOnlyReplicationSpec(), false
     );
     Task<DDLWork> dropTableTask = TaskFactory.get(
         new DDLWork(readEntitySet, writeEntitySet, dropTableDesc),
