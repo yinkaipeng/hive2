@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
@@ -109,8 +108,21 @@ public class ACLConfigurationParser {
     return Collections.unmodifiableSet(allowedGroups);
   }
 
+  public static boolean isBlank(final CharSequence cs) {
+    int strLen;
+    if (cs == null || (strLen = cs.length()) == 0) {
+      return true;
+    }
+    for (int i = 0; i < strLen; i++) {
+      if (!Character.isWhitespace(cs.charAt(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   public void addAllowedUser(String user) {
-    if (StringUtils.isBlank(user)) {
+    if (isBlank(user)) {
       return;
     }
     if (allowedUsers.contains(WILDCARD_ACL_VALUE)) {
