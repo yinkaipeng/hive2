@@ -199,11 +199,11 @@ STAGE PLANS:
             Statistics: Num rows: 12288 Data size: 110088 Basic stats: COMPLETE Column stats: COMPLETE
             Filter Operator
               predicate: (cfloat is null and cbigint is null) (type: boolean)
-              Statistics: Num rows: 790 Data size: 7092 Basic stats: COMPLETE Column stats: COMPLETE
+              Statistics: Num rows: 3115 Data size: 27912 Basic stats: COMPLETE Column stats: COMPLETE
               Select Operator
                 expressions: null (type: float), null (type: bigint), 0.0 (type: float)
                 outputColumnNames: _col0, _col1, _col2
-                Statistics: Num rows: 790 Data size: 3172 Basic stats: COMPLETE Column stats: COMPLETE
+                Statistics: Num rows: 3115 Data size: 12472 Basic stats: COMPLETE Column stats: COMPLETE
                 Limit
                   Number of rows: 10
                   Statistics: Num rows: 10 Data size: 52 Basic stats: COMPLETE Column stats: COMPLETE
@@ -357,11 +357,11 @@ STAGE PLANS:
             Statistics: Num rows: 12288 Data size: 110088 Basic stats: COMPLETE Column stats: COMPLETE
             Filter Operator
               predicate: (cfloat is null and cbigint is null) (type: boolean)
-              Statistics: Num rows: 790 Data size: 7092 Basic stats: COMPLETE Column stats: COMPLETE
+              Statistics: Num rows: 3115 Data size: 27912 Basic stats: COMPLETE Column stats: COMPLETE
               Select Operator
                 expressions: null (type: float), null (type: bigint), null (type: float)
                 outputColumnNames: _col0, _col1, _col2
-                Statistics: Num rows: 790 Data size: 16 Basic stats: COMPLETE Column stats: COMPLETE
+                Statistics: Num rows: 3115 Data size: 16 Basic stats: COMPLETE Column stats: COMPLETE
                 Limit
                   Number of rows: 10
                   Statistics: Num rows: 10 Data size: 16 Basic stats: COMPLETE Column stats: COMPLETE
