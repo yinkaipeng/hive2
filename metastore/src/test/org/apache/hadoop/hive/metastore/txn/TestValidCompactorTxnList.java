@@ -89,11 +89,11 @@ public class TestValidCompactorTxnList {
   public void readFromString() {
     ValidCompactorTxnList txns = new ValidCompactorTxnList("37:" + Long.MAX_VALUE + ":7:9:10");
     Assert.assertEquals(37L, txns.getHighWatermark());
-    Assert.assertEquals(Long.MAX_VALUE, txns.getMinOpenTxn());
+    Assert.assertNull(txns.getMinOpenTxn());
     Assert.assertArrayEquals(new long[]{7L, 9L, 10L}, txns.getInvalidTransactions());
     txns = new ValidCompactorTxnList("21:" + Long.MAX_VALUE + ":");
     Assert.assertEquals(21L, txns.getHighWatermark());
-    Assert.assertEquals(Long.MAX_VALUE, txns.getMinOpenTxn());
+    Assert.assertNull(txns.getMinOpenTxn());
     Assert.assertEquals(0, txns.getInvalidTransactions().length);
   }
 }

@@ -89,4 +89,9 @@ public interface ValidTxnList {
    * @return a list of invalid transaction ids
    */
   public long[] getInvalidTransactions();
+
+  /**
+   * Returns smallest Open transaction in this set, {@code null} if there is none.
+   */
+  Long getMinOpenTxn();
 }

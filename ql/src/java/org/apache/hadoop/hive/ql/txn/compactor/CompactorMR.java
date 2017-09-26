@@ -258,7 +258,13 @@ public class CompactorMR {
     if (parsedDeltas.isEmpty() &&
         (dir.getOriginalFiles() == null || dir.getOriginalFiles().isEmpty())) {
       // Skip compaction if there's no delta files AND there's no original files
-      LOG.error("No delta files or original files found to compact in " + sd.getLocation());
+      String minOpenInfo = ".";
+      if(txns.getMinOpenTxn() != null) {
+        minOpenInfo = " with min Open " + JavaUtils.txnIdToString(txns.getMinOpenTxn()) +
+          ".  Compaction cannot compact above this txnid";
+      }
+      LOG.error("No delta files or original files found to compact in " + sd.getLocation() +
+        " for compactionId=" + ci.id + minOpenInfo);
       return;
     }
 
