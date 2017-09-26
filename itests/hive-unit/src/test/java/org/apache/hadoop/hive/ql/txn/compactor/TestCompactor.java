@@ -860,7 +860,6 @@ public class TestCompactor {
   /**
    * Users have the choice of specifying compaction related tblproperties either in CREATE TABLE
    * statement or in ALTER TABLE .. COMPACT statement. This tests both cases.
-   * @throws Exception
    */
   @Test
   public void testTableProperties() throws Exception {
@@ -1028,6 +1027,9 @@ public class TestCompactor {
       public void readFromString(String src) {
 
       }
+
+      @Override
+      public Long getMinOpenTxn() { return null; }
 
       @Override
       public long getHighWatermark() {
