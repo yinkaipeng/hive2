@@ -48,6 +48,8 @@ import org.apache.hadoop.hive.ql.WindowsPathUtil;
 import org.apache.hadoop.hive.ql.exec.repl.ReplDumpWork;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
 import org.apache.hadoop.hive.ql.session.SessionState;
+import org.apache.hadoop.hive.shims.Utils;
+import org.apache.hadoop.security.authorize.ProxyUsers;
 import org.apache.hive.hcatalog.api.repl.ReplicationV1CompatRule;
 import org.apache.hadoop.util.Shell;
 import org.apache.thrift.TException;
@@ -93,6 +95,7 @@ public class TestReplicationScenarios {
   private static int msPort;
   private static Driver driver;
   private static HiveMetaStoreClient metaStoreClient;
+  private static String proxySettingName;
   static HiveConf hconfMirror;
   static int msPortMirror;
   static Driver driverMirror;
@@ -135,6 +138,8 @@ public class TestReplicationScenarios {
     hconf.setVar(HiveConf.ConfVars.REPLCMDIR, TEST_PATH + "/cmroot/");
     hconf.setBoolVar(HiveConf.ConfVars.REPLCMENABLED, true);
     hconf.setBoolVar(HiveConf.ConfVars.FIRE_EVENTS_FOR_DML, true);
+    proxySettingName = "hadoop.proxyuser." + Utils.getUGI().getShortUserName() + ".hosts";
+    hconf.set(proxySettingName, "*");
     msPort = MetaStoreUtils.startMetaStore(hconf);
     hconf.setVar(HiveConf.ConfVars.REPLDIR,TEST_PATH + "/hrepl/");
     hconf.setVar(HiveConf.ConfVars.METASTOREURIS, "thrift://localhost:"
@@ -3168,6 +3173,40 @@ public class TestReplicationScenarios {
     assertFalse(new AndFilter(no, yes, no).accept(dummyEvent));
     assertFalse(new AndFilter(no, no, yes).accept(dummyEvent));
     assertFalse(new AndFilter(no, no, no).accept(dummyEvent));
+  }
+
+  @Test
+  public void testAuthForNotificationAPIs() throws Exception {
+    // Setup
+    long firstEventId = metaStoreClient.getCurrentNotificationEventId().getEventId();
+    String dbName = "testAuthForNotificationAPIs";
+    driver.run("create database " + dbName);
+    NotificationEventResponse rsp = metaStoreClient.getNextNotification(firstEventId, 0, null);
+    assertEquals(1, rsp.getEventsSize());
+    // Test various scenarios
+    // Remove the proxy privilege and the auth should fail (in reality the proxy setting should not be changed on the fly)
+    hconf.unset(proxySettingName);
+    // Need to explicitly update ProxyUsers
+    ProxyUsers.refreshSuperUserGroupsConfiguration(hconf);
+    // Verify if the auth should fail
+    Exception ex = null;
+    try {
+      rsp = metaStoreClient.getNextNotification(firstEventId, 0, null);
+    } catch (TException e) {
+      ex = e;
+    }
+    assertNotNull(ex);
+    // Disable auth so the call should succeed
+    hconf.setBoolVar(HiveConf.ConfVars.METASTORE_EVENT_DB_NOTIFICATION_API_AUTH, false);
+    try {
+      rsp = metaStoreClient.getNextNotification(firstEventId, 0, null);
+      assertEquals(1, rsp.getEventsSize());
+    } finally {
+      // Restore the settings
+      hconf.setBoolVar(HiveConf.ConfVars.METASTORE_EVENT_DB_NOTIFICATION_API_AUTH, true);
+      hconf.set(proxySettingName, "*");
+      ProxyUsers.refreshSuperUserGroupsConfiguration(hconf);
+    }
   }
 
   private NotificationEvent createDummyEvent(String dbname, String tblname, long evid) {

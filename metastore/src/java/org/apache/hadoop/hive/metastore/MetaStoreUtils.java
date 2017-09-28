@@ -31,6 +31,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -98,6 +99,9 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge;
+import org.apache.hadoop.security.authorize.DefaultImpersonationProvider;
+import org.apache.hadoop.security.authorize.ProxyUsers;
+import org.apache.hadoop.util.MachineList;
 import org.apache.hive.common.util.HiveStringUtils;
 import org.apache.hive.common.util.ReflectionUtil;
 
@@ -2007,7 +2011,29 @@ public class MetaStoreUtils {
     }
     return metaException;
   }
-  
+
+  /**
+   * Verify if the user is allowed to make DB notification related calls.
+   * Only the superusers defined in the Hadoop proxy user settings have the permission.
+   *
+   * @param user the short user name
+   * @param config that contains the proxy user settings
+   * @return if the user has the permission
+   */
+  public static boolean checkUserHasHostProxyPrivileges(String user, Configuration conf, String ipAddress) {
+    DefaultImpersonationProvider sip = ProxyUsers.getDefaultImpersonationProvider();
+    // Just need to initialize the ProxyUsers for the first time, given that the conf will not change on the fly
+    if (sip == null) {
+      ProxyUsers.refreshSuperUserGroupsConfiguration(conf);
+      sip = ProxyUsers.getDefaultImpersonationProvider();
+    }
+    Map<String, Collection<String>> proxyHosts = sip.getProxyHosts();
+    Collection<String> hostEntries = proxyHosts.get(sip.getProxySuperuserIpConfKey(user));
+    MachineList machineList = new MachineList(hostEntries);
+    ipAddress = (ipAddress == null) ? StringUtils.EMPTY : ipAddress;
+    return machineList.includes(ipAddress);
+  }
+
   // ColumnStatisticsObj with info about its db, table, partition (if table is partitioned)
   public static class ColStatsObjWithSourceInfo {
     private final ColumnStatisticsObj colStatsObj;
