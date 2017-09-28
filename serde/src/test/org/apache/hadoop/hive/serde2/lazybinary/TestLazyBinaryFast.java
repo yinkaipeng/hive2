@@ -242,14 +242,15 @@ public class TestLazyBinaryFast extends TestCase {
     String fieldNames = ObjectInspectorUtils.getFieldNames(rowStructObjectInspector);
     String fieldTypes = ObjectInspectorUtils.getFieldTypes(rowStructObjectInspector);
 
-    SerDe serde = TestLazyBinarySerDe.getSerDe(fieldNames, fieldTypes);
+    TestLazyBinarySerDe testLazyBinarySerDe = new TestLazyBinarySerDe();
+    SerDe serde = testLazyBinarySerDe.getSerDe(fieldNames, fieldTypes);
 
     SerDe serde_fewer = null;
     if (doWriteFewerColumns) {
       String partialFieldNames = ObjectInspectorUtils.getFieldNames(writeRowStructObjectInspector);
       String partialFieldTypes = ObjectInspectorUtils.getFieldTypes(writeRowStructObjectInspector);
 
-        serde_fewer = TestLazyBinarySerDe.getSerDe(partialFieldNames, partialFieldTypes);;
+        serde_fewer = testLazyBinarySerDe.getSerDe(partialFieldNames, partialFieldTypes);;
     }
 
     testLazyBinaryFast(
