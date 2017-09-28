@@ -168,8 +168,6 @@ class LlapRecordReader
     feedback = rp = cvp.createReadPipeline(this, split, columnIds, sarg, columnNames,
         counters, schema, sourceInputFormat, sourceSerDe, reporter, job,
         mapWork.getPathToPartitionInfo());
-    LOG.info("DBG: schema: {} len: {} readerSchema: {} len: {}", schema, schema.getMaximumId(), rp.getReaderSchema(),
-      rp.getReaderSchema().getMaximumId());
     fileSchema = rp.getFileSchema();
     includedColumns = rp.getIncludedColumns();
   }
