@@ -391,6 +391,7 @@ TOK_REPL_DUMP;
 TOK_REPL_LOAD;
 TOK_REPL_STATUS;
 TOK_TO;
+TOK_KILL_QUERY;
 }
 
 
@@ -553,6 +554,8 @@ import org.apache.hadoop.hive.conf.HiveConf;
     xlateMap.put("KW_NORELY", "NORELY");
     xlateMap.put("KW_ABORT", "ABORT");
     xlateMap.put("KW_TRANSACTIONS", "TRANSACTIONS");
+    xlateMap.put("KW_KILL", "KILL");
+    xlateMap.put("KW_QUERY", "QUERY");
 
     // Operators
     xlateMap.put("DOT", ".");
@@ -858,6 +861,7 @@ ddlStatement
     | setRole
     | showCurrentRole
     | abortTransactionStatement
+    | killQueryStatement
     ;
 
 ifExists
@@ -2739,3 +2743,10 @@ updateOrDelete
 /*
 END SQL Merge statement
 */
+
+killQueryStatement
+@init { pushMsg("kill query statement", state); }
+@after { popMsg(state); }
+  :
+  KW_KILL KW_QUERY ( StringLiteral )+ -> ^(TOK_KILL_QUERY ( StringLiteral )+)
+  ;

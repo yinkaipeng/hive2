@@ -36,6 +36,7 @@ import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Schema;
 import org.apache.hadoop.hive.ql.session.OperationLog;
+import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hive.service.AbstractService;
 import org.apache.hive.service.cli.FetchOrientation;
 import org.apache.hive.service.cli.HiveSQLException;
@@ -62,6 +63,8 @@ public class OperationManager extends AbstractService {
   private final Logger LOG = LoggerFactory.getLogger(OperationManager.class.getName());
   private final ConcurrentHashMap<OperationHandle, Operation> handleToOperation =
       new ConcurrentHashMap<OperationHandle, Operation>();
+  private final ConcurrentHashMap<String, Operation> queryIdOperation =
+      new ConcurrentHashMap<String, Operation>();
 
   //Following fields for displaying queries on WebUI
   private Object webuiLock = new Object();
@@ -199,7 +202,12 @@ public class OperationManager extends AbstractService {
     return handleToOperation.get(operationHandle);
   }
 
+  private String getQueryId(Operation operation) {
+    return operation.getParentSession().getHiveConf().getVar(ConfVars.HIVEQUERYID);
+  }
+
   private void addOperation(Operation operation) {
+    queryIdOperation.put(getQueryId(operation), operation);
     handleToOperation.put(operation.getHandle(), operation);
     if (operation instanceof SQLOperation) {
       synchronized (webuiLock) {
@@ -211,6 +219,7 @@ public class OperationManager extends AbstractService {
 
   private Operation removeOperation(OperationHandle opHandle) {
     Operation operation = handleToOperation.remove(opHandle);
+    queryIdOperation.remove(getQueryId(operation));
     if (operation instanceof SQLOperation) {
       removeSaveSqlOperationDisplay(opHandle);
     }
@@ -230,11 +239,7 @@ public class OperationManager extends AbstractService {
         }
       }
 
-      handleToOperation.remove(operationHandle, operation);
-      if (operation instanceof SQLOperation) {
-        removeSaveSqlOperationDisplay(operationHandle);
-      }
-      return operation;
+      return removeOperation(operationHandle);
     }
     return null;
   }
@@ -424,5 +429,9 @@ public class OperationManager extends AbstractService {
       }
       return historicSqlOperations.get(handle);
     }
+  }
+
+  public Operation getOperationByQueryId(String queryId) {
+    return queryIdOperation.get(queryId);
   }
 }

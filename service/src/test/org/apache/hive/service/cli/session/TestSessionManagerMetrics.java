@@ -52,8 +52,7 @@ public class TestSessionManagerMetrics {
     conf.setBoolVar(HiveConf.ConfVars.HIVEOPTIMIZEMETADATAQUERIES, false);
     MetricsFactory.init(conf);
 
-    HiveServer2 hs2 = new HiveServer2();
-    sm = new SessionManager(hs2);
+    sm = new SessionManager(null);
     sm.init(conf);
 
     metrics = (CodahaleMetrics) MetricsFactory.getInstance();
