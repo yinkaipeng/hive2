@@ -694,7 +694,6 @@ public class Hive {
     try {
       validatePartition(newPart);
       getSynchronizedMSC().alter_partition(dbName, tblName, newPart.getTPartition(), environmentContext);
-
     } catch (MetaException e) {
       throw new HiveException("Unable to alter partition. " + e.getMessage(), e);
     } catch (TException e) {
@@ -2106,7 +2105,7 @@ private void constructOneLBLocationMap(FileStatus fSta,
       Table tbl, AddPartitionDesc.OnePartitionDesc addSpec) throws HiveException {
     Path location = addSpec.getLocation() != null
         ? new Path(tbl.getPath(), addSpec.getLocation()) : null;
-    if (location !=null && !Utilities.isDefaultNameNode(conf)) {
+    if (location != null) {
       // Ensure that it is a full qualified path (in most cases it will be since tbl.getPath() is full qualified)
       location = new Path(Utilities.getQualifiedPath(conf, location));
     }
