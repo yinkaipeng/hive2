@@ -411,9 +411,10 @@ class EncodedReaderImpl implements EncodedReader {
       }
     }
 
+    // 4. Finally, decompress data, map per RG, and return to caller.
+    // We go by RG and not by column because that is how data is processed.
+    boolean hasError = true;
     try {
-      // 4. Finally, decompress data, map per RG, and return to caller.
-      // We go by RG and not by column because that is how data is processed.
       int rgCount = (int)Math.ceil((double)stripe.getNumberOfRows() / rowIndexStride);
       for (int rgIx = 0; rgIx < rgCount; ++rgIx) {
         if (rgs != null && !rgs[rgIx]) {
@@ -423,7 +424,7 @@ class EncodedReaderImpl implements EncodedReader {
         // Create the batch we will use to return data for this RG.
         OrcEncodedColumnBatch ecb = POOLS.ecbPool.take();
         trace.logStartRg(rgIx);
-        boolean hasError = true;
+        boolean hasErrorForEcb = true;
         try {
           ecb.init(fileKey, stripeIx, rgIx, included.length);
           for (int colIx = 0; colIx < colCtxs.length; ++colIx) {
@@ -499,10 +500,14 @@ class EncodedReaderImpl implements EncodedReader {
               }
             }
           }
-          hasError = false;
+          hasErrorForEcb = false;
         } finally {
-          if (hasError) {
-            releaseEcbRefCountsOnError(ecb);
+          if (hasErrorForEcb) {
+            try {
+              releaseEcbRefCountsOnError(ecb);
+            } catch (Throwable t) {
+              LOG.error("Error during the cleanup of an error; ignoring", t);
+            }
           }
         }
         // After this, the non-initial refcounts are the responsibility of the consumer.
@@ -514,41 +519,45 @@ class EncodedReaderImpl implements EncodedReader {
             + RecordReaderUtils.stringifyDiskRanges(toRead.next));
       }
       trace.logRanges(fileKey, stripeOffset, toRead.next, RangesSrc.PREREAD);
+      hasError = false;
     } finally {
-      // Release the unreleased stripe-level buffers. See class comment about refcounts.
-      for (int colIx = 0; colIx < colCtxs.length; ++colIx) {
-        ColumnReadContext ctx = colCtxs[colIx];
-        if (ctx == null) continue; // This column is not included.
-        for (int streamIx = 0; streamIx < ctx.streamCount; ++streamIx) {
-          StreamContext sctx = ctx.streams[streamIx];
-          if (sctx == null || sctx.stripeLevelStream == null) continue;
-          if (0 != sctx.stripeLevelStream.decRef()) continue;
-          // Note - this is a little bit confusing; the special treatment of stripe-level buffers
-          // is because we run the ColumnStreamData refcount one ahead (as specified above). It
-          // may look like this would release the buffers too many times (one release from the
-          // consumer, one from releaseInitialRefcounts below, and one here); however, this is
-          // merely handling a special case where all the batches that are sharing the stripe-
-          // level stream have been processed before we got here; they have all decRef-ed the CSD,
-          // but have not released the buffers because of that extra refCount. So, this is
-          // essentially the "consumer" refcount being released here.
-          for (MemoryBuffer buf : sctx.stripeLevelStream.getCacheBuffers()) {
-            if (LOG.isTraceEnabled()) {
-              LOG.trace("Unlocking {} at the end of processing", buf);
+      try {
+        // Release the unreleased stripe-level buffers. See class comment about refcounts.
+        for (int colIx = 0; colIx < colCtxs.length; ++colIx) {
+          ColumnReadContext ctx = colCtxs[colIx];
+          if (ctx == null) continue; // This column is not included.
+          for (int streamIx = 0; streamIx < ctx.streamCount; ++streamIx) {
+            StreamContext sctx = ctx.streams[streamIx];
+            if (sctx == null || sctx.stripeLevelStream == null) continue;
+            if (0 != sctx.stripeLevelStream.decRef()) continue;
+            // Note - this is a little bit confusing; the special treatment of stripe-level buffers
+            // is because we run the ColumnStreamData refcount one ahead (as specified above). It
+            // may look like this would release the buffers too many times (one release from the
+            // consumer, one from releaseInitialRefcounts below, and one here); however, this is
+            // merely handling a special case where all the batches that are sharing the stripe-
+            // level stream have been processed before we got here; they have all decRef-ed the CSD,
+            // but have not released the buffers because of that extra refCount. So, this is
+            // essentially the "consumer" refcount being released here.
+            for (MemoryBuffer buf : sctx.stripeLevelStream.getCacheBuffers()) {
+              if (LOG.isTraceEnabled()) {
+                LOG.trace("Unlocking {} at the end of processing", buf);
+              }
+              cacheWrapper.releaseBuffer(buf);
             }
-            cacheWrapper.releaseBuffer(buf);
           }
         }
-      }
-
-      releaseInitialRefcounts(toRead.next);
-      // Release buffers as we are done with all the streams... also see toRelease comment.
-      if (toRelease != null) {
-        releaseBuffers(toRelease.keySet(), true);
+        releaseInitialRefcounts(toRead.next);
+        // Release buffers as we are done with all the streams... also see toRelease comment.
+        if (toRelease != null) {
+          releaseBuffers(toRelease.keySet(), true);
+        }
+      } catch (Throwable t) {
+        if (!hasError) throw new IOException(t);
+        LOG.error("Error during the cleanup after another error; ignoring", t);
       }
     }
     releaseCacheChunksIntoObjectPool(toRead.next);
   }
-
 
   private void releaseEcbRefCountsOnError(OrcEncodedColumnBatch ecb) {
     if (isTracingEnabled) {
@@ -599,6 +608,18 @@ class EncodedReaderImpl implements EncodedReader {
     while (current != null) {
       DiskRangeList toFree = current;
       current = current.next;
+      if (toFree instanceof ProcCacheChunk) {
+        ProcCacheChunk pcc = (ProcCacheChunk)toFree;
+        if (pcc.originalData != null) {
+          // This can only happen in case of failure - we read some data, but didn't decompress
+          // it. Deallocate the buffer directly, do not decref.
+          if (pcc.getBuffer() != null) {
+            cacheWrapper.getAllocator().deallocate(pcc.getBuffer());
+          }
+          continue;
+        }
+        
+      }
       if (!(toFree instanceof CacheChunk)) continue;
       CacheChunk cc = (CacheChunk)toFree;
       if (cc.getBuffer() == null) continue;
@@ -816,11 +837,16 @@ class EncodedReaderImpl implements EncodedReader {
         copyUncompressedChunk(chunk.originalData, dest);
       }
 
-      chunk.originalData = null;
       if (isTracingEnabled) {
         LOG.trace("Locking " + chunk.getBuffer() + " due to reuse (after decompression)");
       }
-      cacheWrapper.reuseBuffer(chunk.getBuffer());
+      // After we set originalData to null, we incref the buffer and the cleanup would decref it.
+      // Note that this assumes the failure during incref means incref didn't occur.
+      try {
+        cacheWrapper.reuseBuffer(chunk.getBuffer());
+      } finally {
+        chunk.originalData = null;
+      }
     }
 
     // 5. Release the copies we made directly to the cleaner.
