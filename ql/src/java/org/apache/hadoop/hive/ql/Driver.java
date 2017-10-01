@@ -174,6 +174,19 @@ public class Driver implements CommandProcessor {
   // Query specific info
   private QueryState queryState;
 
+  // Transaction manager the Driver has been initialized with (can be null).
+  // If this is set then this Transaction manager will be used during query
+  // compilation/execution rather than using the current session's transaction manager.
+  // This might be needed in a situation where a Driver is nested within an already
+  // running Driver/query - the nested Driver requires a separate transaction manager
+  // so as not to conflict with the outer Driver/query which is using the session
+  // transaction manager.
+  private final HiveTxnManager initTxnMgr;
+
+  // Transaction manager used for the query. This will be set at compile time based on
+  // either initTxnMgr or from the SessionState, in that order.
+  private HiveTxnManager queryTxnMgr;
+
   private boolean checkConcurrency() {
     boolean supportConcurrency = conf.getBoolVar(HiveConf.ConfVars.HIVE_SUPPORT_CONCURRENCY);
     if (!supportConcurrency) {
@@ -317,12 +330,21 @@ public class Driver implements CommandProcessor {
     this(new QueryState(conf), userName);
   }
 
+  public Driver(HiveConf conf, HiveTxnManager txnMgr) {
+    this(new QueryState(conf), null, txnMgr);
+  }
+
   public Driver(QueryState queryState, String userName) {
+    this(queryState, userName, null);
+  }
+
+  public Driver(QueryState queryState, String userName, HiveTxnManager txnMgr) {
     this.queryState = queryState;
     this.conf = queryState.getConf();
     isParallelEnabled = (conf != null)
         && HiveConf.getBoolVar(conf, ConfVars.HIVE_SERVER2_PARALLEL_COMPILATION);
     this.userName = userName;
+    this.initTxnMgr = txnMgr;
   }
 
   /**
@@ -386,16 +408,22 @@ public class Driver implements CommandProcessor {
     HadoopShims shim = ShimLoader.getHadoopShims();
     try {
       // Initialize the transaction manager.  This must be done before analyze is called.
-      final HiveTxnManager txnManager = SessionState.get().initTxnMgr(conf);
-      // In case when user Ctrl-C twice to kill Hive CLI JVM, we want to release locks
+      if (initTxnMgr != null) {
+        queryTxnMgr = initTxnMgr;
+      } else {
+        queryTxnMgr = SessionState.get().initTxnMgr(conf);
+      }
+      queryState.setTxnManager(queryTxnMgr);
 
+      // In case when user Ctrl-C twice to kill Hive CLI JVM, we want to release locks
       // if compile is being called multiple times, clear the old shutdownhook
       ShutdownHookManager.removeShutdownHook(shutdownRunner);
+      final HiveTxnManager txnMgr = queryTxnMgr;
       shutdownRunner = new Runnable() {
         @Override
         public void run() {
           try {
-            releaseLocksAndCommitOrRollback(false, txnManager);
+            releaseLocksAndCommitOrRollback(false, txnMgr);
           } catch (LockException e) {
             LOG.warn("Exception when releasing locks in ShutdownHook for Driver: " +
                 e.getMessage());
@@ -933,8 +961,7 @@ public class Driver implements CommandProcessor {
 
   // Write the current set of valid transactions into the conf file so that it can be read by
   // the input format.
-  private void recordValidTxns() throws LockException {
-    HiveTxnManager txnMgr = SessionState.get().getTxnMgr();
+  private void recordValidTxns(HiveTxnManager txnMgr) throws LockException {
     ValidTxnList txns = txnMgr.getValidTxns();
     String txnStr = txns.toString();
     conf.set(ValidTxnList.VALID_TXNS_KEY, txnStr);
@@ -963,10 +990,8 @@ public class Driver implements CommandProcessor {
     PerfLogger perfLogger = SessionState.getPerfLogger();
     perfLogger.PerfLogBegin(CLASS_NAME, PerfLogger.ACQUIRE_READ_WRITE_LOCKS);
 
-    SessionState ss = SessionState.get();
-    HiveTxnManager txnMgr = ss.getTxnMgr();
     if(startTxnImplicitly) {
-      assert !txnMgr.getAutoCommit();
+      assert !queryTxnMgr.getAutoCommit();
     }
 
     try {
@@ -986,25 +1011,25 @@ public class Driver implements CommandProcessor {
 
       boolean initiatingTransaction = false;
       boolean readOnlyQueryInAutoCommit = false;
-      if((txnMgr.getAutoCommit() && haveAcidWrite()) || plan.getOperation() == HiveOperation.START_TRANSACTION ||
-        (!txnMgr.getAutoCommit() && startTxnImplicitly)) {
-        if(txnMgr.isTxnOpen()) {
-          throw new RuntimeException("Already have an open transaction txnid:" + txnMgr.getCurrentTxnId());
+      if((queryTxnMgr.getAutoCommit() && haveAcidWrite()) || plan.getOperation() == HiveOperation.START_TRANSACTION ||
+        (!queryTxnMgr.getAutoCommit() && startTxnImplicitly)) {
+        if(queryTxnMgr.isTxnOpen()) {
+          throw new RuntimeException("Already have an open transaction txnid:" + queryTxnMgr.getCurrentTxnId());
         }
         // We are writing to tables in an ACID compliant way, so we need to open a transaction
-        txnMgr.openTxn(ctx, userFromUGI);
+        queryTxnMgr.openTxn(ctx, userFromUGI);
         initiatingTransaction = true;
       }
       else {
-        readOnlyQueryInAutoCommit = txnMgr.getAutoCommit() && plan.getOperation() == HiveOperation.QUERY && !haveAcidWrite();
+        readOnlyQueryInAutoCommit = queryTxnMgr.getAutoCommit() && plan.getOperation() == HiveOperation.QUERY && !haveAcidWrite();
       }
       // Set the transaction id in all of the acid file sinks
       if (haveAcidWrite()) {
         for (FileSinkDesc desc : acidSinks) {
-          desc.setTransactionId(txnMgr.getCurrentTxnId());
+          desc.setTransactionId(queryTxnMgr.getCurrentTxnId());
           //it's possible to have > 1 FileSink writing to the same table/partition
           //e.g. Merge stmt, multi-insert stmt when mixing DP and SP writes
-          desc.setStatementId(txnMgr.getWriteIdAndIncrement());
+          desc.setStatementId(queryTxnMgr.getWriteIdAndIncrement());
         }
       }
       /*Note, we have to record snapshot after lock acquisition to prevent lost update problem
@@ -1013,13 +1038,13 @@ public class Driver implements CommandProcessor {
       see the changes made by 1st one.  This takes care of autoCommit=true case.
       For multi-stmt txns this is not sufficient and will be managed via WriteSet tracking
       in the lock manager.*/
-      txnMgr.acquireLocks(plan, ctx, userFromUGI);
+      queryTxnMgr.acquireLocks(plan, ctx, userFromUGI);
       if(initiatingTransaction || (readOnlyQueryInAutoCommit && acidInQuery)) {
         //For multi-stmt txns we should record the snapshot when txn starts but
         // don't update it after that until txn completes.  Thus the check for {@code initiatingTransaction}
         //For autoCommit=true, Read-only statements, txn is implicit, i.e. lock in the snapshot
         //for each statement.
-        recordValidTxns();
+        recordValidTxns(queryTxnMgr);
       }
 
       return 0;
@@ -1035,9 +1060,69 @@ public class Driver implements CommandProcessor {
     }
   }
 
+  /**
+   * Wrap logic for startTxnImplicitly that is used for acquireLocksAndOpenTxn()
+   * @return null if successful, CommandProcessorResponse with error code if failed
+   */
+  private CommandProcessorResponse acquireLocks() {
+    boolean startTxnImplicitly = false;
+    int ret = 0;
+    {
+      //this block ensures op makes sense in given context, e.g. COMMIT is valid only if txn is open
+      //DDL is not allowed in a txn, etc.
+      //an error in an open txn does a rollback of the txn
+      if (queryTxnMgr.isTxnOpen() && !plan.getOperation().isAllowedInTransaction()) {
+        assert !queryTxnMgr.getAutoCommit() : "didn't expect AC=true";
+        return rollback(new CommandProcessorResponse(12, ErrorMsg.OP_NOT_ALLOWED_IN_TXN, null,
+          plan.getOperationName(), Long.toString(queryTxnMgr.getCurrentTxnId())));
+      }
+      if(!queryTxnMgr.isTxnOpen() && plan.getOperation().isRequiresOpenTransaction()) {
+        return rollback(new CommandProcessorResponse(12, ErrorMsg.OP_NOT_ALLOWED_WITHOUT_TXN, null, plan.getOperationName()));
+      }
+      if(!queryTxnMgr.isTxnOpen() && plan.getOperation() == HiveOperation.QUERY && !queryTxnMgr.getAutoCommit()) {
+        //this effectively makes START TRANSACTION optional and supports JDBC setAutoCommit(false) semantics
+        //also, indirectly allows DDL to be executed outside a txn context
+        startTxnImplicitly = true;
+      }
+      if(queryTxnMgr.getAutoCommit() && plan.getOperation() == HiveOperation.START_TRANSACTION) {
+          return rollback(new CommandProcessorResponse(12, ErrorMsg.OP_NOT_ALLOWED_IN_AUTOCOMMIT, null, plan.getOperationName()));
+      }
+    }
+    if(plan.getOperation() == HiveOperation.SET_AUTOCOMMIT) {
+      try {
+        if(plan.getAutoCommitValue() && !queryTxnMgr.getAutoCommit()) {
+          /*here, if there is an open txn, we want to commit it; this behavior matches
+          * https://docs.oracle.com/javase/6/docs/api/java/sql/Connection.html#setAutoCommit(boolean)*/
+          releaseLocksAndCommitOrRollback(true);
+          queryTxnMgr.setAutoCommit(true);
+        }
+        else if(!plan.getAutoCommitValue() && queryTxnMgr.getAutoCommit()) {
+          queryTxnMgr.setAutoCommit(false);
+        }
+        else {/*didn't change autoCommit value - no-op*/}
+      }
+      catch(LockException e) {
+        return handleHiveException(e, 12);
+      }
+    }
+
+    if (requiresLock()) {
+      ret = acquireLocksAndOpenTxn(startTxnImplicitly);
+      if (ret != 0) {
+        return rollback(createProcessorResponse(ret));
+      }
+    }
+    return null;
+  }
+
   private boolean haveAcidWrite() {
     return acidSinks != null && !acidSinks.isEmpty();
   }
+
+  public void releaseLocksAndCommitOrRollback(boolean commit) throws LockException {
+    releaseLocksAndCommitOrRollback(commit, queryTxnMgr);
+  }
+
   /**
    * @param commit if there is an open transaction and if true, commit,
    *               if false rollback.  If there is no open transaction this parameter is ignored.
@@ -1187,6 +1272,21 @@ public class Driver implements CommandProcessor {
     return createProcessorResponse(compileInternal(command));
   }
 
+  public CommandProcessorResponse lockAndRespond() {
+    // Assumes the query has already been compiled
+    if (plan == null) {
+      throw new IllegalStateException(
+          "No previously compiled query for driver - queryId=" + queryState.getQueryId());
+    }
+
+    CommandProcessorResponse response = acquireLocks();
+    if (response != null) {
+      return response;
+    }
+
+    return createProcessorResponse(0);
+  }
+
   private static final ReentrantLock globalCompileLock = new ReentrantLock();
   private int compileInternal(String command) {
     int ret;
@@ -1204,7 +1304,7 @@ public class Driver implements CommandProcessor {
 
     if (ret != 0) {
       try {
-        releaseLocksAndCommitOrRollback(false, null);
+        releaseLocksAndCommitOrRollback(false);
       } catch (LockException e) {
         LOG.warn("Exception in releasing locks. "
             + org.apache.hadoop.util.StringUtils.stringifyException(e));
@@ -1305,54 +1405,11 @@ public class Driver implements CommandProcessor {
     // the reason that we set the txn manager for the cxt here is because each
     // query has its own ctx object. The txn mgr is shared across the
     // same instance of Driver, which can run multiple queries.
-    HiveTxnManager txnManager = SessionState.get().getTxnMgr();
-    ctx.setHiveTxnManager(txnManager);
+    ctx.setHiveTxnManager(queryTxnMgr);
 
-    boolean startTxnImplicitly = false;
-    {
-      //this block ensures op makes sense in given context, e.g. COMMIT is valid only if txn is open
-      //DDL is not allowed in a txn, etc.
-      //an error in an open txn does a rollback of the txn
-      if (txnManager.isTxnOpen() && !plan.getOperation().isAllowedInTransaction()) {
-        assert !txnManager.getAutoCommit() : "didn't expect AC=true";
-        return rollback(new CommandProcessorResponse(12, ErrorMsg.OP_NOT_ALLOWED_IN_TXN, null,
-          plan.getOperationName(), Long.toString(txnManager.getCurrentTxnId())));
-      }
-      if(!txnManager.isTxnOpen() && plan.getOperation().isRequiresOpenTransaction()) {
-        return rollback(new CommandProcessorResponse(12, ErrorMsg.OP_NOT_ALLOWED_WITHOUT_TXN, null, plan.getOperationName()));
-      }
-      if(!txnManager.isTxnOpen() && plan.getOperation() == HiveOperation.QUERY && !txnManager.getAutoCommit()) {
-        //this effectively makes START TRANSACTION optional and supports JDBC setAutoCommit(false) semantics
-        //also, indirectly allows DDL to be executed outside a txn context
-        startTxnImplicitly = true;
-      }
-      if(txnManager.getAutoCommit() && plan.getOperation() == HiveOperation.START_TRANSACTION) {
-          return rollback(new CommandProcessorResponse(12, ErrorMsg.OP_NOT_ALLOWED_IN_AUTOCOMMIT, null, plan.getOperationName()));
-      }
-    }
-    if(plan.getOperation() == HiveOperation.SET_AUTOCOMMIT) {
-      try {
-        if(plan.getAutoCommitValue() && !txnManager.getAutoCommit()) {
-          /*here, if there is an open txn, we want to commit it; this behavior matches
-          * https://docs.oracle.com/javase/6/docs/api/java/sql/Connection.html#setAutoCommit(boolean)*/
-          releaseLocksAndCommitOrRollback(true, null);
-          txnManager.setAutoCommit(true);
-        }
-        else if(!plan.getAutoCommitValue() && txnManager.getAutoCommit()) {
-          txnManager.setAutoCommit(false);
-        }
-        else {/*didn't change autoCommit value - no-op*/}
-      }
-      catch(LockException e) {
-        return handleHiveException(e, 12);
-      }
-    }
-
-    if (requiresLock()) {
-      ret = acquireLocksAndOpenTxn(startTxnImplicitly);
-      if (ret != 0) {
-        return rollback(createProcessorResponse(ret));
-      }
+    CommandProcessorResponse lockResponse = acquireLocks();
+    if (lockResponse != null) {
+      return lockResponse;
     }
     ret = execute();
     if (ret != 0) {
@@ -1362,11 +1419,11 @@ public class Driver implements CommandProcessor {
 
     //if needRequireLock is false, the release here will do nothing because there is no lock
     try {
-      if(txnManager.getAutoCommit() || plan.getOperation() == HiveOperation.COMMIT) {
-        releaseLocksAndCommitOrRollback(true, null);
+      if(queryTxnMgr.getAutoCommit() || plan.getOperation() == HiveOperation.COMMIT) {
+        releaseLocksAndCommitOrRollback(true);
       }
       else if(plan.getOperation() == HiveOperation.ROLLBACK) {
-        releaseLocksAndCommitOrRollback(false, null);
+        releaseLocksAndCommitOrRollback(false);
       }
       else {
         //txn (if there is one started) is not finished
@@ -1399,7 +1456,7 @@ public class Driver implements CommandProcessor {
   private CommandProcessorResponse rollback(CommandProcessorResponse cpr) {
     //console.printError(cpr.toString());
     try {
-      releaseLocksAndCommitOrRollback(false, null);
+      releaseLocksAndCommitOrRollback(false);
     }
     catch (LockException e) {
       LOG.error("rollback() FAILED: " + cpr);//make sure not to loose
@@ -2067,7 +2124,7 @@ public class Driver implements CommandProcessor {
     destroyed = true;
     if (!hiveLocks.isEmpty()) {
       try {
-        releaseLocksAndCommitOrRollback(false, null);
+        releaseLocksAndCommitOrRollback(false);
       } catch (LockException e) {
         LOG.warn("Exception when releasing locking in destroy: " +
             e.getMessage());

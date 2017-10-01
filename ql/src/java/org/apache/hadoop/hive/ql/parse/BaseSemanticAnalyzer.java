@@ -62,6 +62,7 @@ import org.apache.hadoop.hive.ql.hooks.ReadEntity;
 import org.apache.hadoop.hive.ql.hooks.WriteEntity;
 import org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat;
 import org.apache.hadoop.hive.ql.lib.Node;
+import org.apache.hadoop.hive.ql.lockmgr.HiveTxnManager;
 import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.metadata.InvalidTableException;
@@ -75,6 +76,7 @@ import org.apache.hadoop.hive.ql.plan.FileSinkDesc;
 import org.apache.hadoop.hive.ql.plan.ListBucketingCtx;
 import org.apache.hadoop.hive.ql.plan.PlanUtils;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
+import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.ql.session.SessionState.LogHelper;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.io.DateWritable;
@@ -118,6 +120,8 @@ public abstract class BaseSemanticAnalyzer {
 
   // whether any ACID table is involved in a query
   protected boolean acidInQuery;
+
+  protected HiveTxnManager txnManager;
 
   public static int HIVE_COLUMN_ORDER_ASC = 1;
   public static int HIVE_COLUMN_ORDER_DESC = 0;
@@ -226,6 +230,7 @@ public abstract class BaseSemanticAnalyzer {
       idToTableNameMap = new HashMap<String, String>();
       inputs = new LinkedHashSet<ReadEntity>();
       outputs = new LinkedHashSet<WriteEntity>();
+      txnManager = queryState.getTxnManager();
     } catch (Exception e) {
       throw new SemanticException(e);
     }
@@ -1787,5 +1792,12 @@ public abstract class BaseSemanticAnalyzer {
             IgnoreKeyTextOutputFormat.class, prop), -1);
     fetch.setSerializationNullFormat(" ");
     return (FetchTask) TaskFactory.get(fetch, conf);
+  }
+
+  protected HiveTxnManager getTxnMgr() {
+    if (txnManager != null) {
+      return txnManager;
+    }
+    return SessionState.get().getTxnMgr();
   }
 }
