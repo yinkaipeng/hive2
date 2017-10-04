@@ -49,6 +49,7 @@ import org.apache.hadoop.hive.ql.parse.BaseSemanticAnalyzer.TableSpec;
 import org.apache.hadoop.hive.ql.parse.ExplainConfiguration.AnalyzeState;
 import org.apache.hadoop.hive.ql.plan.DynamicPartitionCtx;
 import org.apache.hadoop.hive.ql.plan.LoadTableDesc;
+import org.apache.hadoop.hive.ql.plan.LoadTableDesc.LoadFileType;
 import org.apache.hadoop.hive.ql.plan.StatsWork;
 import org.apache.hadoop.hive.ql.plan.api.StageType;
 import org.apache.hadoop.hive.ql.stats.StatsAggregator;
@@ -175,7 +176,8 @@ public class StatsTask extends Task<StatsWork> implements Serializable {
         if (work.getTableSpecs() == null && AcidUtils.isAcidTable(table)) {
           StatsSetupConst.setBasicStatsState(parameters, StatsSetupConst.FALSE);
         } else if (work.getTableSpecs() != null
-            || (work.getLoadTableDesc() != null && work.getLoadTableDesc().getReplace())
+            || (work.getLoadTableDesc() != null
+                && (work.getLoadTableDesc().getLoadFileType() == LoadFileType.REPLACE_ALL))
             || (work.getLoadFileDesc() != null && !work.getLoadFileDesc()
                 .getDestinationCreateTable().isEmpty())) {
           StatsSetupConst.setBasicStatsState(parameters, StatsSetupConst.TRUE);
@@ -225,7 +227,8 @@ public class StatsTask extends Task<StatsWork> implements Serializable {
           if (work.getTableSpecs() == null && AcidUtils.isAcidTable(table)) {
             StatsSetupConst.setBasicStatsState(parameters, StatsSetupConst.FALSE);
           } else if (work.getTableSpecs() != null
-              || (work.getLoadTableDesc() != null && work.getLoadTableDesc().getReplace())
+              || (work.getLoadTableDesc() != null
+                  && (work.getLoadTableDesc().getLoadFileType() == LoadFileType.REPLACE_ALL))
               || (work.getLoadFileDesc() != null && !work.getLoadFileDesc()
                   .getDestinationCreateTable().isEmpty())) {
             StatsSetupConst.setBasicStatsState(parameters, StatsSetupConst.TRUE);
@@ -350,7 +353,7 @@ public class StatsTask extends Task<StatsWork> implements Serializable {
         long longValue = Long.parseLong(value);
 
         if (work.getLoadTableDesc() != null &&
-            !work.getLoadTableDesc().getReplace()) {
+                (work.getLoadTableDesc().getLoadFileType() != LoadFileType.REPLACE_ALL)) {
           String originalValue = parameters.get(statType);
           if (originalValue != null) {
             longValue += Long.parseLong(originalValue); // todo: invalid + valid = invalid

@@ -33,7 +33,7 @@ import org.apache.hadoop.hive.ql.plan.Explain.Level;
 public class LoadTableDesc extends org.apache.hadoop.hive.ql.plan.LoadDesc
     implements Serializable {
   private static final long serialVersionUID = 1L;
-  private boolean replace;
+  private LoadFileType loadFileType;
   private DynamicPartitionCtx dpCtx;
   private ListBucketingCtx lbCtx;
   private boolean inheritTableSpecs = true; //For partitions, flag controlling whether the current
@@ -46,13 +46,19 @@ public class LoadTableDesc extends org.apache.hadoop.hive.ql.plan.LoadDesc
   private org.apache.hadoop.hive.ql.plan.TableDesc table;
   private Map<String, String> partitionSpec; // NOTE: this partitionSpec has to be ordered map
 
+  public enum LoadFileType {
+    REPLACE_ALL,        // Remove all existing data before copy/move
+    KEEP_EXISTING,      // If any file exist while copy, then just duplicate the file
+    OVERWRITE_EXISTING  // If any file exist while copy, then just overwrite the file
+  }
+
   public LoadTableDesc(final Path sourcePath,
       final org.apache.hadoop.hive.ql.plan.TableDesc table,
       final Map<String, String> partitionSpec,
-      final boolean replace,
+      final LoadFileType loadFileType,
       final AcidUtils.Operation writeType) {
     super(sourcePath);
-    init(table, partitionSpec, replace, writeType);
+    init(table, partitionSpec, loadFileType, writeType);
   }
 
   /**
@@ -60,20 +66,20 @@ public class LoadTableDesc extends org.apache.hadoop.hive.ql.plan.LoadDesc
    * @param sourcePath
    * @param table
    * @param partitionSpec
-   * @param replace
+   * @param loadFileType
    */
   public LoadTableDesc(final Path sourcePath,
                        final TableDesc table,
                        final Map<String, String> partitionSpec,
-                       final boolean replace) {
-    this(sourcePath, table, partitionSpec, replace, AcidUtils.Operation.NOT_ACID);
+                       final LoadFileType loadFileType) {
+    this(sourcePath, table, partitionSpec, loadFileType, AcidUtils.Operation.NOT_ACID);
   }
 
   public LoadTableDesc(final Path sourcePath,
       final org.apache.hadoop.hive.ql.plan.TableDesc table,
       final Map<String, String> partitionSpec,
       final AcidUtils.Operation writeType) {
-    this(sourcePath, table, partitionSpec, true, writeType);
+    this(sourcePath, table, partitionSpec, LoadFileType.REPLACE_ALL, writeType);
   }
 
   /**
@@ -85,7 +91,7 @@ public class LoadTableDesc extends org.apache.hadoop.hive.ql.plan.LoadDesc
   public LoadTableDesc(final Path sourcePath,
                        final org.apache.hadoop.hive.ql.plan.TableDesc table,
                        final Map<String, String> partitionSpec) {
-    this(sourcePath, table, partitionSpec, true, AcidUtils.Operation.NOT_ACID);
+    this(sourcePath, table, partitionSpec, LoadFileType.REPLACE_ALL, AcidUtils.Operation.NOT_ACID);
   }
 
   public LoadTableDesc(final Path sourcePath,
@@ -95,20 +101,20 @@ public class LoadTableDesc extends org.apache.hadoop.hive.ql.plan.LoadDesc
     super(sourcePath);
     this.dpCtx = dpCtx;
     if (dpCtx != null && dpCtx.getPartSpec() != null && partitionSpec == null) {
-      init(table, dpCtx.getPartSpec(), true, writeType);
+      init(table, dpCtx.getPartSpec(), LoadFileType.REPLACE_ALL, writeType);
     } else {
-      init(table, new LinkedHashMap<String, String>(), true, writeType);
+      init(table, new LinkedHashMap<String, String>(), LoadFileType.REPLACE_ALL, writeType);
     }
   }
 
   private void init(
       final org.apache.hadoop.hive.ql.plan.TableDesc table,
       final Map<String, String> partitionSpec,
-      final boolean replace,
+      final LoadFileType loadFileType,
       AcidUtils.Operation writeType) {
     this.table = table;
     this.partitionSpec = partitionSpec;
-    this.replace = replace;
+    this.loadFileType = loadFileType;
     this.writeType = writeType;
   }
 
@@ -132,11 +138,15 @@ public class LoadTableDesc extends org.apache.hadoop.hive.ql.plan.LoadDesc
 
   @Explain(displayName = "replace")
   public boolean getReplace() {
-    return replace;
+    return (loadFileType == LoadFileType.REPLACE_ALL);
   }
 
-  public void setReplace(boolean replace) {
-    this.replace = replace;
+  public LoadFileType getLoadFileType() {
+    return loadFileType;
+  }
+
+  public void setLoadFileType(LoadFileType loadFileType) {
+    this.loadFileType = loadFileType;
   }
 
   public DynamicPartitionCtx getDPCtx() {

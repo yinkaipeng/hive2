@@ -42,6 +42,7 @@ import org.apache.hadoop.hive.ql.parse.SemanticException;
 import org.apache.hadoop.hive.ql.parse.repl.ReplLogger;
 import org.apache.hadoop.hive.ql.plan.ImportTableDesc;
 import org.apache.hadoop.hive.ql.plan.LoadTableDesc;
+import org.apache.hadoop.hive.ql.plan.LoadTableDesc.LoadFileType;
 import org.apache.hadoop.hive.ql.plan.MoveWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -227,8 +228,7 @@ public class LoadTable {
 
     LoadTableDesc loadTableWork = new LoadTableDesc(
         tmpPath, Utilities.getTableDesc(table), new TreeMap<String, String>(),
-        replicationSpec.isReplace()
-    );
+        replicationSpec.isReplace() ? LoadFileType.REPLACE_ALL : LoadFileType.OVERWRITE_EXISTING);
     MoveWork moveWork =
         new MoveWork(new HashSet<ReadEntity>(), new HashSet<WriteEntity>(), loadTableWork, null,
             false);

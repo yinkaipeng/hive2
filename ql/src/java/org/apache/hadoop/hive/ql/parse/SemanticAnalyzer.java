@@ -191,6 +191,7 @@ import org.apache.hadoop.hive.ql.plan.LimitDesc;
 import org.apache.hadoop.hive.ql.plan.ListBucketingCtx;
 import org.apache.hadoop.hive.ql.plan.LoadFileDesc;
 import org.apache.hadoop.hive.ql.plan.LoadTableDesc;
+import org.apache.hadoop.hive.ql.plan.LoadTableDesc.LoadFileType;
 import org.apache.hadoop.hive.ql.plan.MapJoinDesc;
 import org.apache.hadoop.hive.ql.plan.OperatorDesc;
 import org.apache.hadoop.hive.ql.plan.PTFDesc;
@@ -6837,8 +6838,10 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
           checkAcidConstraints(qb, table_desc, dest_tab);
         }
         ltd = new LoadTableDesc(queryTmpdir, table_desc, dpCtx, acidOp);
-        ltd.setReplace(!qb.getParseInfo().isInsertIntoTable(dest_tab.getDbName(),
-            dest_tab.getTableName()));
+        LoadFileType loadType = (!qb.getParseInfo().isInsertIntoTable(dest_tab.getDbName(),
+                dest_tab.getTableName()))
+                ? LoadFileType.REPLACE_ALL : LoadFileType.KEEP_EXISTING;
+        ltd.setLoadFileType(loadType);
         ltd.setLbCtx(lbCtx);
         loadTableWork.add(ltd);
       } else {
@@ -6950,8 +6953,10 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         checkAcidConstraints(qb, table_desc, dest_tab);
       }
       ltd = new LoadTableDesc(queryTmpdir, table_desc, dest_part.getSpec(), acidOp);
-      ltd.setReplace(!qb.getParseInfo().isInsertIntoTable(dest_tab.getDbName(),
-          dest_tab.getTableName()));
+      LoadFileType loadType = (!qb.getParseInfo().isInsertIntoTable(dest_tab.getDbName(),
+              dest_tab.getTableName()))
+              ? LoadFileType.REPLACE_ALL : LoadFileType.KEEP_EXISTING;
+      ltd.setLoadFileType(loadType);
       ltd.setLbCtx(lbCtx);
 
       loadTableWork.add(ltd);
@@ -13421,8 +13426,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     // and don't have a rational way to guess, so assume the most
     // conservative case.
     if (isNonNativeTable) return WriteEntity.WriteType.INSERT_OVERWRITE;
-    else return (ltd.getReplace() ? WriteEntity.WriteType.INSERT_OVERWRITE :
-      getWriteType(dest));
+    else return ((ltd.getLoadFileType() == LoadFileType.REPLACE_ALL)
+                         ? WriteEntity.WriteType.INSERT_OVERWRITE : getWriteType(dest));
   }
 
   private WriteEntity.WriteType getWriteType(String dest) {
