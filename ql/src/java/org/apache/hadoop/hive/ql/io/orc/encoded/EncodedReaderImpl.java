@@ -103,19 +103,15 @@ class EncodedReaderImpl implements EncodedReader {
   private static final Object POOLS_CREATION_LOCK = new Object();
   private static Pools POOLS;
   private static class Pools {
-    Pool<CacheChunk> tccPool;
-    Pool<ProcCacheChunk> pccPool;
     Pool<OrcEncodedColumnBatch> ecbPool;
     Pool<ColumnStreamData> csdPool;
   }
   private final static DiskRangeListFactory CC_FACTORY = new DiskRangeListFactory() {
-        @Override
-        public DiskRangeList createCacheChunk(MemoryBuffer buffer, long offset, long end) {
-          CacheChunk tcc = POOLS.tccPool.take();
-          tcc.init(buffer, offset, end);
-          return tcc;
-        }
-      };
+    @Override
+    public DiskRangeList createCacheChunk(MemoryBuffer buffer, long offset, long end) {
+      return new CacheChunk(buffer, offset, end);
+    }
+  };
   private final Object fileKey;
   private final DataReader dataReader;
   private boolean isDataReaderOpen = false;
@@ -563,7 +559,6 @@ class EncodedReaderImpl implements EncodedReader {
         LOG.error("Error during the cleanup after another error; ignoring", t);
       }
     }
-    releaseCacheChunksIntoObjectPool(toRead.next);
   }
 
   private void releaseEcbRefCountsOnError(OrcEncodedColumnBatch ecb) {
@@ -663,8 +658,7 @@ class EncodedReaderImpl implements EncodedReader {
     private int count;
 
     public UncompressedCacheChunk(BufferChunk bc) {
-      super();
-      init(null, bc.getOffset(), bc.getEnd());
+      super(null, bc.getOffset(), bc.getEnd());
       chunk = bc;
       count = 1;
     }
@@ -706,18 +700,12 @@ class EncodedReaderImpl implements EncodedReader {
    * the DiskRange list created for the request, and everyone treats it like regular CacheChunk.
    */
   private static class ProcCacheChunk extends CacheChunk {
-    public void init(long cbStartOffset, long cbEndOffset, boolean isCompressed,
+    public ProcCacheChunk(long cbStartOffset, long cbEndOffset, boolean isCompressed,
         ByteBuffer originalData, MemoryBuffer targetBuffer, int originalCbIndex) {
-      super.init(targetBuffer, cbStartOffset, cbEndOffset);
+      super(targetBuffer, cbStartOffset, cbEndOffset);
       this.isOriginalDataCompressed = isCompressed;
       this.originalData = originalData;
       this.originalCbIndex = originalCbIndex;
-    }
-
-    @Override
-    public void reset() {
-      super.reset();
-      this.originalData = null;
     }
 
     @Override
@@ -1161,8 +1149,7 @@ class EncodedReaderImpl implements EncodedReader {
     MemoryBuffer buffer = singleAlloc[0];
     cacheWrapper.reuseBuffer(buffer);
     ByteBuffer dest = buffer.getByteBufferRaw();
-    CacheChunk tcc = POOLS.tccPool.take();
-    tcc.init(buffer, partOffset, candidateEnd);
+    CacheChunk tcc = new CacheChunk(buffer, partOffset, candidateEnd);
     copyAndReplaceUncompressedChunks(candidateCached, dest, tcc, false);
     return tcc;
   }
@@ -1175,8 +1162,7 @@ class EncodedReaderImpl implements EncodedReader {
     MemoryBuffer buffer = singleAlloc[0];
     cacheWrapper.reuseBuffer(buffer);
     ByteBuffer dest = buffer.getByteBufferRaw();
-    CacheChunk tcc = POOLS.tccPool.take();
-    tcc.init(buffer, bc.getOffset(), bc.getEnd());
+    CacheChunk tcc = new CacheChunk(buffer, bc.getOffset(), bc.getEnd());
     copyUncompressedChunk(bc.getChunk(), dest);
     bc.replaceSelfWith(tcc);
     return tcc;
@@ -1218,17 +1204,6 @@ class EncodedReaderImpl implements EncodedReader {
     if (newLim > startLim) {
       throw new AssertionError("After codec, buffer [" + startPos + ", " + startLim
           + ") became [" + dest.position() + ", " + newLim + ")");
-    }
-  }
-
-  public static void releaseCacheChunksIntoObjectPool(DiskRangeList current) {
-    while (current != null) {
-      if (current instanceof ProcCacheChunk) {
-        POOLS.pccPool.offer((ProcCacheChunk)current);
-      } else if (current instanceof CacheChunk) {
-        POOLS.tccPool.offer((CacheChunk)current);
-      }
-      current = current.next;
     }
   }
 
@@ -1638,8 +1613,7 @@ class EncodedReaderImpl implements EncodedReader {
     // Add it to result in order we are processing.
     cacheBuffers.add(futureAlloc);
     // Add it to the list of work to decompress.
-    ProcCacheChunk cc = POOLS.pccPool.take();
-    cc.init(cbStartOffset, cbEndOffset, !isUncompressed,
+    ProcCacheChunk cc = new ProcCacheChunk(cbStartOffset, cbEndOffset, !isUncompressed,
         fullCompressionBlock, futureAlloc, cacheBuffers.size() - 1);
     toDecompress.add(cc);
     // Adjust the compression block position.
@@ -1673,26 +1647,6 @@ class EncodedReaderImpl implements EncodedReader {
 
   private static Pools createPools(PoolFactory pf) {
     Pools pools = new Pools();
-    pools.pccPool = pf.createPool(1024, new PoolObjectHelper<ProcCacheChunk>() {
-      @Override
-      public ProcCacheChunk create() {
-        return new ProcCacheChunk();
-      }
-      @Override
-      public void resetBeforeOffer(ProcCacheChunk t) {
-        t.reset();
-      }
-    });
-    pools.tccPool = pf.createPool(1024, new PoolObjectHelper<CacheChunk>() {
-      @Override
-      public CacheChunk create() {
-        return new CacheChunk();
-      }
-      @Override
-      public void resetBeforeOffer(CacheChunk t) {
-        t.reset();
-      }
-    });
     pools.ecbPool = pf.createEncodedColumnBatchPool();
     pools.csdPool = pf.createColumnStreamDataPool();
     return pools;
