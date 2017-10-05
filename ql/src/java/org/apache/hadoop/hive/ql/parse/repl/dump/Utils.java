@@ -30,7 +30,8 @@ import org.apache.hadoop.io.IOUtils;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class Utils {
+  private static Logger LOG = LoggerFactory.getLogger(Utils.class);
   public static final String BOOTSTRAP_DUMP_STATE_KEY_PREFIX = "bootstrap.dump.state.";
 
   public enum ReplDumpState {
@@ -114,6 +116,8 @@ public class Utils {
     }
 
     hiveDb.alterDatabase(dbName, database);
+    LOG.info("REPL DUMP:: Set property for Database: {}, Property: {}, Value: {}",
+            dbName, uniqueKey, Utils.ReplDumpState.ACTIVE.name());
     return uniqueKey;
   }
 
@@ -126,6 +130,7 @@ public class Utils {
         params.remove(uniqueKey);
         database.setParameters(params);
         hiveDb.alterDatabase(dbName, database);
+        LOG.info("REPL DUMP:: Reset property for Database: {}, Property: {}", dbName, uniqueKey);
       }
     }
   }
