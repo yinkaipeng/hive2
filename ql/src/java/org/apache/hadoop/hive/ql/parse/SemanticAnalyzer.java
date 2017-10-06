@@ -10876,7 +10876,16 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
   @Override
   @SuppressWarnings("nls")
   public void analyzeInternal(ASTNode ast) throws SemanticException {
-    analyzeInternal(ast, new PlannerContext());
+    analyzeInternal(ast, new PlannerContextFactory() {
+      @Override
+      public PlannerContext create() {
+        return new PlannerContext();
+      }
+    });
+  }
+
+  protected static interface PlannerContextFactory {
+    PlannerContext create();
   }
 
   /**
@@ -11235,11 +11244,12 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     return genPlan(qb);
   }
 
-  void analyzeInternal(ASTNode ast, PlannerContext plannerCtx) throws SemanticException {
+  void analyzeInternal(ASTNode ast, PlannerContextFactory pcf) throws SemanticException {
     // 1. Generate Resolved Parse tree from syntax tree
     LOG.info("Starting Semantic Analysis");
     //change the location of position alias process here
     processPositionAlias(ast);
+    PlannerContext plannerCtx = pcf.create();
     if (!genResolvedParseTree(ast, plannerCtx)) {
       return;
     }
@@ -11253,6 +11263,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       ASTNode tree = rewriteASTWithMaskAndFilter(tableMask, ast, ctx.getTokenRewriteStream(),
               ctx, db, tabNameToTabObject, ignoredTokens);
       if (tree != ast) {
+        plannerCtx = pcf.create();
         ctx.setSkipTableMasking(true);
         init(true);
         //change the location of position alias process here
