@@ -120,7 +120,7 @@ public class TestHCatClient {
     conf.set("hadoop.proxyuser." + Utils.getUGI().getShortUserName() + ".hosts", "*");
     ProxyUsers.refreshSuperUserGroupsConfiguration(conf);
 
-    System.setProperty(HiveConf.ConfVars.METASTORE_EVENT_LISTENERS.varname,
+    System.setProperty(HiveConf.ConfVars.METASTORE_TRANSACTIONAL_EVENT_LISTENERS.varname,
         DbNotificationListener.class.getName()); // turn on db notification listener on metastore
     msPort = MetaStoreUtils.startMetaStore();
     securityManager = System.getSecurityManager();
