@@ -4358,6 +4358,8 @@ public class HiveConf extends Configuration {
     "mapreduce\\.job\\.reduce\\.slowstart\\.completedmaps",
     "mapreduce\\.job\\.queuename",
     "mapreduce\\.job\\.tags",
+    "mapreduce\\.job\\.hdfs-servers",
+    "mapreduce\\.job\\.send-token-conf",
     "mapreduce\\.input\\.fileinputformat\\.split\\.minsize",
     "mapreduce\\.map\\..*",
     "mapreduce\\.reduce\\..*",
