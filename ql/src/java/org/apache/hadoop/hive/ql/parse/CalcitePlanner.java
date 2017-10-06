@@ -222,6 +222,8 @@ import org.apache.hadoop.hive.ql.parse.PTFInvocationSpec.PartitionSpec;
 import org.apache.hadoop.hive.ql.parse.QBExpr.Opcode;
 import org.apache.hadoop.hive.ql.parse.QBSubQuery.SubQueryType;
 import org.apache.hadoop.hive.ql.parse.QBExpr.Opcode;
+import org.apache.hadoop.hive.ql.parse.SemanticAnalyzer.PlannerContext;
+import org.apache.hadoop.hive.ql.parse.SemanticAnalyzer.PlannerContextFactory;
 import org.apache.hadoop.hive.ql.parse.WindowingSpec.BoundarySpec;
 import org.apache.hadoop.hive.ql.parse.WindowingSpec.RangeBoundarySpec;
 import org.apache.hadoop.hive.ql.parse.WindowingSpec.WindowExpressionSpec;
@@ -286,8 +288,12 @@ public class CalcitePlanner extends SemanticAnalyzer {
   @SuppressWarnings("nls")
   public void analyzeInternal(ASTNode ast) throws SemanticException {
     if (runCBO) {
-      PreCboCtx cboCtx = new PreCboCtx();
-      super.analyzeInternal(ast, cboCtx);
+      super.analyzeInternal(ast, new PlannerContextFactory() {
+        @Override
+        public PlannerContext create() {
+          return new PreCboCtx();
+        }
+      });
     } else {
       super.analyzeInternal(ast);
     }
