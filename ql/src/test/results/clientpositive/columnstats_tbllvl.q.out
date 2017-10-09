@@ -283,7 +283,7 @@ PREHOOK: Input: default@uservisits_web_text_none
 POSTHOOK: query: describe formatted UserVisits_web_text_none destURL
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@uservisits_web_text_none
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 destURL             	string              	                    	                    	0                   	55                  	48.945454545454545  	96                  	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"ccode\":\"true\",\"avgtimeonsite\":\"true\",\"sourceip\":\"true\",\"adrevenue\":\"true\",\"visitdate\":\"true\",\"useragent\":\"true\",\"lcode\":\"true\",\"skeyword\":\"true\",\"desturl\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -293,7 +293,7 @@ PREHOOK: Input: default@uservisits_web_text_none
 POSTHOOK: query: describe formatted UserVisits_web_text_none adRevenue
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@uservisits_web_text_none
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 adRevenue           	float               	13.099044799804688  	492.98870849609375  	0                   	55                  	                    	                    	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"ccode\":\"true\",\"avgtimeonsite\":\"true\",\"sourceip\":\"true\",\"adrevenue\":\"true\",\"visitdate\":\"true\",\"useragent\":\"true\",\"lcode\":\"true\",\"skeyword\":\"true\",\"desturl\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -303,7 +303,7 @@ PREHOOK: Input: default@uservisits_web_text_none
 POSTHOOK: query: describe formatted UserVisits_web_text_none avgTimeOnSite
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@uservisits_web_text_none
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 avgTimeOnSite       	int                 	1                   	9                   	0                   	9                   	                    	                    	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"ccode\":\"true\",\"avgtimeonsite\":\"true\",\"sourceip\":\"true\",\"adrevenue\":\"true\",\"visitdate\":\"true\",\"useragent\":\"true\",\"lcode\":\"true\",\"skeyword\":\"true\",\"desturl\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -412,7 +412,7 @@ PREHOOK: Input: default@uservisits_web_text_none
 POSTHOOK: query: describe formatted default.UserVisits_web_text_none destURL
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@uservisits_web_text_none
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 destURL             	string              	                    	                    	0                   	55                  	48.945454545454545  	96                  	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"ccode\":\"true\",\"avgtimeonsite\":\"true\",\"sourceip\":\"true\",\"adrevenue\":\"true\",\"visitdate\":\"true\",\"useragent\":\"true\",\"lcode\":\"true\",\"skeyword\":\"true\",\"desturl\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -703,7 +703,7 @@ PREHOOK: Input: dummydb@uservisits_in_dummy_db
 POSTHOOK: query: describe formatted dummydb.UserVisits_in_dummy_db destURL
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: dummydb@uservisits_in_dummy_db
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 destURL             	string              	                    	                    	0                   	55                  	48.945454545454545  	96                  	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"ccode\":\"true\",\"avgtimeonsite\":\"true\",\"sourceip\":\"true\",\"adrevenue\":\"true\",\"visitdate\":\"true\",\"useragent\":\"true\",\"lcode\":\"true\",\"skeyword\":\"true\",\"desturl\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -713,7 +713,7 @@ PREHOOK: Input: dummydb@uservisits_in_dummy_db
 POSTHOOK: query: describe formatted dummydb.UserVisits_in_dummy_db adRevenue
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: dummydb@uservisits_in_dummy_db
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 adRevenue           	float               	13.099044799804688  	492.98870849609375  	0                   	55                  	                    	                    	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"ccode\":\"true\",\"avgtimeonsite\":\"true\",\"sourceip\":\"true\",\"adrevenue\":\"true\",\"visitdate\":\"true\",\"useragent\":\"true\",\"lcode\":\"true\",\"skeyword\":\"true\",\"desturl\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -723,7 +723,7 @@ PREHOOK: Input: dummydb@uservisits_in_dummy_db
 POSTHOOK: query: describe formatted dummydb.UserVisits_in_dummy_db avgTimeOnSite
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: dummydb@uservisits_in_dummy_db
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 avgTimeOnSite       	int                 	1                   	9                   	0                   	9                   	                    	                    	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"ccode\":\"true\",\"avgtimeonsite\":\"true\",\"sourceip\":\"true\",\"adrevenue\":\"true\",\"visitdate\":\"true\",\"useragent\":\"true\",\"lcode\":\"true\",\"skeyword\":\"true\",\"desturl\":\"true\"}}	 	 	 	 	 	 	 	 	 	 

@@ -18,7 +18,6 @@
 
 package org.apache.hadoop.hive.ql.metadata.formatting;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -51,7 +50,6 @@ import org.apache.hadoop.hive.serde2.io.DateWritable;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -179,8 +177,8 @@ public final class MetaDataFormatUtils {
       return "";
     }
     byte[] sub = new byte[2];
-    sub[0] = (byte) buf[0];
-    sub[1] = (byte) buf[1];
+    sub[0] = buf[0];
+    sub[1] = buf[1];
     return new String(sub);
   }
 
@@ -210,37 +208,37 @@ public final class MetaDataFormatUtils {
         if (csd.isSetBinaryStats()) {
           BinaryColumnStatsData bcsd = csd.getBinaryStats();
           appendColumnStatsNoFormatting(colBuffer, "", "", bcsd.getNumNulls(), "",
-              bcsd.getAvgColLen(), bcsd.getMaxColLen(), "", "");
+              bcsd.getAvgColLen(), bcsd.getMaxColLen(), "", "", convertToString(bcsd.getBitVectors()));
         } else if (csd.isSetStringStats()) {
           StringColumnStatsData scsd = csd.getStringStats();
           appendColumnStatsNoFormatting(colBuffer, "", "", scsd.getNumNulls(), scsd.getNumDVs(),
-              scsd.getAvgColLen(), scsd.getMaxColLen(), "", "");
+              scsd.getAvgColLen(), scsd.getMaxColLen(), "", "", convertToString(scsd.getBitVectors()));
         } else if (csd.isSetBooleanStats()) {
           BooleanColumnStatsData bcsd = csd.getBooleanStats();
           appendColumnStatsNoFormatting(colBuffer, "", "", bcsd.getNumNulls(), "", "", "",
-              bcsd.getNumTrues(), bcsd.getNumFalses());
+              bcsd.getNumTrues(), bcsd.getNumFalses(), convertToString(bcsd.getBitVectors()));
         } else if (csd.isSetDecimalStats()) {
           DecimalColumnStatsData dcsd = csd.getDecimalStats();
           appendColumnStatsNoFormatting(colBuffer, convertToString(dcsd.getLowValue()),
               convertToString(dcsd.getHighValue()), dcsd.getNumNulls(), dcsd.getNumDVs(),
-              "", "", "", "");
+              "", "", "", "", convertToString(dcsd.getBitVectors()));
         } else if (csd.isSetDoubleStats()) {
           DoubleColumnStatsData dcsd = csd.getDoubleStats();
           appendColumnStatsNoFormatting(colBuffer, dcsd.getLowValue(), dcsd.getHighValue(),
-              dcsd.getNumNulls(), dcsd.getNumDVs(), "", "", "", "");
+              dcsd.getNumNulls(), dcsd.getNumDVs(), "", "", "", "", convertToString(dcsd.getBitVectors()));
         } else if (csd.isSetLongStats()) {
           LongColumnStatsData lcsd = csd.getLongStats();
           appendColumnStatsNoFormatting(colBuffer, lcsd.getLowValue(), lcsd.getHighValue(),
-              lcsd.getNumNulls(), lcsd.getNumDVs(), "", "", "", "");
+              lcsd.getNumNulls(), lcsd.getNumDVs(), "", "", "", "", convertToString(lcsd.getBitVectors()));
         } else if (csd.isSetDateStats()) {
           DateColumnStatsData dcsd = csd.getDateStats();
           appendColumnStatsNoFormatting(colBuffer,
               convertToString(dcsd.getLowValue()),
               convertToString(dcsd.getHighValue()),
-              dcsd.getNumNulls(), dcsd.getNumDVs(), "", "", "", "");
+              dcsd.getNumNulls(), dcsd.getNumDVs(), "", "", "", "", convertToString(dcsd.getBitVectors()));
         }
       } else {
-        appendColumnStatsNoFormatting(colBuffer, "", "", "", "", "", "", "", "");
+        appendColumnStatsNoFormatting(colBuffer, "", "", "", "", "", "", "", "","");
       }
     }
     colBuffer.append(comment == null ? "" : comment);
@@ -604,7 +602,7 @@ public final class MetaDataFormatUtils {
 
   private static void appendColumnStatsNoFormatting(StringBuilder sb, Object min,
       Object max, Object numNulls, Object ndv, Object avgColLen, Object maxColLen,
-      Object numTrues, Object numFalses) {
+      Object numTrues, Object numFalses, String bitvector) {
     sb.append(min).append(FIELD_DELIM);
     sb.append(max).append(FIELD_DELIM);
     sb.append(numNulls).append(FIELD_DELIM);
@@ -613,6 +611,7 @@ public final class MetaDataFormatUtils {
     sb.append(maxColLen).append(FIELD_DELIM);
     sb.append(numTrues).append(FIELD_DELIM);
     sb.append(numFalses).append(FIELD_DELIM);
+    sb.append(bitvector).append(FIELD_DELIM);
   }
 
   public static String[] getColumnsHeader(List<ColumnStatisticsObj> colStats) {

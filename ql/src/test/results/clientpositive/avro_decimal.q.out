@@ -32,7 +32,7 @@ PREHOOK: Input: default@dec
 POSTHOOK: query: DESC FORMATTED dec value
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@dec
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 value               	decimal(8,4)        	-12.25              	234.79              	0                   	10                  	                    	                    	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"value\":\"true\"}}	 	 	 	 	 	 	 	 	 	 

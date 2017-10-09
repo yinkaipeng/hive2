@@ -250,7 +250,7 @@ PREHOOK: Input: default@dest_j1
 POSTHOOK: query: desc formatted dest_j1 key
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@dest_j1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 key                 	int                 	0                   	498                 	0                   	309                 	                    	                    	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"key\":\"true\",\"value\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -260,7 +260,7 @@ PREHOOK: Input: default@dest_j1
 POSTHOOK: query: desc formatted dest_j1 value
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@dest_j1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 value               	string              	                    	                    	0                   	309                 	6.834630350194552   	7                   	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"key\":\"true\",\"value\":\"true\"}}	 	 	 	 	 	 	 	 	 	 

@@ -209,7 +209,7 @@ PREHOOK: Input: default@srcpart
 POSTHOOK: query: describe formatted srcpart key
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@srcpart
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 key                 	string              	                    	                    	0                   	309                 	2.812               	3                   	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"key\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -300,7 +300,7 @@ PREHOOK: Input: default@srcpart
 POSTHOOK: query: describe formatted `srcpart` `key`
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@srcpart
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 key                 	string              	                    	                    	0                   	309                 	2.812               	3                   	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"key\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -350,7 +350,7 @@ PREHOOK: Input: default@srcpart
 POSTHOOK: query: describe formatted `srcpart` `ds`
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@srcpart
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 ds                  	string              	                    	                    	0                   	2                   	100.0               	100                 	                    	                    	                    	                    
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"ds\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -360,7 +360,7 @@ PREHOOK: Input: default@srcpart
 POSTHOOK: query: describe formatted `srcpart` `hr`
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@srcpart
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 hr                  	string              	                    	                    	0                   	2                   	100.0               	100                 	                    	                    	                    	                    
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"hr\":\"true\"}}	 	 	 	 	 	 	 	 	 	 

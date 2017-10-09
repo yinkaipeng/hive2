@@ -209,7 +209,7 @@ PREHOOK: Input: db1@t1
 POSTHOOK: query: DESCRIBE FORMATTED t1 key1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: db1@t1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 key1                	int                 	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"key1\":\"false\"}}	 	 	 	 	 	 	 	 	 	 
@@ -233,7 +233,7 @@ PREHOOK: Input: db1@t1
 POSTHOOK: query: DESCRIBE FORMATTED db1.t1 key1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: db1@t1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 key1                	int                 	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"key1\":\"false\"}}	 	 	 	 	 	 	 	 	 	 
@@ -257,7 +257,7 @@ PREHOOK: Input: db1@t1
 POSTHOOK: query: DESCRIBE FORMATTED t1 key1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: db1@t1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 key1                	int                 	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"key1\":\"false\"}}	 	 	 	 	 	 	 	 	 	 

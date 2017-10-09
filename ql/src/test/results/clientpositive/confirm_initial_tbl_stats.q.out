@@ -14,7 +14,7 @@ PREHOOK: Input: default@src
 POSTHOOK: query: describe formatted src key
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@src
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 key                 	string              	                    	                    	0                   	309                 	2.812               	3                   	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"key\":\"true\",\"value\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -34,7 +34,7 @@ PREHOOK: Input: default@src1
 POSTHOOK: query: describe formatted src1 value
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@src1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 value               	string              	                    	                    	0                   	19                  	4.92                	7                   	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"key\":\"true\",\"value\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -53,7 +53,7 @@ PREHOOK: Input: default@src_json
 POSTHOOK: query: describe formatted src_json json
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@src_json
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 json                	string              	                    	                    	0                   	1                   	644.0               	644                 	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"json\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -73,7 +73,7 @@ PREHOOK: Input: default@src_sequencefile
 POSTHOOK: query: describe formatted src_sequencefile value
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@src_sequencefile
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 value               	string              	                    	                    	0                   	309                 	6.812               	7                   	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"key\":\"true\",\"value\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -93,7 +93,7 @@ PREHOOK: Input: default@srcbucket
 POSTHOOK: query: describe formatted srcbucket value
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@srcbucket
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 value               	string              	                    	                    	0                   	430                 	6.802               	7                   	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"key\":\"true\",\"value\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -113,7 +113,7 @@ PREHOOK: Input: default@srcbucket2
 POSTHOOK: query: describe formatted srcbucket2 value
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@srcbucket2
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 value               	string              	                    	                    	0                   	309                 	6.812               	7                   	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"key\":\"true\",\"value\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -141,7 +141,7 @@ PREHOOK: Input: default@srcpart
 POSTHOOK: query: describe formatted srcpart PARTITION (ds="2008-04-09", hr="12") key
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@srcpart
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 key                 	string              	                    	                    	0                   	309                 	2.812               	3                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe extended alltypesorc
@@ -170,7 +170,7 @@ PREHOOK: Input: default@alltypesorc
 POSTHOOK: query: describe formatted alltypesorc ctinyint
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@alltypesorc
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 ctinyint            	tinyint             	-64                 	62                  	3115                	127                 	                    	                    	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"ctinyint\":\"true\",\"csmallint\":\"true\",\"cint\":\"true\",\"cbigint\":\"true\",\"cfloat\":\"true\",\"cdouble\":\"true\",\"cstring1\":\"true\",\"cstring2\":\"true\",\"ctimestamp1\":\"true\",\"ctimestamp2\":\"true\",\"cboolean1\":\"true\",\"cboolean2\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -180,7 +180,7 @@ PREHOOK: Input: default@alltypesorc
 POSTHOOK: query: describe formatted alltypesorc cfloat
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@alltypesorc
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 cfloat              	float               	-64.0               	79.5530014038086    	3115                	131                 	                    	                    	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"ctinyint\":\"true\",\"csmallint\":\"true\",\"cint\":\"true\",\"cbigint\":\"true\",\"cfloat\":\"true\",\"cdouble\":\"true\",\"cstring1\":\"true\",\"cstring2\":\"true\",\"ctimestamp1\":\"true\",\"ctimestamp2\":\"true\",\"cboolean1\":\"true\",\"cboolean2\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -190,7 +190,7 @@ PREHOOK: Input: default@alltypesorc
 POSTHOOK: query: describe formatted alltypesorc ctimestamp1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@alltypesorc
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 ctimestamp1         	timestamp           	-30                 	31                  	3115                	35                  	                    	                    	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"ctinyint\":\"true\",\"csmallint\":\"true\",\"cint\":\"true\",\"cbigint\":\"true\",\"cfloat\":\"true\",\"cdouble\":\"true\",\"cstring1\":\"true\",\"cstring2\":\"true\",\"ctimestamp1\":\"true\",\"ctimestamp2\":\"true\",\"cboolean1\":\"true\",\"cboolean2\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -200,7 +200,7 @@ PREHOOK: Input: default@alltypesorc
 POSTHOOK: query: describe formatted alltypesorc cboolean2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@alltypesorc
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 cboolean2           	boolean             	                    	                    	3115                	                    	                    	                    	3983                	5190                	                    	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"ctinyint\":\"true\",\"csmallint\":\"true\",\"cint\":\"true\",\"cbigint\":\"true\",\"cfloat\":\"true\",\"cdouble\":\"true\",\"cstring1\":\"true\",\"cstring2\":\"true\",\"ctimestamp1\":\"true\",\"ctimestamp2\":\"true\",\"cboolean1\":\"true\",\"cboolean2\":\"true\"}}	 	 	 	 	 	 	 	 	 	 

@@ -87,7 +87,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	10                  	                    	                    	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"col1\":\"true\",\"col2\":\"true\",\"col3\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -97,7 +97,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"col1\":\"true\",\"col2\":\"true\",\"col3\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -107,7 +107,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col3
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col3                	string              	                    	                    	0                   	1                   	4.0                 	4                   	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"col1\":\"true\",\"col2\":\"true\",\"col3\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -125,7 +125,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	10                  	                    	                    	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testtable1 col2
@@ -134,7 +134,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testtable1 col4
@@ -143,7 +143,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col4
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col4                	string              	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
 PREHOOK: query: alter table testtable1 change col1 col1 string
@@ -160,7 +160,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	string              	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testtable1 col2
@@ -169,7 +169,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testtable1 col4
@@ -178,7 +178,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col4
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col4                	string              	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
 PREHOOK: query: alter table statsdb1.testtable1 rename to statsdb2.testtable2
@@ -208,7 +208,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	10                  	                    	                    	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
@@ -217,7 +217,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col3
@@ -226,7 +226,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col3
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col3                	string              	                    	                    	0                   	1                   	4.0                 	4                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part2') col1
@@ -235,7 +235,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part2') col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	20                  	                    	                    	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part2') col2
@@ -244,7 +244,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part2') col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	20                  	6.8                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part2') col3
@@ -253,7 +253,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part2') col3
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col3                	string              	                    	                    	0                   	1                   	4.0                 	4                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: alter table statsdb1.testpart1 partition (part = 'part2') rename to partition (part = 'part3')
@@ -272,7 +272,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	10                  	                    	                    	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
@@ -281,7 +281,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col3
@@ -290,7 +290,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col3
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col3                	string              	                    	                    	0                   	1                   	4.0                 	4                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part3') col1
@@ -338,7 +338,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	10                  	                    	                    	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
@@ -347,7 +347,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col4
@@ -394,7 +394,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col4
@@ -556,7 +556,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	10                  	                    	                    	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"col1\":\"true\",\"col2\":\"true\",\"col3\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -566,7 +566,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"col1\":\"true\",\"col2\":\"true\",\"col3\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -576,7 +576,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col3
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col3                	string              	                    	                    	0                   	1                   	4.0                 	4                   	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"BASIC_STATS\":\"true\",\"COLUMN_STATS\":{\"col1\":\"true\",\"col2\":\"true\",\"col3\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -594,7 +594,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	10                  	                    	                    	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testtable1 col2
@@ -603,7 +603,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testtable1 col4
@@ -612,7 +612,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col4
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col4                	string              	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
 PREHOOK: query: alter table testtable1 change col1 col1 string
@@ -629,7 +629,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	string              	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testtable1 col2
@@ -638,7 +638,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testtable1 col4
@@ -647,7 +647,7 @@ PREHOOK: Input: statsdb1@testtable1
 POSTHOOK: query: describe formatted statsdb1.testtable1 col4
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testtable1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col4                	string              	                    	                    	                    	                    	                    	                    	                    	                    	                    	from deserializer   
 PREHOOK: query: alter table statsdb1.testtable1 rename to statsdb2.testtable2
@@ -677,7 +677,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	10                  	                    	                    	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
@@ -686,7 +686,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col3
@@ -695,7 +695,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col3
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col3                	string              	                    	                    	0                   	1                   	4.0                 	4                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part2') col1
@@ -704,7 +704,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part2') col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	20                  	                    	                    	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part2') col2
@@ -713,7 +713,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part2') col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	20                  	6.8                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part2') col3
@@ -722,7 +722,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part2') col3
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col3                	string              	                    	                    	0                   	1                   	4.0                 	4                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: alter table statsdb1.testpart1 partition (part = 'part2') rename to partition (part = 'part3')
@@ -741,7 +741,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	10                  	                    	                    	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
@@ -750,7 +750,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col3
@@ -759,7 +759,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col3
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col3                	string              	                    	                    	0                   	1                   	4.0                 	4                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part3') col1
@@ -807,7 +807,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col1
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col1                	int                 	27                  	484                 	0                   	10                  	                    	                    	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
@@ -816,7 +816,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col4
@@ -863,7 +863,7 @@ PREHOOK: Input: statsdb1@testpart1
 POSTHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col2
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: statsdb1@testpart1
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 col2                	string              	                    	                    	0                   	10                  	6.7                 	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted statsdb1.testpart1 partition (part = 'part1') col4

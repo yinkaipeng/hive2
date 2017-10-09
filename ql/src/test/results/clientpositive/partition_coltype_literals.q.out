@@ -302,7 +302,7 @@ PREHOOK: Input: default@partcoltypenum
 POSTHOOK: query: describe formatted partcoltypenum partition (tint=110Y, sint=22000S, bint=330000000000L) key
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@partcoltypenum
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 key                 	int                 	27                  	484                 	0                   	20                  	                    	                    	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted partcoltypenum partition (tint=110Y, sint=22000S, bint=330000000000L) value
@@ -311,7 +311,7 @@ PREHOOK: Input: default@partcoltypenum
 POSTHOOK: query: describe formatted partcoltypenum partition (tint=110Y, sint=22000S, bint=330000000000L) value
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@partcoltypenum
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 value               	string              	                    	                    	0                   	20                  	6.766666666666667   	7                   	                    	                    	HL                  	from deserializer   
 PREHOOK: query: describe formatted partcoltypenum tint
@@ -320,7 +320,7 @@ PREHOOK: Input: default@partcoltypenum
 POSTHOOK: query: describe formatted partcoltypenum tint
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@partcoltypenum
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 tint                	tinyint             	110                 	110                 	0                   	1                   	                    	                    	                    	                    	                    	                    
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"tint\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -330,7 +330,7 @@ PREHOOK: Input: default@partcoltypenum
 POSTHOOK: query: describe formatted partcoltypenum sint
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@partcoltypenum
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 sint                	smallint            	22000               	22000               	0                   	1                   	                    	                    	                    	                    	                    	                    
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"sint\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -340,7 +340,7 @@ PREHOOK: Input: default@partcoltypenum
 POSTHOOK: query: describe formatted partcoltypenum bint
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@partcoltypenum
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 bint                	bigint              	330000000000        	330000000000        	0                   	1                   	                    	                    	                    	                    	                    	                    
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"bint\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
@@ -458,7 +458,7 @@ PREHOOK: Input: default@partcoltypenum
 POSTHOOK: query: describe formatted partcoltypenum tint
 POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@partcoltypenum
-# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	comment             	bitVector           
+# col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
 tint                	decimal(3,0)        	110                 	110                 	0                   	1                   	                    	                    	                    	                    	                    	                    
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"tint\":\"true\"}}	 	 	 	 	 	 	 	 	 	 

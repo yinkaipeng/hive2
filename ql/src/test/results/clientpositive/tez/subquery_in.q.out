@@ -266,7 +266,7 @@ STAGE PLANS:
                   alias: part
                   Statistics: Num rows: 26 Data size: 3147 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
-                    predicate: p_size is not null (type: boolean)
+                    predicate: UDFToDouble(p_size) is not null (type: boolean)
                     Statistics: Num rows: 26 Data size: 3147 Basic stats: COMPLETE Column stats: NONE
                     Select Operator
                       expressions: p_name (type: string), p_size (type: int)
@@ -1389,7 +1389,7 @@ STAGE PLANS:
                   alias: part
                   Statistics: Num rows: 26 Data size: 3147 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
-                    predicate: p_size is not null (type: boolean)
+                    predicate: (p_size - 1) is not null (type: boolean)
                     Statistics: Num rows: 26 Data size: 3147 Basic stats: COMPLETE Column stats: NONE
                     Select Operator
                       expressions: p_partkey (type: int), p_name (type: string), p_mfgr (type: string), p_brand (type: string), p_type (type: string), p_size (type: int), p_container (type: string), p_retailprice (type: double), p_comment (type: string)
@@ -1525,7 +1525,7 @@ STAGE PLANS:
                   alias: part
                   Statistics: Num rows: 26 Data size: 3147 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
-                    predicate: (p_partkey is not null and p_size is not null) (type: boolean)
+                    predicate: (p_partkey * p_size) is not null (type: boolean)
                     Statistics: Num rows: 26 Data size: 3147 Basic stats: COMPLETE Column stats: NONE
                     Select Operator
                       expressions: p_partkey (type: int), p_name (type: string), p_mfgr (type: string), p_brand (type: string), p_type (type: string), p_size (type: int), p_container (type: string), p_retailprice (type: double), p_comment (type: string)
@@ -1770,7 +1770,7 @@ STAGE PLANS:
                   alias: part
                   Statistics: Num rows: 26 Data size: 3147 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
-                    predicate: p_retailprice is not null (type: boolean)
+                    predicate: floor(p_retailprice) is not null (type: boolean)
                     Statistics: Num rows: 26 Data size: 3147 Basic stats: COMPLETE Column stats: NONE
                     Select Operator
                       expressions: p_partkey (type: int), p_name (type: string), p_mfgr (type: string), p_brand (type: string), p_type (type: string), p_size (type: int), p_container (type: string), p_retailprice (type: double), p_comment (type: string)
@@ -2905,7 +2905,7 @@ STAGE PLANS:
                   alias: part
                   Statistics: Num rows: 26 Data size: 3147 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
-                    predicate: p_size is not null (type: boolean)
+                    predicate: (p_size - 1) is not null (type: boolean)
                     Statistics: Num rows: 26 Data size: 3147 Basic stats: COMPLETE Column stats: NONE
                     Select Operator
                       expressions: p_partkey (type: int), p_name (type: string), p_mfgr (type: string), p_brand (type: string), p_type (type: string), p_size (type: int), p_container (type: string), p_retailprice (type: double), p_comment (type: string)
@@ -3053,7 +3053,7 @@ STAGE PLANS:
                   alias: part
                   Statistics: Num rows: 26 Data size: 3147 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
-                    predicate: p_size is not null (type: boolean)
+                    predicate: (p_size - 1) is not null (type: boolean)
                     Statistics: Num rows: 26 Data size: 3147 Basic stats: COMPLETE Column stats: NONE
                     Select Operator
                       expressions: p_partkey (type: int), p_name (type: string), p_mfgr (type: string), p_brand (type: string), p_type (type: string), p_size (type: int), p_container (type: string), p_retailprice (type: double), p_comment (type: string)
@@ -5032,7 +5032,7 @@ STAGE PLANS:
                   alias: t
                   Statistics: Num rows: 2 Data size: 2 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
-                    predicate: i is not null (type: boolean)
+                    predicate: UDFToLong(i) is not null (type: boolean)
                     Statistics: Num rows: 2 Data size: 2 Basic stats: COMPLETE Column stats: NONE
                     Select Operator
                       expressions: i (type: int)
