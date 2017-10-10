@@ -280,7 +280,7 @@ public class ReplLoadTask extends Task<ReplLoadWork> implements Serializable {
     use loadTask as dependencyCollection
    */
     if (shouldCreateAnotherLoadTask) {
-      Task<ReplLoadWork> loadTask = TaskFactory.get(work, conf);
+      Task<ReplLoadWork> loadTask = TaskFactory.get(work, conf, true);
       dependency(rootTasks, loadTask);
     }
   }
