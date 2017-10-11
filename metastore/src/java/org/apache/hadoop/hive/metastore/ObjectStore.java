@@ -8316,6 +8316,9 @@ public class ObjectStore implements RawStore, Configurable {
         }
       }
     }
+    public long getSleepInterval() {
+      return sleepInterval;
+    }
   }
 
   @Override
