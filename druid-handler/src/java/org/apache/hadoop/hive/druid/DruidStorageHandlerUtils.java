@@ -89,6 +89,7 @@ import org.skife.jdbi.v2.util.ByteArrayMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -248,13 +249,21 @@ public final class DruidStorageHandlerUtils {
           throws IOException {
     ImmutableList.Builder<DataSegment> publishedSegmentsBuilder = ImmutableList.builder();
     FileSystem fs = taskDir.getFileSystem(conf);
-    for (FileStatus fileStatus : fs.listStatus(taskDir)) {
+    FileStatus[] fss;
+    try {
+      fss = fs.listStatus(taskDir);
+    } catch (FileNotFoundException e) {
+      // This is a CREATE TABLE statement or query executed for CTAS/INSERT
+      // did not produce any result. We do not need to do anything, this is
+      // expected behavior.
+      return publishedSegmentsBuilder.build();
+    }
+    for (FileStatus fileStatus : fss) {
       final DataSegment segment = JSON_MAPPER
               .readValue(fs.open(fileStatus.getPath()), DataSegment.class);
       publishedSegmentsBuilder.add(segment);
     }
-    List<DataSegment> publishedSegments = publishedSegmentsBuilder.build();
-    return publishedSegments;
+    return publishedSegmentsBuilder.build();
   }
 
   /**
@@ -374,16 +383,21 @@ public final class DruidStorageHandlerUtils {
   ) throws CallbackFailedException {
     connector.getDBI().inTransaction(
             (TransactionCallback<Void>) (handle, transactionStatus) -> {
-              final List<DataSegment> finalSegmentsToPublish = Lists.newArrayList();
               VersionedIntervalTimeline<String, DataSegment> timeline;
               if (overwrite) {
+                // If we are overwriting, we disable existing sources
                 disableDataSourceWithHandle(handle, metadataStorageTablesConfig, dataSource);
-                // When overwriting start with empty timeline, as we are overwriting segments with new versions
-                timeline = new VersionedIntervalTimeline<>(
-                        Ordering.natural()
-                );
+
+                // When overwriting, we just start with empty timeline,
+                // as we are overwriting segments with new versions
+                timeline = new VersionedIntervalTimeline<>(Ordering.natural());
               } else {
-                // Append Mode - build a timeline of existing segments in metadata storage.
+                // Append Mode
+                if (segments.isEmpty()) {
+                  // If there are no new segments, we can just bail out
+                  return null;
+                }
+                // Otherwise, build a timeline of existing segments in metadata storage
                 Interval indexedInterval = JodaUtils
                         .umbrellaInterval(Iterables.transform(segments,
                                 input -> input.getInterval()
@@ -392,6 +406,8 @@ public final class DruidStorageHandlerUtils {
                 timeline = getTimelineForIntervalWithHandle(
                         handle, dataSource, indexedInterval, metadataStorageTablesConfig);
               }
+
+              final List<DataSegment> finalSegmentsToPublish = Lists.newArrayList();
               for (DataSegment segment : segments) {
                 List<TimelineObjectHolder<String, DataSegment>> existingChunks = timeline
                         .lookup(segment.getInterval());
