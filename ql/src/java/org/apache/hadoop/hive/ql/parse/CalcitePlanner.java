@@ -1478,18 +1478,9 @@ public class CalcitePlanner extends SemanticAnalyzer {
       // 8. Apply Druid transformation rules
       perfLogger.PerfLogBegin(this.getClass().getName(), PerfLogger.OPTIMIZER);
       calciteOptimizedPlan = hepPlan(calciteOptimizedPlan, false, mdProvider.getMetadataProvider(), null,
-              HepMatchOrder.BOTTOM_UP,
-              DruidRules.FILTER,
-              DruidRules.PROJECT_FILTER_TRANSPOSE_RULE,
-              DruidRules.AGGREGATE_FILTER_TRANSPOSE_RULE,
-              DruidRules.PROJECT_AGGREGATE,
-              DruidRules.PROJECT,
-              DruidRules.AGGREGATE,
-              DruidRules.FILTER_AGGREGATE_TRANSPOSE_RULE,
-              DruidRules.FILTER_PROJECT_TRANSPOSE_RULE,
-              DruidRules.PROJECT_SORT,
-              DruidRules.SORT,
-              DruidRules.SORT_PROJECT);
+              HepMatchOrder.BOTTOM_UP, DruidRules.FILTER, DruidRules.PROJECT_AGGREGATE,
+              DruidRules.PROJECT, DruidRules.AGGREGATE, DruidRules.PROJECT_SORT,
+              DruidRules.SORT, DruidRules.SORT_PROJECT);
       perfLogger.PerfLogEnd(this.getClass().getName(), PerfLogger.OPTIMIZER, "Calcite: Druid transformation rules");
 
       // 9. Run rules to aid in translation from Calcite tree to Hive tree
