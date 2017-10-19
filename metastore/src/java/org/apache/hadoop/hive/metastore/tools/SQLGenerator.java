@@ -169,4 +169,8 @@ public final class SQLGenerator {
       throw new MetaException(msg);
     }
   }
+
+  public DatabaseProduct getDbProduct() {
+    return dbProduct;
+  }
 }

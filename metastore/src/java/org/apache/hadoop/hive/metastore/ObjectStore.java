@@ -6904,6 +6904,11 @@ public class ObjectStore implements RawStore, Configurable {
       if (oldStats != null) {
         StatObjectConverter.setFieldsIntoOldStats(mStatsObj, oldStats);
       } else {
+        if (sqlGenerator.getDbProduct().equals(DatabaseProduct.POSTGRES) && mStatsObj.getBitVector() == null) {
+          // workaround for DN bug in persisting nulls in pg bytea column
+          // instead set empty bit vector with header.
+          mStatsObj.setBitVector(new byte[] {'H','L'});
+        }
         pm.makePersistent(mStatsObj);
       }
     } finally {
@@ -6940,6 +6945,11 @@ public class ObjectStore implements RawStore, Configurable {
       if (oldStats != null) {
         StatObjectConverter.setFieldsIntoOldStats(mStatsObj, oldStats);
       } else {
+        if (sqlGenerator.getDbProduct().equals(DatabaseProduct.POSTGRES) && mStatsObj.getBitVector() == null) {
+          // workaround for DN bug in persisting nulls in pg bytea column
+          // instead set empty bit vector with header.
+          mStatsObj.setBitVector(new byte[] {'H','L'});
+        }
         pm.makePersistent(mStatsObj);
       }
     } finally {
