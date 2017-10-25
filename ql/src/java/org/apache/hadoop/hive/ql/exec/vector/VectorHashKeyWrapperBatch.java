@@ -23,6 +23,9 @@ import org.apache.hadoop.hive.ql.exec.vector.expressions.VectorExpressionWriter;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.util.JavaDataModel;
 import org.apache.hadoop.hive.serde2.io.TimestampWritable;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
+import org.apache.hadoop.hive.ql.exec.vector.ColumnVector.Type;
 
 /**
  * Class for handling vectorized hash map key wrappers. It evaluates the key columns in a
@@ -725,7 +728,7 @@ public class VectorHashKeyWrapperBatch extends VectorColumnSetInfo {
     compiledKeyWrapperBatch.vectorHashKeyWrappers =
         new VectorHashKeyWrapper[VectorizedRowBatch.DEFAULT_SIZE];
     for(int i=0;i<VectorizedRowBatch.DEFAULT_SIZE; ++i) {
-      compiledKeyWrapperBatch.vectorHashKeyWrappers[i] = 
+      compiledKeyWrapperBatch.vectorHashKeyWrappers[i] =
           compiledKeyWrapperBatch.allocateKeyWrapper();
     }
 
@@ -796,6 +799,23 @@ public class VectorHashKeyWrapperBatch extends VectorColumnSetInfo {
       throw new HiveException(String.format(
           "Internal inconsistent KeyLookupHelper at index [%d]:%d %d %d %d %d %d",
           i, klh.longIndex, klh.doubleIndex, klh.stringIndex, klh.decimalIndex,
+          klh.timestampIndex, klh.intervalDayTimeIndex));
+    }
+  }
+
+  public void setLongValue(VectorHashKeyWrapper kw, int keyIndex, Long value)
+    throws HiveException {
+    KeyLookupHelper klh = indexLookup[keyIndex];
+    if (klh.longIndex >= 0) {
+      if (value == null) {
+        kw.assignNullLong(klh.longIndex);
+        return;
+      }
+      kw.assignLong(klh.longIndex, value);
+    } else {
+      throw new HiveException(String.format(
+          "Internal inconsistent KeyLookupHelper at index [%d]:%d %d %d %d %d %d",
+          keyIndex, klh.longIndex, klh.doubleIndex, klh.stringIndex, klh.decimalIndex,
           klh.timestampIndex, klh.intervalDayTimeIndex));
     }
   }
