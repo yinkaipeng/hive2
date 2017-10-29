@@ -19,10 +19,13 @@
 package org.apache.hadoop.hive.metastore;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileChecksum;
@@ -52,7 +55,6 @@ public class ReplChangeManager {
   private static HiveConf hiveConf;
   private String msUser;
   private String msGroup;
-  private FileSystem fs;
 
   private static final String ORIG_LOC_TAG = "user.original-loc";
   static final String REMAIN_IN_TRASH_TAG = "user.remain-in-trash";
@@ -126,11 +128,11 @@ public class ReplChangeManager {
           ReplChangeManager.cmroot = new Path(hiveConf.get(HiveConf.ConfVars.REPLCMDIR.varname));
           ReplChangeManager.hiveConf = hiveConf;
 
-          fs = cmroot.getFileSystem(hiveConf);
+          FileSystem cmFs = cmroot.getFileSystem(hiveConf);
           // Create cmroot with permission 700 if not exist
-          if (!fs.exists(cmroot)) {
-            fs.mkdirs(cmroot);
-            fs.setPermission(cmroot, new FsPermission("700"));
+          if (!cmFs.exists(cmroot)) {
+            cmFs.mkdirs(cmroot);
+            cmFs.setPermission(cmroot, new FsPermission("700"));
           }
           UserGroupInformation usergroupInfo = UserGroupInformation.getCurrentUser();
           msUser = usergroupInfo.getShortUserName();
@@ -172,7 +174,7 @@ public class ReplChangeManager {
 
     try {
       int count = 0;
-
+      FileSystem fs = path.getFileSystem(hiveConf);
       if (fs.isDirectory(path)) {
         FileStatus[] files = fs.listStatus(path, hiddenFileFilter);
         for (FileStatus file : files) {
