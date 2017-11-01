@@ -179,6 +179,7 @@ import org.apache.hadoop.hive.ql.plan.FilterDesc.SampleDesc;
 import org.apache.hadoop.hive.ql.plan.ForwardDesc;
 import org.apache.hadoop.hive.ql.plan.GroupByDesc;
 import org.apache.hadoop.hive.ql.plan.HiveOperation;
+import org.apache.hadoop.hive.ql.plan.InsertTableDesc;
 import org.apache.hadoop.hive.ql.plan.JoinCondDesc;
 import org.apache.hadoop.hive.ql.plan.JoinDesc;
 import org.apache.hadoop.hive.ql.plan.LateralViewForwardDesc;
@@ -1844,7 +1845,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
   public void getMaterializationMetadata(QB qb) throws SemanticException {
     try {
       gatherCTEReferences(qb, rootClause);
-      int threshold = HiveConf.getIntVar(conf, HiveConf.ConfVars.HIVE_CTE_MATERIALIZE_THRESHOLD);      
+      int threshold = HiveConf.getIntVar(conf, HiveConf.ConfVars.HIVE_CTE_MATERIALIZE_THRESHOLD);
       for (CTEClause cte : Sets.newHashSet(aliasToCTEs.values())) {
         if (threshold >= 0 && cte.reference >= threshold) {
           cte.materialize = true;
@@ -6801,6 +6802,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         // This is a non-native table.
         // We need to set stats as inaccurate.
         setStatsForNonNativeTable(dest_tab);
+        createInsertDesc(dest_tab, !qb.getParseInfo().isInsertIntoTable(dest_tab.getTableName()));
       }
 
       WriteEntity output = null;
@@ -7057,7 +7059,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     }
 
     input = genConversionSelectOperator(dest, qb, input, table_desc, dpCtx);
- 
+
     inputRR = opParseCtx.get(input).getRowResolver();
 
     ArrayList<ColumnInfo> vecCol = new ArrayList<ColumnInfo>();
@@ -7199,6 +7201,14 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       }
     }
     return output;
+  }
+
+  private void createInsertDesc(Table table, boolean overwrite) {
+    Task<? extends Serializable>[] tasks = new Task[this.rootTasks.size()];
+    tasks = this.rootTasks.toArray(tasks);
+    InsertTableDesc insertTableDesc = new InsertTableDesc(table.getTTable(), overwrite);
+    TaskFactory
+            .getAndMakeChild(new DDLWork(getInputs(), getOutputs(), insertTableDesc), conf, tasks);
   }
 
   private void genAutoColumnStatsGatheringPipeline(QB qb, TableDesc table_desc,
@@ -10758,7 +10768,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
           colNames.add(col.getName());
           colTypes.add(col.getType());
         }
-        
+
         basicInfos.put(new HivePrivilegeObject(table.getDbName(), table.getTableName(), colNames),
             new MaskAndFilterInfo(colTypes, additionalTabInfo.toString(), alias, astNode, table.isView()));
       }
@@ -10783,7 +10793,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       }
     }
   }
-  
+
   // We walk through the AST.
   // We replace all the TOK_TABREF by adding additional masking and filter if
   // the table needs to be masked or filtered.
@@ -10904,7 +10914,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     // masking and filtering should be created here
     // the basic idea is similar to unparseTranslator.
     tableMask = new TableMask(this, conf, ctx);
-    
+
     // 4. continue analyzing from the child ASTNode.
     Phase1Ctx ctx_1 = initPhase1Ctx();
     preProcessForInsert(child, qb);
