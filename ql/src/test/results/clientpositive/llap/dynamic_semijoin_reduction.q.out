@@ -3423,7 +3423,7 @@ STAGE PLANS:
         Map 1 <- Map 2 (BROADCAST_EDGE), Reducer 3 (BROADCAST_EDGE)
         Map 4 <- Map 1 (BROADCAST_EDGE)
         Reducer 3 <- Map 2 (CUSTOM_SIMPLE_EDGE)
-        Reducer 5 <- Map 4 (CUSTOM_SIMPLE_EDGE)
+        Reducer 5 <- Map 4 (SIMPLE_EDGE)
 #### A masked pattern was here ####
       Vertices:
         Map 1 
@@ -3433,7 +3433,7 @@ STAGE PLANS:
                   filterExpr: (key1 is not null and (key1 BETWEEN DynamicValue(RS_10_srcpart_small10_key1_min) AND DynamicValue(RS_10_srcpart_small10_key1_max) and in_bloom_filter(key1, DynamicValue(RS_10_srcpart_small10_key1_bloom_filter)))) (type: boolean)
                   Statistics: Num rows: 20 Data size: 5420 Basic stats: COMPLETE Column stats: PARTIAL
                   Filter Operator
-                    predicate: ((key1 BETWEEN DynamicValue(RS_10_srcpart_small10_key1_min) AND DynamicValue(RS_10_srcpart_small10_key1_max) and in_bloom_filter(key1, DynamicValue(RS_10_srcpart_small10_key1_bloom_filter))) and key1 is not null) (type: boolean)
+                    predicate: (key1 is not null and (key1 BETWEEN DynamicValue(RS_10_srcpart_small10_key1_min) AND DynamicValue(RS_10_srcpart_small10_key1_max) and in_bloom_filter(key1, DynamicValue(RS_10_srcpart_small10_key1_bloom_filter)))) (type: boolean)
                     Statistics: Num rows: 20 Data size: 5420 Basic stats: COMPLETE Column stats: PARTIAL
                     Select Operator
                       expressions: key1 (type: string), ds (type: string)
@@ -3583,7 +3583,7 @@ STAGE PLANS:
       Edges:
         Map 1 <- Map 2 (BROADCAST_EDGE)
         Map 3 <- Map 1 (BROADCAST_EDGE)
-        Reducer 4 <- Map 3 (CUSTOM_SIMPLE_EDGE)
+        Reducer 4 <- Map 3 (SIMPLE_EDGE)
 #### A masked pattern was here ####
       Vertices:
         Map 1 
