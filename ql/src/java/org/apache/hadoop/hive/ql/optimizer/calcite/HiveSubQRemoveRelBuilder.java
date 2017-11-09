@@ -1109,10 +1109,8 @@ public class HiveSubQRemoveRelBuilder {
     return getRexBuilder().makeFieldAccess(e, name, false);
   }
 
-  /** Creates a {@link org.apache.calcite.rel.core.Join} with correlating
-   * variables. */
   public HiveSubQRemoveRelBuilder join(JoinRelType joinType, RexNode condition,
-                         Set<CorrelationId> variablesSet) {
+                                       Set<CorrelationId> variablesSet, boolean createSemiJoin) {
     Frame right = stack.pop();
     final Frame left = stack.pop();
     final RelNode join;
@@ -1138,8 +1136,15 @@ public class HiveSubQRemoveRelBuilder {
         default:
           postCondition = condition;
       }
+      if(createSemiJoin) {
+        join = correlateFactory.createCorrelate(left.rel, right.rel, id,
+            requiredColumns, SemiJoinType.SEMI);
+      }
+      else {
       join = correlateFactory.createCorrelate(left.rel, right.rel, id,
               requiredColumns, SemiJoinType.of(joinType));
+
+      }
     } else {
       join = joinFactory.createJoin(left.rel, right.rel, condition,
               variablesSet, joinType, false);
@@ -1150,6 +1155,13 @@ public class HiveSubQRemoveRelBuilder {
     stack.push(new Frame(join, ImmutableList.copyOf(pairs)));
     filter(postCondition);
     return this;
+  }
+
+  /** Creates a {@link org.apache.calcite.rel.core.Join} with correlating
+   * variables. */
+  public HiveSubQRemoveRelBuilder join(JoinRelType joinType, RexNode condition,
+                         Set<CorrelationId> variablesSet) {
+    return join(joinType, condition, variablesSet, false) ;
   }
 
   /** Creates a {@link org.apache.calcite.rel.core.Join} using USING syntax.
