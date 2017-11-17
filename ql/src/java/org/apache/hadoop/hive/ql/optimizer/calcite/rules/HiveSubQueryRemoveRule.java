@@ -318,10 +318,24 @@ public abstract class HiveSubQueryRemoveRule extends RelOptRule{
                     case TRUE:
                         if (fields.isEmpty()) {
                             builder.project(builder.alias(builder.literal(true), "i" + e.rel.getId()));
+                    if(!variablesSet.isEmpty() && (e.getKind() == SqlKind.EXISTS || e.getKind() == SqlKind.IN)) {
+                        // avoid adding group by for correlated IN/EXISTS queries
+                        // since this is rewritting into semijoin
+                        break;
+                    }
+                    else {
                             builder.aggregate(builder.groupKey(0));
+                    }
                         } else {
+                    if(!variablesSet.isEmpty() && (e.getKind() == SqlKind.EXISTS || e.getKind() == SqlKind.IN)) {
+                        // avoid adding group by for correlated IN/EXISTS queries
+                        // since this is rewritting into semijoin
+                      break;
+                    }
+                    else {
                             builder.aggregate(builder.groupKey(fields));
                         }
+                }
                         break;
                     default:
                         fields.add(builder.alias(builder.literal(true), "i" + e.rel.getId()));
@@ -337,7 +351,7 @@ public abstract class HiveSubQueryRemoveRule extends RelOptRule{
                 }
                 switch (logic) {
                     case TRUE:
-                        builder.join(JoinRelType.INNER, builder.and(conditions), variablesSet);
+                builder.join(JoinRelType.INNER, builder.and(conditions), variablesSet, true);
                         return builder.literal(true);
                 }
                 builder.join(JoinRelType.LEFT, builder.and(conditions), variablesSet);
