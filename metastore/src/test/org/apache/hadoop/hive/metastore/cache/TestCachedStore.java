@@ -73,6 +73,7 @@ public class TestCachedStore {
     SharedCache.getPartitionCache().clear();
     SharedCache.getSdCache().clear();
     SharedCache.getPartitionColStatsCache().clear();
+    CachedStore.startCacheUpdateService(conf);
   }
 
   /**********************************************************************************************
@@ -484,7 +485,7 @@ public class TestCachedStore {
     // Set cache refresh period to 100 milliseconds
     cachedStore.setCacheRefreshPeriod(100);
     // Start the CachedStore update service
-    cachedStore.startCacheUpdateService();
+    cachedStore.startCacheUpdateService(cachedStore.getConf());
     // Sleep for 500 ms so that cache update is complete
     Thread.sleep(500);
     // Stop cache update service

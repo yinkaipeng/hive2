@@ -19,6 +19,8 @@ package org.apache.hadoop.hive.metastore.cache;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,6 +31,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -120,6 +124,8 @@ public class CachedStore implements RawStore, Configurable {
   private static ReentrantReadWriteLock partitionColStatsCacheLock = new ReentrantReadWriteLock(
       true);
   private static AtomicBoolean isPartitionColStatsCacheDirty = new AtomicBoolean(false);
+  private static List<Pattern> whitelistPatterns = null;
+  private static List<Pattern> blacklistPatterns = null;
   private static ReentrantReadWriteLock partitionAggrColStatsCacheLock = new ReentrantReadWriteLock(
       true);
   private static AtomicBoolean isPartitionAggrColStatsCacheDirty = new AtomicBoolean(false);
@@ -127,8 +133,12 @@ public class CachedStore implements RawStore, Configurable {
   Configuration conf;
   private PartitionExpressionProxy expressionProxy = null;
   // Default value set to 100 milliseconds for test purpose
-  private long cacheRefreshPeriod = 100;
+  private static long cacheRefreshPeriod = 100;
   static boolean firstTime = true;
+
+  /** A wrapper over SharedCache. Allows one to get SharedCache safely; should be merged
+   *  into SharedCache itself (see the TODO on the class). */
+  private static final SharedCacheWrapper sharedCacheWrapper = new SharedCacheWrapper();
 
   static final private Logger LOG = LoggerFactory.getLogger(CachedStore.class.getName());
 
@@ -200,6 +210,22 @@ public class CachedStore implements RawStore, Configurable {
   public CachedStore() {
   }
 
+  public static void initSharedCacheAsync(Configuration conf) {
+    String clazzName = null;
+    boolean isEnabled = false;
+    try {
+      clazzName = HiveConf.getVar(conf, HiveConf.ConfVars.METASTORE_RAW_STORE_IMPL);
+      isEnabled = MetaStoreUtils.getClass(clazzName).isAssignableFrom(CachedStore.class);
+    } catch (MetaException e) {
+      LOG.error("Cannot instantiate metastore class", e);
+    }
+    if (!isEnabled) {
+      LOG.debug("CachedStore is not enabled; using " + clazzName);
+      return;
+    }
+    sharedCacheWrapper.startInit(conf);
+  }
+
   @Override
   public void setConf(Configuration conf) {
     String rawStoreClassName = HiveConf.getVar(conf, HiveConf.ConfVars.METASTORE_CACHED_RAW_STORE_IMPL,
@@ -221,20 +247,7 @@ public class CachedStore implements RawStore, Configurable {
     if (expressionProxy == null || conf != oldConf) {
       expressionProxy = PartFilterExprUtil.createExpressionProxy(conf);
     }
-    if (firstTime) {
-      try {
-        LOG.info("Prewarming CachedStore");
-        long start = System.currentTimeMillis();
-        prewarm();
-        LOG.info("Time taken to prewarm: " + (System.currentTimeMillis()-start)/1000);
-        LOG.info("CachedStore initialized");
-        // Start the cache update master-worker threads
-        startCacheUpdateService();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-      firstTime = false;
-    }
+    initBlackListWhiteList(conf);
   }
 
   @VisibleForTesting
@@ -243,69 +256,101 @@ public class CachedStore implements RawStore, Configurable {
     // RawStoreProxy
     Deadline.registerIfNot(1000000);
     List<String> dbNames = rawStore.getAllDatabases();
-    for (String dbName : dbNames) {
+    LOG.info("Number of databases to prewarm: " + dbNames.size());
+    for (int i = 0; i < dbNames.size(); i++) {
+      String dbName = HiveStringUtils.normalizeIdentifier(dbNames.get(i));
+      LOG.info("Caching database: {}. Cached {} / {} databases so far.", dbName, i, dbNames.size());
+      SharedCache sharedCache = sharedCacheWrapper.getUnsafe();
       // Cache partition column stats
       Deadline.startTimer("getColStatsForDatabase");
       List<ColStatsObjWithSourceInfo> colStatsForDB = rawStore
           .getPartitionColStatsForDatabase(dbName);
       Deadline.stopTimer();
       if (colStatsForDB != null) {
-        SharedCache.addPartitionColStatsToCache(colStatsForDB);
+        sharedCache.addPartitionColStatsToCache(colStatsForDB);
       }
       Database db = rawStore.getDatabase(dbName);
-      dbName = HiveStringUtils.normalizeIdentifier(dbName);
-      SharedCache.addDatabaseToCache(dbName, db);
+      sharedCache.addDatabaseToCache(dbName, db);
       List<String> tblNames = rawStore.getAllTables(dbName);
-      for (String tblName : tblNames) {
+      LOG.debug("Tables in database: {} : {}", dbName, tblNames);
+      for (int j = 0; j < tblNames.size(); j++) {
+        String tblName = HiveStringUtils.normalizeIdentifier(tblNames.get(j));
+        if (!shouldCacheTable(dbName, tblName)) {
+          LOG.info("Not caching database: {}'s table: {}", dbName, tblName);
+          continue;
+        }
+        LOG.info("Caching database: {}'s table: {}. Cached {} / {}  tables so far.", dbName,
+            tblName, j, tblNames.size());
         Table table = rawStore.getTable(dbName, tblName);
+        // It is possible the table is deleted during fetching tables of the database,
+        // in that case, continue with the next table
+        if (table == null) {
+          continue;
+        }
         tblName = HiveStringUtils.normalizeIdentifier(tblName);
-        SharedCache.addTableToCache(dbName, tblName, table);
-        Deadline.startTimer("getPartitions");
-        List<Partition> partitions = rawStore.getPartitions(dbName, tblName, Integer.MAX_VALUE);
-        Deadline.stopTimer();
-        for (Partition partition : partitions) {
-          SharedCache.addPartitionToCache(dbName, tblName, partition);
-        }
-        // Cache table column stats
-        List<String> colNames = MetaStoreUtils.getColumnNamesForTable(table);
-        Deadline.startTimer("getTableColumnStatistics");
-        ColumnStatistics tableColStats = rawStore.getTableColumnStatistics(dbName, tblName,
-            colNames);
-        Deadline.stopTimer();
-        if ((tableColStats != null) && (tableColStats.getStatsObjSize() > 0)) {
-          SharedCache.addTableColStatsToCache(dbName, tblName, tableColStats.getStatsObj());
-        }
-        // Cache aggregate stats for all partitions of a table and for all but
-        // default partition
-        List<String> partNames = listPartitionNames(dbName, tblName, (short) -1);
-        if ((partNames != null) && (partNames.size() > 0)) {
-          List<ColumnStatisticsObj> colStats = mergeColStatsForPartitions(dbName, tblName,
-              partNames, colNames);
-          AggrStats aggrStatsAllPartitions = new AggrStats(colStats, partNames.size());
-          // Remove default partition from partition names and get aggregate
-          // stats again
-          List<FieldSchema> partKeys = table.getPartitionKeys();
-          String defaultPartitionValue = HiveConf.getVar(conf, ConfVars.DEFAULTPARTITIONNAME);
-          List<String> partCols = new ArrayList<String>();
-          List<String> partVals = new ArrayList<String>();
-          for (FieldSchema fs : partKeys) {
-            partCols.add(fs.getName());
-            partVals.add(defaultPartitionValue);
+        sharedCache.addTableToCache(dbName, tblName, table);
+        if (table.getPartitionKeys() != null && table.getPartitionKeys().size() > 0) {
+          Deadline.startTimer("getPartitions");
+          List<Partition> partitions = rawStore.getPartitions(dbName, tblName, Integer.MAX_VALUE);
+          Deadline.stopTimer();
+          for (Partition partition : partitions) {
+            sharedCache.addPartitionToCache(dbName, tblName, partition);
           }
-          String defaultPartitionName = FileUtils.makePartName(partCols, partVals);
-          partNames.remove(defaultPartitionName);
-          colStats = mergeColStatsForPartitions(dbName, tblName, partNames, colNames);
-          AggrStats aggrStatsAllButDefaultPartition = new AggrStats(colStats, partNames.size());
-          SharedCache.addAggregateStatsToCache(dbName, tblName, aggrStatsAllPartitions,
-              aggrStatsAllButDefaultPartition);
+          // Cache table column stats
+          List<String> colNames = MetaStoreUtils.getColumnNamesForTable(table);
+          Deadline.startTimer("getTableColumnStatistics");
+          ColumnStatistics tableColStats = rawStore.getTableColumnStatistics(dbName, tblName,
+              colNames);
+          Deadline.stopTimer();
+          if ((tableColStats != null) && (tableColStats.getStatsObjSize() > 0)) {
+            sharedCache.addTableColStatsToCache(dbName, tblName, tableColStats.getStatsObj());
+          }
+          // Cache aggregate stats for all partitions of a table and for all but
+          // default partition
+          List<String> partNames = listPartitionNames(dbName, tblName, (short) -1);
+          if ((partNames != null) && (partNames.size() > 0)) {
+            List<ColumnStatisticsObj> colStats = mergeColStatsForPartitions(dbName, tblName,
+                partNames, colNames);
+            AggrStats aggrStatsAllPartitions = new AggrStats(colStats, partNames.size());
+            // Remove default partition from partition names and get aggregate
+            // stats again
+            List<FieldSchema> partKeys = table.getPartitionKeys();
+            String defaultPartitionValue = HiveConf.getVar(conf, ConfVars.DEFAULTPARTITIONNAME);
+            List<String> partCols = new ArrayList<String>();
+            List<String> partVals = new ArrayList<String>();
+            for (FieldSchema fs : partKeys) {
+              partCols.add(fs.getName());
+              partVals.add(defaultPartitionValue);
+            }
+            String defaultPartitionName = FileUtils.makePartName(partCols, partVals);
+            partNames.remove(defaultPartitionName);
+            colStats = mergeColStatsForPartitions(dbName, tblName, partNames, colNames);
+            AggrStats aggrStatsAllButDefaultPartition = new AggrStats(colStats, partNames.size());
+            sharedCache.addAggregateStatsToCache(dbName, tblName, aggrStatsAllPartitions,
+                aggrStatsAllButDefaultPartition);
+          }
         }
       }
+    }
+    // Notify all blocked threads that prewarm is complete now
+    sharedCacheWrapper.notifyAllBlocked();
+  }
+
+  private static void initBlackListWhiteList(Configuration conf) {
+    if (whitelistPatterns == null || blacklistPatterns == null) {
+      whitelistPatterns = createPatterns(HiveConf.getVar(conf,
+          HiveConf.ConfVars.METASTORE_CACHED_RAW_STORE_CACHED_OBJECTS_WHITELIST));
+      blacklistPatterns = createPatterns(HiveConf.getVar(conf,
+          HiveConf.ConfVars.METASTORE_CACHED_RAW_STORE_CACHED_OBJECTS_BLACKLIST));
+      // The last specified blacklist pattern gets precedence
+      Collections.reverse(blacklistPatterns);
     }
   }
 
   @VisibleForTesting
-  synchronized void startCacheUpdateService() {
+  synchronized static void startCacheUpdateService(Configuration conf) {
     if (cacheUpdateMaster == null) {
+      initBlackListWhiteList(conf);
       cacheUpdateMaster = Executors.newScheduledThreadPool(1, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -321,13 +366,13 @@ public class CachedStore implements RawStore, Configurable {
             TimeUnit.MILLISECONDS);
       }
       LOG.info("CachedStore: starting cache update service (run every " + cacheRefreshPeriod + "ms)");
-      cacheUpdateMaster.scheduleAtFixedRate(new CacheUpdateMasterWork(this), cacheRefreshPeriod,
+      cacheUpdateMaster.scheduleAtFixedRate(new CacheUpdateMasterWork(conf), 0,
           cacheRefreshPeriod, TimeUnit.MILLISECONDS);
     }
   }
   
   @VisibleForTesting
-  synchronized boolean stopCacheUpdateService(long timeout) {
+  synchronized static boolean stopCacheUpdateService(long timeout) {
     boolean tasksStoppedBeforeShutdown = false;
     if (cacheUpdateMaster != null) {
       LOG.info("CachedStore: shutting down cache update service");
@@ -350,26 +395,62 @@ public class CachedStore implements RawStore, Configurable {
   }
 
   static class CacheUpdateMasterWork implements Runnable {
+    private boolean isFirstRun = true;
+    private final RawStore rawStore;
+    Configuration conf;
 
-    private final CachedStore cachedStore;
-
-    public CacheUpdateMasterWork(CachedStore cachedStore) {
-      this.cachedStore = cachedStore;
+    public CacheUpdateMasterWork(Configuration conf) {
+      this.conf = conf;
+      String rawStoreClassName = HiveConf.getVar(conf, ConfVars.METASTORE_CACHED_RAW_STORE_IMPL,
+          ObjectStore.class.getName());
+      try {
+        rawStore =
+            ((Class<? extends RawStore>) MetaStoreUtils.getClass(rawStoreClassName)).newInstance();
+        rawStore.setConf(conf);
+      } catch (InstantiationException | IllegalAccessException | MetaException e) {
+          throw new RuntimeException("Cannot instantiate " + rawStoreClassName, e);
+      }
+      rawStore.setConf(conf);
     }
       
     @Override
     public void run() {
+      if (isFirstRun) {
+        while (isFirstRun) {
+          try {
+            long startTime = System.nanoTime();
+            LOG.info("Prewarming CachedStore");
+            CachedStore cachedStore = new CachedStore();
+            cachedStore.setConf(conf);
+            cachedStore.prewarm();
+            LOG.info("CachedStore initialized");
+            long endTime = System.nanoTime();
+            LOG.info("Time taken in prewarming = " + (endTime - startTime) / 1000000 + "ms");
+          } catch (Exception e) {
+            LOG.error("Prewarm failure", e);
+            sharedCacheWrapper.updateInitState(e, false);
+            return;
+          }
+          sharedCacheWrapper.updateInitState(null, false);
+          isFirstRun = false;
+        }
+      } else {
+        // TODO: prewarm and update can probably be merged.
+        update();
+      }
+    }
+    public void update() {
       // Prevents throwing exceptions in our raw store calls since we're not using RawStoreProxy
       Deadline.registerIfNot(1000000);
       LOG.debug("CachedStore: updating cached objects");
       String rawStoreClassName =
-          HiveConf.getVar(cachedStore.conf, HiveConf.ConfVars.METASTORE_CACHED_RAW_STORE_IMPL,
+          HiveConf.getVar(conf, HiveConf.ConfVars.METASTORE_CACHED_RAW_STORE_IMPL,
               ObjectStore.class.getName());
       RawStore rawStore = null;
       try {
         rawStore =
             ((Class<? extends RawStore>) MetaStoreUtils.getClass(rawStoreClassName)).newInstance();
-        rawStore.setConf(cachedStore.conf);
+        rawStore.setConf(conf);
         List<String> dbNames = rawStore.getAllDatabases();
         if (dbNames != null) {
           // Update the database in cache
@@ -378,7 +459,10 @@ public class CachedStore implements RawStore, Configurable {
             updateDatabasePartitionColStats(rawStore, dbName);
             // Update the tables in cache
             updateTables(rawStore, dbName);
-            List<String> tblNames = cachedStore.getAllTables(dbName);
+            List<String> tblNames = new ArrayList<String>();
+            for (Table tbl : sharedCacheWrapper.getUnsafe().listCachedTables(dbName)) {
+              tblNames.add(HiveStringUtils.normalizeIdentifier(tbl.getTableName()));
+            }
             for (String tblName : tblNames) {
               // Update the partitions for a table in cache
               updateTablePartitions(rawStore, dbName, tblName);
@@ -424,7 +508,7 @@ public class CachedStore implements RawStore, Configurable {
             LOG.debug("Skipping database cache update; the database list we have is dirty.");
             return;
           }
-          SharedCache.refreshDatabases(databases);
+          sharedCacheWrapper.getUnsafe().refreshDatabases(databases);
         }
       } finally {
         if (databaseCacheLock.isWriteLockedByCurrentThread()) {
@@ -447,7 +531,7 @@ public class CachedStore implements RawStore, Configurable {
                   + "list we have is dirty.");
               return;
             }
-            SharedCache.refreshPartitionColStats(HiveStringUtils.normalizeIdentifier(dbName), colStatsForDB);
+            sharedCacheWrapper.getUnsafe().refreshPartitionColStats(HiveStringUtils.normalizeIdentifier(dbName), colStatsForDB);
           }
         }
       } catch (MetaException | NoSuchObjectException e) {
@@ -477,7 +561,7 @@ public class CachedStore implements RawStore, Configurable {
             LOG.debug("Skipping table cache update; the table list we have is dirty.");
             return;
           }
-          SharedCache.refreshTables(dbName, tables);
+          sharedCacheWrapper.getUnsafe().refreshTables(dbName, tables);
         }
       } catch (MetaException e) {
         LOG.info("Updating CachedStore: unable to read tables for database - " + dbName, e);
@@ -500,7 +584,7 @@ public class CachedStore implements RawStore, Configurable {
             LOG.debug("Skipping partition cache update; the partition list we have is dirty.");
             return;
           }
-          SharedCache.refreshPartitions(HiveStringUtils.normalizeIdentifier(dbName),
+          sharedCacheWrapper.getUnsafe().refreshPartitions(HiveStringUtils.normalizeIdentifier(dbName),
               HiveStringUtils.normalizeIdentifier(tblName), partitions);
         }
       } catch (MetaException | NoSuchObjectException e) {
@@ -529,7 +613,7 @@ public class CachedStore implements RawStore, Configurable {
                   + "have is dirty.");
               return;
             }
-            SharedCache.refreshTableColStats(HiveStringUtils.normalizeIdentifier(dbName),
+            sharedCacheWrapper.getUnsafe().refreshTableColStats(HiveStringUtils.normalizeIdentifier(dbName),
                 HiveStringUtils.normalizeIdentifier(tblName), tableColStats.getStatsObj());
           }
         }
@@ -557,7 +641,7 @@ public class CachedStore implements RawStore, Configurable {
           // Remove default partition from partition names and get aggregate
           // stats again
           List<FieldSchema> partKeys = table.getPartitionKeys();
-          String defaultPartitionValue = HiveConf.getVar(cachedStore.conf,
+          String defaultPartitionValue = HiveConf.getVar(conf,
               ConfVars.DEFAULTPARTITIONNAME);
           List<String> partCols = new ArrayList<String>();
           List<String> partVals = new ArrayList<String>();
@@ -579,7 +663,7 @@ public class CachedStore implements RawStore, Configurable {
                     + "have is dirty.");
                 return;
               }
-              SharedCache.refreshAggregateStatsCache(HiveStringUtils.normalizeIdentifier(dbName),
+              sharedCacheWrapper.getUnsafe().refreshAggregateStatsCache(HiveStringUtils.normalizeIdentifier(dbName),
                   HiveStringUtils.normalizeIdentifier(tblName), aggrStatsAllPartitions,
                   aggrStatsAllButDefaultPartition);
             }
@@ -623,11 +707,13 @@ public class CachedStore implements RawStore, Configurable {
   @Override
   public void createDatabase(Database db) throws InvalidObjectException, MetaException {
     rawStore.createDatabase(db);
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    if (sharedCache == null) return;
     try {
       // Wait if background cache update is happening
       databaseCacheLock.readLock().lock();
       isDatabaseCacheDirty.set(true);
-      SharedCache.addDatabaseToCache(HiveStringUtils.normalizeIdentifier(db.getName()),
+      sharedCache.addDatabaseToCache(HiveStringUtils.normalizeIdentifier(db.getName()),
           db.deepCopy());
     } finally {
       databaseCacheLock.readLock().unlock();
@@ -636,7 +722,18 @@ public class CachedStore implements RawStore, Configurable {
 
   @Override
   public Database getDatabase(String dbName) throws NoSuchObjectException {
-    Database db = SharedCache.getDatabaseFromCache(HiveStringUtils.normalizeIdentifier(dbName));
+    SharedCache sharedCache;
+
+    if (!sharedCacheWrapper.isInitialized()) {
+      return rawStore.getDatabase(dbName);
+    }
+
+    try {
+      sharedCache = sharedCacheWrapper.get();
+    } catch (MetaException e) {
+      throw new RuntimeException(e); // TODO: why doesn't getDatabase throw MetaEx?
+    }
+    Database db = sharedCache.getDatabaseFromCache(HiveStringUtils.normalizeIdentifier(dbName));
     if (db == null) {
       throw new NoSuchObjectException();
     }
@@ -647,11 +744,13 @@ public class CachedStore implements RawStore, Configurable {
   public boolean dropDatabase(String dbname) throws NoSuchObjectException, MetaException {
     boolean succ = rawStore.dropDatabase(dbname);
     if (succ) {
+      SharedCache sharedCache = sharedCacheWrapper.get();
+      if (sharedCache == null) return succ;
       try {
         // Wait if background cache update is happening
         databaseCacheLock.readLock().lock();
         isDatabaseCacheDirty.set(true);
-        SharedCache.removeDatabaseFromCache(HiveStringUtils.normalizeIdentifier(dbname));
+        sharedCache.removeDatabaseFromCache(HiveStringUtils.normalizeIdentifier(dbname));
       } finally {
         databaseCacheLock.readLock().unlock();
       }
@@ -664,11 +763,13 @@ public class CachedStore implements RawStore, Configurable {
       MetaException {
     boolean succ = rawStore.alterDatabase(dbName, db);
     if (succ) {
+      SharedCache sharedCache = sharedCacheWrapper.get();
+      if (sharedCache == null) return succ;
       try {
         // Wait if background cache update is happening
         databaseCacheLock.readLock().lock();
         isDatabaseCacheDirty.set(true);
-        SharedCache.alterDatabaseInCache(HiveStringUtils.normalizeIdentifier(dbName), db);
+        sharedCache.alterDatabaseInCache(HiveStringUtils.normalizeIdentifier(dbName), db);
       } finally {
         databaseCacheLock.readLock().unlock();
       }
@@ -678,8 +779,12 @@ public class CachedStore implements RawStore, Configurable {
 
   @Override
   public List<String> getDatabases(String pattern) throws MetaException {
+    if (!sharedCacheWrapper.isInitialized()) {
+      return rawStore.getDatabases(pattern);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
     List<String> results = new ArrayList<String>();
-    for (String dbName : SharedCache.listCachedDatabases()) {
+    for (String dbName : sharedCache.listCachedDatabases()) {
       dbName = HiveStringUtils.normalizeIdentifier(dbName);
       if (CacheUtils.matches(dbName, pattern)) {
         results.add(dbName);
@@ -690,7 +795,11 @@ public class CachedStore implements RawStore, Configurable {
 
   @Override
   public List<String> getAllDatabases() throws MetaException {
-    return SharedCache.listCachedDatabases();
+    if (!sharedCacheWrapper.isInitialized()) {
+      return rawStore.getAllDatabases();
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    return sharedCache.listCachedDatabases();
   }
 
   @Override
@@ -729,13 +838,19 @@ public class CachedStore implements RawStore, Configurable {
   @Override
   public void createTable(Table tbl) throws InvalidObjectException, MetaException {
     rawStore.createTable(tbl);
+    String dbName = HiveStringUtils.normalizeIdentifier(tbl.getDbName());
+    String tblName = HiveStringUtils.normalizeIdentifier(tbl.getTableName());
+    if (!shouldCacheTable(dbName, tblName)) {
+      return;
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    if (sharedCache == null) return;
     validateTableType(tbl);
     try {
       // Wait if background cache update is happening
       tableCacheLock.readLock().lock();
       isTableCacheDirty.set(true);
-      SharedCache.addTableToCache(HiveStringUtils.normalizeIdentifier(tbl.getDbName()),
-          HiveStringUtils.normalizeIdentifier(tbl.getTableName()), tbl);
+      sharedCache.addTableToCache(dbName, tblName, tbl);
     } finally {
       tableCacheLock.readLock().unlock();
     }
@@ -748,12 +863,17 @@ public class CachedStore implements RawStore, Configurable {
     if (succ) {
       dbName = HiveStringUtils.normalizeIdentifier(dbName);
       tblName = HiveStringUtils.normalizeIdentifier(tblName);
+      if (!shouldCacheTable(dbName, tblName)) {
+        return succ;
+      }
+      SharedCache sharedCache = sharedCacheWrapper.get();
+      if (sharedCache == null) return succ;
       // Remove table
       try {
         // Wait if background table cache update is happening
         tableCacheLock.readLock().lock();
         isTableCacheDirty.set(true);
-        SharedCache.removeTableFromCache(dbName, tblName);
+        sharedCache.removeTableFromCache(dbName, tblName);
       } finally {
         tableCacheLock.readLock().unlock();
       }
@@ -762,7 +882,7 @@ public class CachedStore implements RawStore, Configurable {
         // Wait if background table col stats cache update is happening
         tableColStatsCacheLock.readLock().lock();
         isTableColStatsCacheDirty.set(true);
-        SharedCache.removeTableColStatsFromCache(dbName, tblName);
+        sharedCache.removeTableColStatsFromCache(dbName, tblName);
       } finally {
         tableColStatsCacheLock.readLock().unlock();
       }
@@ -771,9 +891,15 @@ public class CachedStore implements RawStore, Configurable {
   }
 
   @Override
-  public Table getTable(String dbName, String tableName) throws MetaException {
-    Table tbl = SharedCache.getTableFromCache(HiveStringUtils.normalizeIdentifier(dbName),
-        HiveStringUtils.normalizeIdentifier(tableName));
+  public Table getTable(String dbName, String tblName) throws MetaException {
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      return rawStore.getTable(dbName, tblName);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    Table tbl = sharedCache.getTableFromCache(HiveStringUtils.normalizeIdentifier(dbName),
+        HiveStringUtils.normalizeIdentifier(tblName));
     if (tbl != null) {
       tbl.unsetPrivileges();
     }
@@ -786,11 +912,16 @@ public class CachedStore implements RawStore, Configurable {
     if (succ) {
       String dbName = HiveStringUtils.normalizeIdentifier(part.getDbName());
       String tblName = HiveStringUtils.normalizeIdentifier(part.getTableName());
+      if (!shouldCacheTable(dbName, tblName)) {
+        return succ;
+      }
+      SharedCache sharedCache = sharedCacheWrapper.get();
+      if (sharedCache == null) return succ;
       try {
         // Wait if background cache update is happening
         partitionCacheLock.readLock().lock();
         isPartitionCacheDirty.set(true);
-        SharedCache.addPartitionToCache(dbName, tblName, part);
+        sharedCache.addPartitionToCache(dbName, tblName, part);
       } finally {
         partitionCacheLock.readLock().unlock();
       }
@@ -814,12 +945,17 @@ public class CachedStore implements RawStore, Configurable {
     if (succ) {
       dbName = HiveStringUtils.normalizeIdentifier(dbName);
       tblName = HiveStringUtils.normalizeIdentifier(tblName);
+      if (!shouldCacheTable(dbName, tblName)) {
+        return succ;
+      }
+      SharedCache sharedCache = sharedCacheWrapper.get();
+      if (sharedCache == null) return succ;
       try {
         // Wait if background cache update is happening
         partitionCacheLock.readLock().lock();
         isPartitionCacheDirty.set(true);
         for (Partition part : parts) {
-          SharedCache.addPartitionToCache(dbName, tblName, part);
+          sharedCache.addPartitionToCache(dbName, tblName, part);
         }
       } finally {
         partitionCacheLock.readLock().unlock();
@@ -829,7 +965,7 @@ public class CachedStore implements RawStore, Configurable {
         // Wait if background cache update is happening
         partitionAggrColStatsCacheLock.readLock().lock();
         isPartitionAggrColStatsCacheDirty.set(true);
-        SharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
+        sharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
       } finally {
         partitionAggrColStatsCacheLock.readLock().unlock();
       }
@@ -844,6 +980,11 @@ public class CachedStore implements RawStore, Configurable {
     if (succ) {
       dbName = HiveStringUtils.normalizeIdentifier(dbName);
       tblName = HiveStringUtils.normalizeIdentifier(tblName);
+      if (!shouldCacheTable(dbName, tblName)) {
+        return succ;
+      }
+      SharedCache sharedCache = sharedCacheWrapper.get();
+      if (sharedCache == null) return succ;
       try {
         // Wait if background cache update is happening
         partitionCacheLock.readLock().lock();
@@ -851,7 +992,7 @@ public class CachedStore implements RawStore, Configurable {
         PartitionSpecProxy.PartitionIterator iterator = partitionSpec.getPartitionIterator();
         while (iterator.hasNext()) {
           Partition part = iterator.next();
-          SharedCache.addPartitionToCache(dbName, tblName, part);
+          sharedCache.addPartitionToCache(dbName, tblName, part);
         }
       } finally {
         partitionCacheLock.readLock().unlock();
@@ -861,7 +1002,7 @@ public class CachedStore implements RawStore, Configurable {
         // Wait if background cache update is happening
         partitionAggrColStatsCacheLock.readLock().lock();
         isPartitionAggrColStatsCacheDirty.set(true);
-        SharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
+        sharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
       } finally {
         partitionAggrColStatsCacheLock.readLock().unlock();
       }
@@ -870,11 +1011,18 @@ public class CachedStore implements RawStore, Configurable {
   }
 
   @Override
-  public Partition getPartition(String dbName, String tableName, List<String> part_vals)
+  public Partition getPartition(String dbName, String tblName, List<String> part_vals)
       throws MetaException, NoSuchObjectException {
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    tblName = HiveStringUtils.normalizeIdentifier(tblName);
+
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      return rawStore.getPartition(dbName, tblName, part_vals);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+
     Partition part =
-        SharedCache.getPartitionFromCache(HiveStringUtils.normalizeIdentifier(dbName),
-            HiveStringUtils.normalizeIdentifier(tableName), part_vals);
+        sharedCache.getPartitionFromCache(dbName, tblName, part_vals);
     if (part != null) {
       part.unsetPrivileges();
     } else {
@@ -884,10 +1032,15 @@ public class CachedStore implements RawStore, Configurable {
   }
 
   @Override
-  public boolean doesPartitionExist(String dbName, String tableName,
+  public boolean doesPartitionExist(String dbName, String tblName,
       List<String> part_vals) throws MetaException, NoSuchObjectException {
-    return SharedCache.existPartitionFromCache(HiveStringUtils.normalizeIdentifier(dbName),
-        HiveStringUtils.normalizeIdentifier(tableName), part_vals);
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      return rawStore.doesPartitionExist(dbName, tblName, part_vals);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    return sharedCache.existPartitionFromCache(dbName, tblName, part_vals);
   }
 
   @Override
@@ -897,12 +1050,17 @@ public class CachedStore implements RawStore, Configurable {
     if (succ) {
       dbName = HiveStringUtils.normalizeIdentifier(dbName);
       tblName = HiveStringUtils.normalizeIdentifier(tblName);
+      if (!shouldCacheTable(dbName, tblName)) {
+        return succ;
+      }
+      SharedCache sharedCache = sharedCacheWrapper.get();
+      if (sharedCache == null) return succ;
       // Remove partition
       try {
         // Wait if background cache update is happening
         partitionCacheLock.readLock().lock();
         isPartitionCacheDirty.set(true);
-        SharedCache.removePartitionFromCache(dbName, tblName, part_vals);
+        sharedCache.removePartitionFromCache(dbName, tblName, part_vals);
       } finally {
         partitionCacheLock.readLock().unlock();
       }
@@ -911,7 +1069,7 @@ public class CachedStore implements RawStore, Configurable {
         // Wait if background cache update is happening
         partitionColStatsCacheLock.readLock().lock();
         isPartitionColStatsCacheDirty.set(true);
-        SharedCache.removePartitionColStatsFromCache(dbName, tblName, part_vals);
+        sharedCache.removePartitionColStatsFromCache(dbName, tblName, part_vals);
       } finally {
         partitionColStatsCacheLock.readLock().unlock();
       }
@@ -920,7 +1078,7 @@ public class CachedStore implements RawStore, Configurable {
         // Wait if background cache update is happening
         partitionAggrColStatsCacheLock.readLock().lock();
         isPartitionAggrColStatsCacheDirty.set(true);
-        SharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
+        sharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
       } finally {
         partitionAggrColStatsCacheLock.readLock().unlock();
       }
@@ -929,10 +1087,15 @@ public class CachedStore implements RawStore, Configurable {
   }
 
   @Override
-  public List<Partition> getPartitions(String dbName, String tableName, int max)
+  public List<Partition> getPartitions(String dbName, String tblName, int max)
       throws MetaException, NoSuchObjectException {
-    List<Partition> parts = SharedCache.listCachedPartitions(HiveStringUtils.normalizeIdentifier(dbName),
-        HiveStringUtils.normalizeIdentifier(tableName), max);
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      return rawStore.getPartitions(dbName, tblName, max);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    List<Partition> parts = sharedCache.listCachedPartitions(dbName, tblName, max);
     if (parts != null) {
       for (Partition part : parts) {
         part.unsetPrivileges();
@@ -945,44 +1108,97 @@ public class CachedStore implements RawStore, Configurable {
   public void alterTable(String dbName, String tblName, Table newTable)
       throws InvalidObjectException, MetaException {
     rawStore.alterTable(dbName, tblName, newTable);
-    validateTableType(newTable);
     dbName = HiveStringUtils.normalizeIdentifier(dbName);
     tblName = HiveStringUtils.normalizeIdentifier(tblName);
-    // Update table cache
-    try {
-      // Wait if background cache update is happening
-      tableCacheLock.readLock().lock();
-      isTableCacheDirty.set(true);
-      SharedCache.alterTableInCache(dbName, tblName, newTable);
-    } finally {
-      tableCacheLock.readLock().unlock();
+    String newTblName = HiveStringUtils.normalizeIdentifier(newTable.getTableName());
+    if (!shouldCacheTable(dbName, tblName) && !shouldCacheTable(dbName, newTblName)) {
+      return;
     }
-    // Update partition cache (key might have changed since table name is a
-    // component of key)
-    try {
-      // Wait if background cache update is happening
-      partitionCacheLock.readLock().lock();
-      isPartitionCacheDirty.set(true);
-      SharedCache.alterTableInPartitionCache(dbName, tblName, newTable);
-    } finally {
-      partitionCacheLock.readLock().unlock();
-    }
-    // Update aggregate partition col stats keys wherever applicable
-    try {
-      // Wait if background cache update is happening
-      partitionAggrColStatsCacheLock.readLock().lock();
-      isPartitionAggrColStatsCacheDirty.set(true);
-      SharedCache.alterTableInAggrPartitionColStatsCache(dbName, tblName, newTable);
-    } finally {
-      partitionAggrColStatsCacheLock.readLock().unlock();
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    if (sharedCache == null) return;
+
+    if (shouldCacheTable(dbName, newTblName)) {
+      validateTableType(newTable);
+      dbName = HiveStringUtils.normalizeIdentifier(dbName);
+      tblName = HiveStringUtils.normalizeIdentifier(tblName);
+      // Update table cache
+      try {
+        // Wait if background cache update is happening
+        tableCacheLock.readLock().lock();
+        isTableCacheDirty.set(true);
+        SharedCache.alterTableInCache(dbName, tblName, newTable);
+      } finally {
+        tableCacheLock.readLock().unlock();
+      }
+      // Update partition cache (key might have changed since table name is a
+      // component of key)
+      try {
+        // Wait if background cache update is happening
+        partitionCacheLock.readLock().lock();
+        isPartitionCacheDirty.set(true);
+        sharedCache.alterTableInPartitionCache(dbName, tblName, newTable);
+      } finally {
+        partitionCacheLock.readLock().unlock();
+      }
+      // Update aggregate partition col stats keys wherever applicable
+      try {
+        // Wait if background cache update is happening
+        partitionAggrColStatsCacheLock.readLock().lock();
+        isPartitionAggrColStatsCacheDirty.set(true);
+        sharedCache.alterTableInAggrPartitionColStatsCache(dbName, tblName, newTable);
+      } finally {
+        partitionAggrColStatsCacheLock.readLock().unlock();
+      }
+    } else {
+      // Remove the table and its cached partitions, stats etc,
+      // since it does not pass the whitelist/blacklist filter.
+      // Remove table
+      try {
+        // Wait if background cache update is happening
+        tableCacheLock.readLock().lock();
+        isTableCacheDirty.set(true);
+        sharedCache.removeTableFromCache(dbName, tblName);
+      } finally {
+        tableCacheLock.readLock().unlock();
+      }
+      // Remove partitions
+      try {
+        // Wait if background cache update is happening
+        partitionCacheLock.readLock().lock();
+        isPartitionCacheDirty.set(true);
+        sharedCache.removePartitionsFromCache(dbName, tblName);
+      } finally {
+        partitionCacheLock.readLock().unlock();
+      }
+      // Remove partition col stats
+      try {
+        // Wait if background cache update is happening
+        partitionColStatsCacheLock.readLock().lock();
+        isPartitionColStatsCacheDirty.set(true);
+        sharedCache.removePartitionColStatsFromCache(dbName, tblName);
+      } finally {
+        partitionColStatsCacheLock.readLock().unlock();
+      }
+      try {
+        // Wait if background cache update is happening
+        partitionAggrColStatsCacheLock.readLock().lock();
+        isPartitionAggrColStatsCacheDirty.set(true);
+        sharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
+      } finally {
+        partitionAggrColStatsCacheLock.readLock().unlock();
+      }
     }
   }
 
   @Override
   public List<String> getTables(String dbName, String pattern)
       throws MetaException {
+    if (!isBlacklistWhitelistEmpty(conf) || !sharedCacheWrapper.isInitialized()) {
+      return rawStore.getTables(dbName, pattern);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
     List<String> tableNames = new ArrayList<String>();
-    for (Table table : SharedCache.listCachedTables(HiveStringUtils.normalizeIdentifier(dbName))) {
+    for (Table table : sharedCache.listCachedTables(HiveStringUtils.normalizeIdentifier(dbName))) {
       if (CacheUtils.matches(table.getTableName(), pattern)) {
         tableNames.add(table.getTableName());
       }
@@ -993,25 +1209,55 @@ public class CachedStore implements RawStore, Configurable {
   @Override
   public List<TableMeta> getTableMeta(String dbNames, String tableNames,
       List<String> tableTypes) throws MetaException {
-    return SharedCache.getTableMeta(HiveStringUtils.normalizeIdentifier(dbNames),
+    // TODO Check if all required tables are allowed, if so, get it from cache
+    if (!isBlacklistWhitelistEmpty(conf) || !sharedCacheWrapper.isInitialized()) {
+      return rawStore.getTableMeta(dbNames, tableNames, tableTypes);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    return sharedCache.getTableMeta(HiveStringUtils.normalizeIdentifier(dbNames),
         HiveStringUtils.normalizeIdentifier(tableNames), tableTypes);
   }
 
   @Override
   public List<Table> getTableObjectsByName(String dbName,
       List<String> tblNames) throws MetaException, UnknownDBException {
-    List<Table> tables = new ArrayList<Table>();
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    boolean missSomeInCache = false;
     for (String tblName : tblNames) {
-      tables.add(SharedCache.getTableFromCache(HiveStringUtils.normalizeIdentifier(dbName),
-          HiveStringUtils.normalizeIdentifier(tblName)));
+      tblName = HiveStringUtils.normalizeIdentifier(tblName);
+      if (!shouldCacheTable(dbName, tblName)) {
+        missSomeInCache = true;
+        break;
+      }
+    }
+    if (!sharedCacheWrapper.isInitialized() || missSomeInCache) {
+      return rawStore.getTableObjectsByName(dbName, tblNames);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    List<Table> tables = new ArrayList<>();
+    for (String tblName : tblNames) {
+      tblName = HiveStringUtils.normalizeIdentifier(tblName);
+      Table tbl = sharedCache.getTableFromCache(dbName, tblName);
+      if (tbl == null) {
+        tbl = rawStore.getTable(dbName, tblName);
+      }
+      tables.add(tbl);
     }
     return tables;
   }
 
   @Override
   public List<String> getAllTables(String dbName) throws MetaException {
-    List<String> tblNames = new ArrayList<String>();
-    for (Table tbl : SharedCache.listCachedTables(HiveStringUtils.normalizeIdentifier(dbName))) {
+    if (!isBlacklistWhitelistEmpty(conf) || !sharedCacheWrapper.isInitialized()) {
+      return rawStore.getAllTables(dbName);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    return getAllTablesInternal(dbName, sharedCache);
+  }
+
+  private static List<String> getAllTablesInternal(String dbName, SharedCache sharedCache) {
+    List<String> tblNames = new ArrayList<>();
+    for (Table tbl : sharedCache.listCachedTables(HiveStringUtils.normalizeIdentifier(dbName))) {
       tblNames.add(HiveStringUtils.normalizeIdentifier(tbl.getTableName()));
     }
     return tblNames;
@@ -1020,9 +1266,13 @@ public class CachedStore implements RawStore, Configurable {
   @Override
   public List<String> listTableNamesByFilter(String dbName, String filter,
       short max_tables) throws MetaException, UnknownDBException {
+    if (!isBlacklistWhitelistEmpty(conf) || !sharedCacheWrapper.isInitialized()) {
+      return rawStore.listTableNamesByFilter(dbName, filter, max_tables);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
     List<String> tableNames = new ArrayList<String>();
     int count = 0;
-    for (Table table : SharedCache.listCachedTables(HiveStringUtils.normalizeIdentifier(dbName))) {
+    for (Table table : sharedCache.listCachedTables(HiveStringUtils.normalizeIdentifier(dbName))) {
       if (CacheUtils.matches(table.getTableName(), filter)
           && (max_tables == -1 || count < max_tables)) {
         tableNames.add(table.getTableName());
@@ -1035,12 +1285,16 @@ public class CachedStore implements RawStore, Configurable {
   @Override
   public List<String> listPartitionNames(String dbName, String tblName,
       short max_parts) throws MetaException {
-    List<String> partitionNames = new ArrayList<String>();
-    Table t = SharedCache.getTableFromCache(HiveStringUtils.normalizeIdentifier(dbName),
-        HiveStringUtils.normalizeIdentifier(tblName));
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      return rawStore.listPartitionNames(dbName, tblName, max_parts);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    List<String> partitionNames = new ArrayList<>();
+    Table t = sharedCache.getTableFromCache(dbName, tblName);
     int count = 0;
-    for (Partition part : SharedCache.listCachedPartitions(HiveStringUtils.normalizeIdentifier(dbName),
-        HiveStringUtils.normalizeIdentifier(tblName), max_parts)) {
+    for (Partition part : sharedCache.listCachedPartitions(dbName, tblName, max_parts)) {
       if (max_parts == -1 || count < max_parts) {
         partitionNames.add(Warehouse.makePartName(t.getPartitionKeys(), part.getValues()));
       }
@@ -1049,10 +1303,10 @@ public class CachedStore implements RawStore, Configurable {
   }
 
   @Override
-  public List<String> listPartitionNamesByFilter(String db_name,
-      String tbl_name, String filter, short max_parts) throws MetaException {
+  public List<String> listPartitionNamesByFilter(String dbName,
+      String tblName, String filter, short max_parts) throws MetaException {
     // TODO Translate filter -> expr
-    return null;
+    return rawStore.listPartitionNamesByFilter(dbName, tblName, filter, max_parts);
   }
 
   @Override
@@ -1061,12 +1315,17 @@ public class CachedStore implements RawStore, Configurable {
     rawStore.alterPartition(dbName, tblName, partVals, newPart);
     dbName = HiveStringUtils.normalizeIdentifier(dbName);
     tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!shouldCacheTable(dbName, tblName)) {
+      return;
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    if (sharedCache == null) return;
     // Update partition cache
     try {
       // Wait if background cache update is happening
       partitionCacheLock.readLock().lock();
       isPartitionCacheDirty.set(true);
-      SharedCache.alterPartitionInCache(dbName, tblName, partVals, newPart);
+      sharedCache.alterPartitionInCache(dbName, tblName, partVals, newPart);
     } finally {
       partitionCacheLock.readLock().unlock();
     }
@@ -1075,7 +1334,7 @@ public class CachedStore implements RawStore, Configurable {
       // Wait if background cache update is happening
       partitionColStatsCacheLock.readLock().lock();
       isPartitionColStatsCacheDirty.set(true);
-      SharedCache.alterPartitionInColStatsCache(dbName, tblName, partVals, newPart);
+      sharedCache.alterPartitionInColStatsCache(dbName, tblName, partVals, newPart);
     } finally {
       partitionColStatsCacheLock.readLock().unlock();
     }
@@ -1084,7 +1343,7 @@ public class CachedStore implements RawStore, Configurable {
       // Wait if background cache update is happening
       partitionAggrColStatsCacheLock.readLock().lock();
       isPartitionAggrColStatsCacheDirty.set(true);
-      SharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
+      sharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
     } finally {
       partitionAggrColStatsCacheLock.readLock().unlock();
     }
@@ -1096,6 +1355,11 @@ public class CachedStore implements RawStore, Configurable {
     rawStore.alterPartitions(dbName, tblName, partValsList, newParts);
     dbName = HiveStringUtils.normalizeIdentifier(dbName);
     tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!shouldCacheTable(dbName, tblName)) {
+      return;
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    if (sharedCache == null) return;
     // Update partition cache
     try {
       // Wait if background cache update is happening
@@ -1104,7 +1368,7 @@ public class CachedStore implements RawStore, Configurable {
       for (int i = 0; i < partValsList.size(); i++) {
         List<String> partVals = partValsList.get(i);
         Partition newPart = newParts.get(i);
-        SharedCache.alterPartitionInCache(dbName, tblName, partVals, newPart);
+        sharedCache.alterPartitionInCache(dbName, tblName, partVals, newPart);
       }
     } finally {
       partitionCacheLock.readLock().unlock();
@@ -1117,7 +1381,7 @@ public class CachedStore implements RawStore, Configurable {
       for (int i = 0; i < partValsList.size(); i++) {
         List<String> partVals = partValsList.get(i);
         Partition newPart = newParts.get(i);
-        SharedCache.alterPartitionInColStatsCache(dbName, tblName, partVals, newPart);
+        sharedCache.alterPartitionInColStatsCache(dbName, tblName, partVals, newPart);
       }
     } finally {
       partitionColStatsCacheLock.readLock().unlock();
@@ -1127,7 +1391,7 @@ public class CachedStore implements RawStore, Configurable {
       // Wait if background cache update is happening
       partitionAggrColStatsCacheLock.readLock().lock();
       isPartitionAggrColStatsCacheDirty.set(true);
-      SharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
+      sharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
     } finally {
       partitionAggrColStatsCacheLock.readLock().unlock();
     }
@@ -1195,19 +1459,26 @@ public class CachedStore implements RawStore, Configurable {
       String filter, short maxParts)
       throws MetaException, NoSuchObjectException {
     // TODO Auto-generated method stub
-    return null;
+    return rawStore.getPartitionsByFilter(dbName, tblName, filter, maxParts);
   }
 
   @Override
   public boolean getPartitionsByExpr(String dbName, String tblName, byte[] expr,
       String defaultPartitionName, short maxParts, List<Partition> result)
       throws TException {
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      return rawStore.getPartitionsByExpr(dbName, tblName, expr, defaultPartitionName, maxParts,
+          result);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
     List<String> partNames = new LinkedList<String>();
     Table table = SharedCache.getTableFromCache(HiveStringUtils.normalizeIdentifier(dbName), HiveStringUtils.normalizeIdentifier(tblName));
     boolean hasUnknownPartitions = getPartitionNamesPrunedByExprNoTxn(
         table, expr, defaultPartitionName, maxParts, partNames);
     for (String partName : partNames) {
-      Partition part = SharedCache.getPartitionFromCache(HiveStringUtils.normalizeIdentifier(dbName),
+      Partition part = sharedCache.getPartitionFromCache(HiveStringUtils.normalizeIdentifier(dbName),
           HiveStringUtils.normalizeIdentifier(tblName), partNameToVals(partName));
       part.unsetPrivileges();
       result.add(part);
@@ -1218,10 +1489,7 @@ public class CachedStore implements RawStore, Configurable {
   @Override
   public int getNumPartitionsByFilter(String dbName, String tblName,
       String filter) throws MetaException, NoSuchObjectException {
-    Table table = SharedCache.getTableFromCache(HiveStringUtils.normalizeIdentifier(dbName),
-        HiveStringUtils.normalizeIdentifier(tblName));
-    // TODO filter -> expr
-    return 0;
+    return rawStore.getNumPartitionsByFilter(dbName, tblName, filter);
   }
 
   public static List<String> partNameToVals(String name) {
@@ -1237,10 +1505,15 @@ public class CachedStore implements RawStore, Configurable {
   @Override
   public List<Partition> getPartitionsByNames(String dbName, String tblName,
       List<String> partNames) throws MetaException, NoSuchObjectException {
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      return rawStore.getPartitionsByNames(dbName, tblName, partNames);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
     List<Partition> partitions = new ArrayList<Partition>();
     for (String partName : partNames) {
-      Partition part = SharedCache.getPartitionFromCache(HiveStringUtils.normalizeIdentifier(dbName),
-          HiveStringUtils.normalizeIdentifier(tblName), partNameToVals(partName));
+      Partition part = sharedCache.getPartitionFromCache(dbName, tblName, partNameToVals(partName));
       if (part!=null) {
         partitions.add(part);
       }
@@ -1408,8 +1681,13 @@ public class CachedStore implements RawStore, Configurable {
   public Partition getPartitionWithAuth(String dbName, String tblName,
       List<String> partVals, String userName, List<String> groupNames)
       throws MetaException, NoSuchObjectException, InvalidObjectException {
-    Partition p = SharedCache.getPartitionFromCache(HiveStringUtils.normalizeIdentifier(dbName),
-        HiveStringUtils.normalizeIdentifier(tblName), partVals);
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      return rawStore.getPartitionWithAuth(dbName, tblName, partVals, userName, groupNames);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    Partition p = sharedCache.getPartitionFromCache(dbName, tblName, partVals);
     if (p!=null) {
       Table t = SharedCache.getTableFromCache(HiveStringUtils.normalizeIdentifier(dbName),
           HiveStringUtils.normalizeIdentifier(tblName));
@@ -1425,12 +1703,17 @@ public class CachedStore implements RawStore, Configurable {
   public List<Partition> getPartitionsWithAuth(String dbName, String tblName,
       short maxParts, String userName, List<String> groupNames)
       throws MetaException, NoSuchObjectException, InvalidObjectException {
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      return rawStore.getPartitionsWithAuth(dbName, tblName, maxParts, userName, groupNames);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
     Table t = SharedCache.getTableFromCache(HiveStringUtils.normalizeIdentifier(dbName),
         HiveStringUtils.normalizeIdentifier(tblName));
     List<Partition> partitions = new ArrayList<Partition>();
     int count = 0;
-    for (Partition part : SharedCache.listCachedPartitions(HiveStringUtils.normalizeIdentifier(dbName),
-        HiveStringUtils.normalizeIdentifier(tblName), maxParts)) {
+    for (Partition part : sharedCache.listCachedPartitions(dbName, tblName, maxParts)) {
       if (maxParts == -1 || count < maxParts) {
         String partName = Warehouse.makePartName(t.getPartitionKeys(), part.getValues());
         PrincipalPrivilegeSet privs = getPartitionPrivilegeSet(dbName, tblName, partName,
@@ -1447,12 +1730,16 @@ public class CachedStore implements RawStore, Configurable {
   public List<String> listPartitionNamesPs(String dbName, String tblName,
       List<String> partVals, short maxParts)
       throws MetaException, NoSuchObjectException {
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      return rawStore.listPartitionNamesPs(dbName, tblName, partVals, maxParts);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
     List<String> partNames = new ArrayList<String>();
     int count = 0;
-    Table t = SharedCache.getTableFromCache(HiveStringUtils.normalizeIdentifier(dbName),
-        HiveStringUtils.normalizeIdentifier(tblName));
-    for (Partition part : SharedCache.listCachedPartitions(HiveStringUtils.normalizeIdentifier(dbName),
-        HiveStringUtils.normalizeIdentifier(tblName), maxParts)) {
+    Table t = sharedCache.getTableFromCache(dbName, tblName);
+    for (Partition part : sharedCache.listCachedPartitions(dbName, tblName, maxParts)) {
       boolean psMatch = true;
       for (int i=0;i<partVals.size();i++) {
         String psVal = partVals.get(i);
@@ -1478,12 +1765,17 @@ public class CachedStore implements RawStore, Configurable {
       String tblName, List<String> partVals, short maxParts, String userName,
       List<String> groupNames)
       throws MetaException, InvalidObjectException, NoSuchObjectException {
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      return rawStore.listPartitionsPsWithAuth(dbName, tblName, partVals, maxParts, userName,
+          groupNames);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
     List<Partition> partitions = new ArrayList<Partition>();
-    Table t = SharedCache.getTableFromCache(HiveStringUtils.normalizeIdentifier(dbName),
-        HiveStringUtils.normalizeIdentifier(tblName));
+    Table t = sharedCache.getTableFromCache(dbName, tblName);
     int count = 0;
-    for (Partition part : SharedCache.listCachedPartitions(HiveStringUtils.normalizeIdentifier(dbName),
-        HiveStringUtils.normalizeIdentifier(tblName), maxParts)) {
+    for (Partition part : sharedCache.listCachedPartitions(dbName, tblName, maxParts)) {
       boolean psMatch = true;
       for (int i=0;i<partVals.size();i++) {
         String psVal = partVals.get(i);
@@ -1512,10 +1804,15 @@ public class CachedStore implements RawStore, Configurable {
       throws NoSuchObjectException, MetaException, InvalidObjectException, InvalidInputException {
     boolean succ = rawStore.updateTableColumnStatistics(colStats);
     if (succ) {
-      String dbName = colStats.getStatsDesc().getDbName();
-      String tableName = colStats.getStatsDesc().getTableName();
+      String dbName = HiveStringUtils.normalizeIdentifier(colStats.getStatsDesc().getDbName());
+      String tblName = HiveStringUtils.normalizeIdentifier(colStats.getStatsDesc().getTableName());
+      if (!shouldCacheTable(dbName, tblName)) {
+        return succ;
+      }
+      SharedCache sharedCache = sharedCacheWrapper.get();
+      if (sharedCache == null) return succ;
       List<ColumnStatisticsObj> statsObjs = colStats.getStatsObj();
-      Table tbl = getTable(dbName, tableName);
+      Table tbl = getTable(dbName, tblName);
       List<String> colNames = new ArrayList<>();
       for (ColumnStatisticsObj statsObj : statsObjs) {
         colNames.add(statsObj.getColName());
@@ -1527,8 +1824,7 @@ public class CachedStore implements RawStore, Configurable {
         // Wait if background cache update is happening
         tableCacheLock.readLock().lock();
         isTableCacheDirty.set(true);
-        SharedCache.alterTableInCache(HiveStringUtils.normalizeIdentifier(dbName),
-            HiveStringUtils.normalizeIdentifier(tableName), tbl);
+        sharedCache.alterTableInCache(dbName, tblName, tbl);
       } finally {
         tableCacheLock.readLock().unlock();
       }
@@ -1538,8 +1834,7 @@ public class CachedStore implements RawStore, Configurable {
         // Wait if background cache update is happening
         tableColStatsCacheLock.readLock().lock();
         isTableColStatsCacheDirty.set(true);
-        SharedCache.updateTableColStatsInCache(HiveStringUtils.normalizeIdentifier(dbName),
-            HiveStringUtils.normalizeIdentifier(tableName), statsObjs);
+        sharedCache.updateTableColStatsInCache(dbName, tblName, statsObjs);
       } finally {
         tableColStatsCacheLock.readLock().unlock();
       }
@@ -1548,15 +1843,19 @@ public class CachedStore implements RawStore, Configurable {
   }
 
   @Override
-  public ColumnStatistics getTableColumnStatistics(String dbName, String tableName,
+  public ColumnStatistics getTableColumnStatistics(String dbName, String tblName,
       List<String> colNames) throws MetaException, NoSuchObjectException {
-    ColumnStatisticsDesc csd = new ColumnStatisticsDesc(true, dbName, tableName);
+    dbName = HiveStringUtils.normalizeIdentifier(dbName);
+    tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      return rawStore.getTableColumnStatistics(dbName, tblName, colNames);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    ColumnStatisticsDesc csd = new ColumnStatisticsDesc(true, dbName, tblName);
     List<ColumnStatisticsObj> colStatObjs = new ArrayList<ColumnStatisticsObj>();
     for (String colName : colNames) {
-      String colStatsCacheKey =
-          CacheUtils.buildKey(HiveStringUtils.normalizeIdentifier(dbName),
-              HiveStringUtils.normalizeIdentifier(tableName), colName);
-      ColumnStatisticsObj colStat = SharedCache.getCachedTableColStats(colStatsCacheKey);
+      String colStatsCacheKey = CacheUtils.buildKey(dbName, tblName, colName);
+      ColumnStatisticsObj colStat = sharedCache.getCachedTableColStats(colStatsCacheKey);
       if (colStat != null) {
         colStatObjs.add(colStat);
       }
@@ -1569,16 +1868,22 @@ public class CachedStore implements RawStore, Configurable {
   }
 
   @Override
-  public boolean deleteTableColumnStatistics(String dbName, String tableName, String colName)
+  public boolean deleteTableColumnStatistics(String dbName, String tblName, String colName)
       throws NoSuchObjectException, MetaException, InvalidObjectException, InvalidInputException {
-    boolean succ = rawStore.deleteTableColumnStatistics(dbName, tableName, colName);
+    boolean succ = rawStore.deleteTableColumnStatistics(dbName, tblName, colName);
     if (succ) {
+      dbName = HiveStringUtils.normalizeIdentifier(dbName);
+      tblName = HiveStringUtils.normalizeIdentifier(tblName);
+      if (!shouldCacheTable(dbName, tblName)) {
+        return succ;
+      }
+      SharedCache sharedCache = sharedCacheWrapper.get();
+      if (sharedCache == null) return succ;
       try {
         // Wait if background cache update is happening
         tableColStatsCacheLock.readLock().lock();
         isTableColStatsCacheDirty.set(true);
-        SharedCache.removeTableColStatsFromCache(HiveStringUtils.normalizeIdentifier(dbName),
-            HiveStringUtils.normalizeIdentifier(tableName), colName);
+        sharedCache.removeTableColStatsFromCache(dbName, tblName, colName);
       } finally {
         tableColStatsCacheLock.readLock().unlock();
       }
@@ -1591,8 +1896,13 @@ public class CachedStore implements RawStore, Configurable {
       throws NoSuchObjectException, MetaException, InvalidObjectException, InvalidInputException {
     boolean succ = rawStore.updatePartitionColumnStatistics(colStats, partVals);
     if (succ) {
-      String dbName = colStats.getStatsDesc().getDbName();
-      String tblName = colStats.getStatsDesc().getTableName();
+      String dbName = HiveStringUtils.normalizeIdentifier(colStats.getStatsDesc().getDbName());
+      String tblName = HiveStringUtils.normalizeIdentifier(colStats.getStatsDesc().getTableName());
+      if (!shouldCacheTable(dbName, tblName)) {
+        return succ;
+      }
+      SharedCache sharedCache = sharedCacheWrapper.get();
+      if (sharedCache == null) return succ;
       List<ColumnStatisticsObj> statsObjs = colStats.getStatsObj();
       Partition part = getPartition(dbName, tblName, partVals);
       List<String> colNames = new ArrayList<>();
@@ -1600,8 +1910,6 @@ public class CachedStore implements RawStore, Configurable {
         colNames.add(statsObj.getColName());
       }
       StatsSetupConst.setColumnStatsState(part.getParameters(), colNames);
-      dbName = HiveStringUtils.normalizeIdentifier(dbName);
-      tblName = HiveStringUtils.normalizeIdentifier(tblName);
       // Update partition
       try {
         // Wait if background cache update is happening
@@ -1616,7 +1924,7 @@ public class CachedStore implements RawStore, Configurable {
         // Wait if background cache update is happening
         partitionColStatsCacheLock.readLock().lock();
         isPartitionColStatsCacheDirty.set(true);
-        SharedCache.updatePartitionColStatsInCache(dbName, tblName, partVals, colStats
+        sharedCache.updatePartitionColStatsInCache(dbName, tblName, partVals, colStats
             .getStatsObj());
       } finally {
         partitionColStatsCacheLock.readLock().unlock();
@@ -1626,7 +1934,7 @@ public class CachedStore implements RawStore, Configurable {
         // Wait if background cache update is happening
         partitionAggrColStatsCacheLock.readLock().lock();
         isPartitionAggrColStatsCacheDirty.set(true);
-        SharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
+        sharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
       } finally {
         partitionAggrColStatsCacheLock.readLock().unlock();
       }
@@ -1651,11 +1959,16 @@ public class CachedStore implements RawStore, Configurable {
     dbName = HiveStringUtils.normalizeIdentifier(dbName);
     tblName = HiveStringUtils.normalizeIdentifier(tblName);
     if (succ) {
+      if (!shouldCacheTable(dbName, tblName)) {
+        return succ;
+      }
+      SharedCache sharedCache = sharedCacheWrapper.get();
+      if (sharedCache == null) return succ;
       try {
         // Wait if background cache update is happening
         partitionColStatsCacheLock.readLock().lock();
         isPartitionColStatsCacheDirty.set(true);
-        SharedCache.removePartitionColStatsFromCache(dbName, tblName, partVals, colName);
+        sharedCache.removePartitionColStatsFromCache(dbName, tblName, partVals, colName);
       } finally {
         partitionColStatsCacheLock.readLock().unlock();
       }
@@ -1664,7 +1977,7 @@ public class CachedStore implements RawStore, Configurable {
         // Wait if background cache update is happening
         partitionAggrColStatsCacheLock.readLock().lock();
         isPartitionAggrColStatsCacheDirty.set(true);
-        SharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
+        sharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
       } finally {
         partitionAggrColStatsCacheLock.readLock().unlock();
       }
@@ -1674,19 +1987,23 @@ public class CachedStore implements RawStore, Configurable {
   
   public AggrStats get_aggr_stats_for(String dbName, String tblName, List<String> partNames,
       List<String> colNames) throws MetaException, NoSuchObjectException {
-    List<ColumnStatisticsObj> colStats;
-    List<String> allPartNames = rawStore.listPartitionNames(dbName, tblName, (short) -1);
     dbName = HiveStringUtils.normalizeIdentifier(dbName);
     tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!sharedCacheWrapper.isInitialized() || !shouldCacheTable(dbName, tblName)) {
+      rawStore.get_aggr_stats_for(dbName, tblName, partNames, colNames);
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    List<ColumnStatisticsObj> colStats;
+    List<String> allPartNames = rawStore.listPartitionNames(dbName, tblName, (short) -1);
     if (partNames.size() == allPartNames.size()) {
-      colStats = SharedCache.getAggrStatsFromCache(dbName, tblName, colNames, StatsType.ALL);
+      colStats = sharedCache.getAggrStatsFromCache(dbName, tblName, colNames, StatsType.ALL);
       if (colStats != null) {
         return new AggrStats(colStats, partNames.size());
       }
     } else if (partNames.size() == (allPartNames.size() - 1)) {
       String defaultPartitionName = HiveConf.getVar(conf, ConfVars.DEFAULTPARTITIONNAME);
       if (!partNames.contains(defaultPartitionName)) {
-        colStats = SharedCache.getAggrStatsFromCache(dbName, tblName, colNames,
+        colStats = sharedCache.getAggrStatsFromCache(dbName, tblName, colNames,
             StatsType.ALLBUTDEFAULT);
         if (colStats != null) {
           return new AggrStats(colStats, partNames.size());
@@ -1816,6 +2133,11 @@ public class CachedStore implements RawStore, Configurable {
     rawStore.dropPartitions(dbName, tblName, partNames);
     dbName = HiveStringUtils.normalizeIdentifier(dbName);
     tblName = HiveStringUtils.normalizeIdentifier(tblName);
+    if (!shouldCacheTable(dbName, tblName)) {
+      return;
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    if (sharedCache == null) return;
     // Remove partitions
     try {
       // Wait if background cache update is happening
@@ -1823,7 +2145,7 @@ public class CachedStore implements RawStore, Configurable {
       isPartitionCacheDirty.set(true);
       for (String partName : partNames) {
         List<String> vals = partNameToVals(partName);
-        SharedCache.removePartitionFromCache(dbName, tblName, vals);
+        sharedCache.removePartitionFromCache(dbName, tblName, vals);
       }
     } finally {
       partitionCacheLock.readLock().unlock();
@@ -1835,7 +2157,7 @@ public class CachedStore implements RawStore, Configurable {
       isPartitionColStatsCacheDirty.set(true);
       for (String partName : partNames) {
         List<String> part_vals = partNameToVals(partName);
-        SharedCache.removePartitionColStatsFromCache(dbName, tblName, part_vals);
+        sharedCache.removePartitionColStatsFromCache(dbName, tblName, part_vals);
       }
     } finally {
       partitionColStatsCacheLock.readLock().unlock();
@@ -1845,7 +2167,7 @@ public class CachedStore implements RawStore, Configurable {
       // Wait if background cache update is happening
       partitionAggrColStatsCacheLock.readLock().lock();
       isPartitionAggrColStatsCacheDirty.set(true);
-      SharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
+      sharedCache.removeAggrPartitionColStatsFromCache(dbName, tblName);
     } finally {
       partitionAggrColStatsCacheLock.readLock().unlock();
     }
@@ -2051,8 +2373,14 @@ public class CachedStore implements RawStore, Configurable {
       throws InvalidObjectException, MetaException {
     // TODO constraintCache
     List<String> constraintNames = rawStore.createTableWithConstraints(tbl, primaryKeys, foreignKeys);
-    SharedCache.addTableToCache(HiveStringUtils.normalizeIdentifier(tbl.getDbName()),
-        HiveStringUtils.normalizeIdentifier(tbl.getTableName()), tbl);
+    String dbName = HiveStringUtils.normalizeIdentifier(tbl.getDbName());
+    String tblName = HiveStringUtils.normalizeIdentifier(tbl.getTableName());
+    if (!shouldCacheTable(dbName, tblName)) {
+      return constraintNames;
+    }
+    SharedCache sharedCache = sharedCacheWrapper.get();
+    if (sharedCache == null) return constraintNames;
+    sharedCache.addTableToCache(dbName, tblName, tbl);
     return constraintNames;
   }
 
@@ -2090,5 +2418,170 @@ public class CachedStore implements RawStore, Configurable {
   @VisibleForTesting
   public void setRawStore(RawStore rawStore) {
     this.rawStore = rawStore;
+  }
+
+  // TODO: this is only used to hide SharedCache instance from direct use; ideally, the stuff in
+  //       CachedStore that's specific to SharedCache (e.g. update threads) should be refactored to
+  //       be part of this, then this could be moved out of this file (or merged with SharedCache).
+  private static final class SharedCacheWrapper {
+    private enum InitState {
+      NOT_ENABLED, INITIALIZING, INITIALIZED, FAILED_FATAL
+    }
+
+    private final SharedCache instance = new SharedCache();
+    private final Object initLock = new Object();
+    private volatile InitState initState = InitState.NOT_ENABLED;
+    // We preserve the old setConf init behavior, where a failed prewarm would fail the query
+    // and give a chance to another query to try prewarming again. Basically, we'd increment the
+    // count and all the queries waiting for prewarm would fail; however, we will retry the prewarm
+    // again infinitely, so some queries might succeed later.
+    private int initFailureCount;
+    private Throwable lastError;
+
+    /**
+     * A callback to updates the initialization state.
+     * @param error Error, if any. Null means the initialization has succeeded.
+     * @param isFatal Whether the error (if present) is fatal, or whether init will be retried.
+     */
+    void updateInitState(Throwable error, boolean isFatal) {
+      boolean isSuccessful = error == null;
+      synchronized (initLock) {
+        if (isSuccessful) {
+          initState = InitState.INITIALIZED;
+        } else if (isFatal) {
+          initState = InitState.FAILED_FATAL;
+          lastError = error;
+        } else {
+          ++initFailureCount;
+          lastError = error;
+        }
+        initLock.notifyAll();
+      }
+    }
+
+    void startInit(Configuration conf) {
+      LOG.info("Initializing shared cache");
+      synchronized (initLock) {
+        assert initState == InitState.NOT_ENABLED;
+        initState = InitState.INITIALIZING;
+      }
+      // The first iteration of the update thread will prewarm the cache.
+      startCacheUpdateService(conf);
+    }
+
+    /**
+     * Gets the SharedCache, waiting for initialization to happen if necessary.
+     * Fails on any initialization error, even if the init will be retried later.
+     */
+    public SharedCache get() throws MetaException {
+      if (!waitForInit()) return null;
+      return instance;
+    }
+
+    /** Gets the shared cache unsafely (may not be ready to use); used by init methods. */
+    SharedCache getUnsafe() {
+      return instance;
+    }
+
+    private boolean waitForInit() throws MetaException {
+      synchronized (initLock) {
+        int localFailureCount = initFailureCount;
+        while (true) {
+          switch (initState) {
+          case INITIALIZED: return true;
+          case NOT_ENABLED: return false;
+          case FAILED_FATAL: {
+            throw new RuntimeException("CachedStore prewarm had a fatal error", lastError);
+          }
+          case INITIALIZING: {
+            try {
+              initLock.wait(100);
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+              throw new MetaException("Interrupted");
+            }
+            break;
+          }
+          default: throw new AssertionError(initState);
+          }
+          // Fail if any errors occured; mimicks the old behavior where a setConf prewarm failure
+          // would fail the current task, but cause the next setConf to try prewarm again forever.
+          if (initFailureCount != localFailureCount) {
+            throw new RuntimeException("CachedStore prewarm failed", lastError);
+          }
+        }
+      }
+    }
+
+    /**
+     * Notify all threads blocked on initialization, to continue work. (We allow read while prewarm
+     * is running; all write calls are blocked using waitForInitAndBlock).
+     */
+    void notifyAllBlocked() {
+      synchronized (initLock) {
+        initLock.notifyAll();
+      }
+    }
+
+    boolean isInitialized() {
+      return initState.equals(InitState.INITIALIZED);
+    }
+  }
+
+  static boolean isNotInBlackList(String dbName, String tblName) {
+    String str = dbName + "." + tblName;
+    for (Pattern pattern : blacklistPatterns) {
+      LOG.debug("Trying to match: {} against blacklist pattern: {}", str, pattern);
+      Matcher matcher = pattern.matcher(str);
+      if (matcher.matches()) {
+        LOG.debug("Found matcher group: {} at start index: {} and end index: {}", matcher.group(),
+            matcher.start(), matcher.end());
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static boolean isInWhitelist(String dbName, String tblName) {
+    String str = dbName + "." + tblName;
+    for (Pattern pattern : whitelistPatterns) {
+      LOG.debug("Trying to match: {} against whitelist pattern: {}", str, pattern);
+      Matcher matcher = pattern.matcher(str);
+      if (matcher.matches()) {
+        LOG.debug("Found matcher group: {} at start index: {} and end index: {}", matcher.group(),
+            matcher.start(), matcher.end());
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Determines if we should cache a table (& its partitions, stats etc),
+  // based on whitelist/blacklist
+  static boolean shouldCacheTable(String dbName, String tblName) {
+    if (!isNotInBlackList(dbName, tblName)) {
+      LOG.debug("{}.{} is in blacklist, skipping", dbName, tblName);
+      return false;
+    }
+    if (!isInWhitelist(dbName, tblName)) {
+      LOG.debug("{}.{} is not in whitelist, skipping", dbName, tblName);
+      return false;
+    }
+    return true;
+  }
+
+  static List<Pattern> createPatterns(String configStr) {
+    List<String> patternStrs = Arrays.asList(configStr.split(","));
+    List<Pattern> patterns = new ArrayList<Pattern>();
+    for (String str : patternStrs) {
+      patterns.add(Pattern.compile(str));
+    }
+    return patterns;
+  }
+
+  static boolean isBlacklistWhitelistEmpty(Configuration conf) {
+    return HiveConf.getVar(conf, HiveConf.ConfVars.METASTORE_CACHED_RAW_STORE_CACHED_OBJECTS_WHITELIST)
+        .equals(".*")
+        && HiveConf.getVar(conf, HiveConf.ConfVars.METASTORE_CACHED_RAW_STORE_CACHED_OBJECTS_BLACKLIST).isEmpty();
   }
 }
