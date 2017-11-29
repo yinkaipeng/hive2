@@ -67,11 +67,6 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-/**
- * TODO: this should be merged with TestTxnCommands once that is checked in
- * specifically the tests; the supporting code here is just a clone of TestTxnCommands
- */
 public class TestTxnCommands2 {
   static final private Logger LOG = LoggerFactory.getLogger(TestTxnCommands2.class);
   private static final String TEST_DATA_DIR = new File(System.getProperty("java.io.tmpdir") +
@@ -1301,7 +1296,7 @@ public class TestTxnCommands2 {
     hiveConf.setBoolVar(HiveConf.ConfVars.HIVETESTMODEROLLBACKTXN, true);
     runStatementOnDriver("insert into " + Table.ACIDTBL + "(a,b) " + makeValuesClause(tableData));
     hiveConf.setBoolVar(HiveConf.ConfVars.HIVETESTMODEROLLBACKTXN, false);
-    
+
     runStatementOnDriver("alter table "+ Table.ACIDTBL + " compact 'MAJOR'");
     runWorker(hiveConf);
     runCleaner(hiveConf);
@@ -1474,7 +1469,7 @@ public class TestTxnCommands2 {
     runStatementOnDriver("insert into " + Table.ACIDTBL + " " + makeValuesClause(vals));
     List<String> r = runStatementOnDriver("select a,b from " + Table.ACIDTBL + " order by a,b");
     Assert.assertEquals(stringifyValues(vals), r);
-    String query = "merge into " + Table.ACIDTBL + 
+    String query = "merge into " + Table.ACIDTBL +
       " using " + Table.NONACIDPART2 + " source ON " + Table.ACIDTBL + ".a = a2 and b + 1 = source.b2 + 1 " +
       "WHEN MATCHED THEN UPDATE set b = source.b2 " +
       "WHEN NOT MATCHED THEN INSERT VALUES(source.a2, source.b2)";
@@ -1590,7 +1585,7 @@ public class TestTxnCommands2 {
     // 1 ReadEntity: default@values__tmp__table__1
     // 1 WriteEntity: default@acidtblpart Type=TABLE WriteType=INSERT isDP=false
     runStatementOnDriver("insert into " + Table.ACIDTBLPART + " partition(p) values(1,1,'p1'),(2,2,'p1'),(3,3,'p1'),(4,4,'p2')");
-    
+
     List<String> r1 = runStatementOnDriver("select count(*) from " + Table.ACIDTBLPART);
     Assert.assertEquals("4", r1.get(0));
     //In DbTxnManager.acquireLocks() we have
@@ -1598,12 +1593,12 @@ public class TestTxnCommands2 {
     // 1 WriteEntity: default@acidtblpart Type=TABLE WriteType=INSERT isDP=false
     //todo: side note on the above: LockRequestBuilder combines the both default@acidtblpart entries to 1
     runStatementOnDriver("insert into " + Table.ACIDTBLPART + " partition(p) select * from " + Table.ACIDTBLPART + " where p='p1'");
-    
+
     //In DbTxnManager.acquireLocks() we have
     // 2 ReadEntity: [default@acidtblpart@p=p1, default@acidtblpart]
     // 1 WriteEntity: default@acidtblpart@p=p2 Type=PARTITION WriteType=INSERT isDP=false
     runStatementOnDriver("insert into " + Table.ACIDTBLPART + " partition(p='p2') select a,b from " + Table.ACIDTBLPART + " where p='p1'");
-    
+
     //In UpdateDeleteSemanticAnalyzer, after super analyze
     // 3 ReadEntity: [default@acidtblpart, default@acidtblpart@p=p1, default@acidtblpart@p=p2]
     // 1 WriteEntity: [default@acidtblpart TABLE/INSERT]
@@ -1613,7 +1608,7 @@ public class TestTxnCommands2 {
     //todo: Why acquire per partition locks - if you have many partitions that's hugely inefficient.
     //could acquire 1 table level Shared_write intead
     runStatementOnDriver("update " + Table.ACIDTBLPART + " set b = 1");
-    
+
     //In UpdateDeleteSemanticAnalyzer, after super analyze
     // Read [default@acidtblpart, default@acidtblpart@p=p1]
     // Write default@acidtblpart TABLE/INSERT
