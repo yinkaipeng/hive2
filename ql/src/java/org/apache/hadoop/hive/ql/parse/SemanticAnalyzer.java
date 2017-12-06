@@ -10368,7 +10368,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       // Currently, partition spec can only be static partition.
       String k = MetaStoreUtils.encodeTableName(tblName) + Path.SEPARATOR;
       tsDesc.setStatsAggPrefix(tab.getDbName()+"."+k);
-      
+
       // set up WriteEntity for replication
       outputs.add(new WriteEntity(tab, WriteEntity.WriteType.DDL_SHARED));
 
@@ -10815,7 +10815,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     void setCTASToken(ASTNode child) {
     }
-    
+
     void setViewToken(ASTNode child) {
     }
 
@@ -11206,8 +11206,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
       if (!ctx.isCboSucceeded()) {
         saveViewDefinition();
-      }      
-      
+      }
+
       // validate the create view statement at this point, the createVwDesc gets
       // all the information for semanticcheck
       validateCreateView(createVwDesc);
@@ -12347,7 +12347,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       for (int child_pos = 0; child_pos < child_count; ++child_pos) {
         ASTNode node = (ASTNode) next.getChild(child_pos);
         int type = node.getToken().getType();
-        if (type == HiveParser.TOK_SELECT) {
+        if (type == HiveParser.TOK_SELECT || type == HiveParser.TOK_SELECTDI) {
           selectNode = node;
         } else if (type == HiveParser.TOK_GROUPBY) {
           groupbyNode = node;
@@ -12383,23 +12383,30 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
           }
         }
 
-        // replace each of the position alias in ORDERBY with the actual column name
+        // replace each of the position alias in ORDERBY with the actual column name,
+        // if cbo is enabled, orderby position will be processed in genPlan
         if (orderbyNode != null) {
           isAllCol = false;
           for (int child_pos = 0; child_pos < selectNode.getChildCount(); ++child_pos) {
             ASTNode node = (ASTNode) selectNode.getChild(child_pos).getChild(0);
-            if (node.getToken().getType() == HiveParser.TOK_ALLCOLREF) {
+            if (node != null && node.getToken().getType() == HiveParser.TOK_ALLCOLREF) {
               isAllCol = true;
             }
           }
           for (int child_pos = 0; child_pos < orderbyNode.getChildCount(); ++child_pos) {
-            ASTNode colNode = (ASTNode) orderbyNode.getChild(child_pos).getChild(0);
-            ASTNode node = (ASTNode) colNode.getChild(0);
+            ASTNode colNode = null;
+            ASTNode node = null;
+            if (orderbyNode.getChildCount() > 0) {
+              colNode = (ASTNode) orderbyNode.getChild(child_pos).getChild(0);
+              if (colNode.getChildCount() > 0) {
+                node = (ASTNode) colNode.getChild(0);
+              }
+            }
             if (node != null && node.getToken().getType() == HiveParser.Number) {
               if (isObyByPos) {
                 if (!isAllCol) {
                   int pos = Integer.parseInt(node.getText());
-                  if (pos > 0 && pos <= selectExpCnt) {
+                  if (pos > 0 && pos <= selectExpCnt && selectNode.getChild(pos - 1).getChildCount() > 0) {
                     colNode.setChild(0, selectNode.getChild(pos - 1).getChild(0));
                   } else {
                     throw new SemanticException(
