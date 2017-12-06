@@ -1,6 +1,19 @@
 Changes only in Hortonworks git repo and not in released hive-2.1.1
 ===================================================================
 NEW FEATURES & BUG FIXES
+  HDP-2.6.4:
+    HIVE-17947: Concurrent inserts might fail for ACID table since HIVE-17526 on branch-1 (Daniel Voros reviewed by Eugene Koifman)
+    HIVE-17628: always use fully qualified path for tables/partitions/etc. (Sergey Shelukhin, reviewed by Ashutosh Chauhan and Thejas M Nair)
+    HIVE-16360: Improve 'No delta files or original files found to compact in' message (Eugene Koifman, reviewed by Alan Gates)
+    HIVE-17774: compaction may start with 0 splits and fail (Sergey Shelukhin, reviewed by Eugene Koifman)
+    HIVE-17918: NPE during semijoin reduction optimization when LLAP caching disabled
+    HIVE-17908: LLAP External client not correctly handling killTask for pending requests
+    HIVE-17963: Fix for HIVE-17113 can be improved for non-blobstore filesystems
+    HIVE-17813: hive.exec.move.files.from.source.dir does not work with partitioned tables
+    HIVE-17939: Bucket map join not being selected when bucketed tables is missing bucket files (Deepak Jaiswal, reviewed by Jason Dere)
+    HIVE-17079: LLAP: Use FQDN by default for work submission
+    HIVE-17936: Dynamic Semijoin Reduction : markSemiJoinForDPP marks unwanted semijoin branches (Deepak Jaiswal via Jason Dere)
+
   HDP-2.6.1:
     HIVE-16779: cachedStore leak PersistenceManager resources
     HIVE-16777: LLAP: Use separate tokens and UGI instances when an external client is used
@@ -732,6 +745,12 @@ Pre-HDP-2.5.4:
     HIVE-14349: Vectorization: LIKE should anchor the regexes 
     
 INTERNAL FIXES (NO APACHE JIRA)
+  HDP-2.6.4:
+    QE-16281: .q.out fixes
+    BUG-90704 : TPCDS test run getting stuck at query16 and query94
+    BUG-91353 BUG-88821 Fix testconfiguration.properties
+    BUG-91352 : Update result file.
+
   HDP-2.6.1:
     BUG-81443: hybridgrace_hashjoin_1 UT failure in hive2
     BUG-81447: TestDynamicPartitionPruner.testSingleSourceMultipleFiltersOrdering2 fails in hive2
