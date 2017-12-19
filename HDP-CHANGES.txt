@@ -2,6 +2,7 @@ Changes only in Hortonworks git repo and not in released hive-2.1.1
 ===================================================================
 NEW FEATURES & BUG FIXES
   HDP-2.6.4:
+    HIVE-18271: Druid Insert into fails with exception when committing files
     HIVE-17947: Concurrent inserts might fail for ACID table since HIVE-17526 on branch-1 (Daniel Voros reviewed by Eugene Koifman)
     HIVE-17628: always use fully qualified path for tables/partitions/etc. (Sergey Shelukhin, reviewed by Ashutosh Chauhan and Thejas M Nair)
     HIVE-16360: Improve 'No delta files or original files found to compact in' message (Eugene Koifman, reviewed by Alan Gates)
