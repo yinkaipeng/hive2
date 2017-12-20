@@ -1013,7 +1013,7 @@ public abstract class BaseSemanticAnalyzer {
     public TableSpec(Table tableHandle, List<Partition> partitions)
         throws HiveException {
       this.tableHandle = tableHandle;
-      this.tableName = tableHandle.getTableName();
+      this.tableName = tableHandle.getDbName() + "." + tableHandle.getTableName();
       if (partitions != null && !partitions.isEmpty()) {
         this.specType = SpecType.STATIC_PARTITION;
         this.partitions = partitions;
