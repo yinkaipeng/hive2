@@ -305,6 +305,12 @@
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-server</artifactId>
       <version>${hbase.version}</version>
+      <exclusions>
+	<exclusion>
+	  <groupId>com.lmax</groupId>
+	  <artifactId>disruptor</artifactId>
+	</exclusion>
+      </exclusions>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -313,6 +319,12 @@
       <version>${hbase.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.lmax</groupId>
+          <artifactId>disruptor</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.tez</groupId>
