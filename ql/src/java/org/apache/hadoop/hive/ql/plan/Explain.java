@@ -45,4 +45,6 @@ public @interface Explain {
   boolean displayOnlyOnTrue() default false;
 
   boolean skipHeader() default false;
+  
+  boolean jsonOnly() default false;
 }

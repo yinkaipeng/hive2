@@ -81,6 +81,15 @@ public abstract class ExprNodeDesc implements Serializable, Node {
     return null;
   }
 
+  @Explain(jsonOnly = true)
+  public String getExprStringForExplain() {
+    return toString();
+  }
+
+  public String getExprString(boolean sortChildren) {
+    return getExprString();
+  }
+
   public ObjectInspector getWritableObjectInspector() {
     return TypeInfoUtils
       .getStandardWritableObjectInspectorFromTypeInfo(typeInfo);

@@ -19,6 +19,7 @@
 package org.apache.hadoop.hive.ql.plan;
 
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hadoop.fs.Path;
@@ -35,6 +36,13 @@ public class AbstractOperatorDesc implements OperatorDesc {
   protected long memNeeded = 0;
   protected long memAvailable = 0;
   protected String runtimeStatsTmpDir;
+
+  /**
+   * A map of output column name to input expression map. This is used by
+   * optimizer and built during semantic analysis contains only key elements for
+   * reduce sink and group by op
+   */
+  protected Map<String, ExprNodeDesc> colExprMap;
 
   @Override
   @Explain(skipHeader = true, displayName = "Statistics")
@@ -112,4 +120,22 @@ public class AbstractOperatorDesc implements OperatorDesc {
     this.runtimeStatsTmpDir = runtimeStatsTmpDir;
   }
 
+  @Explain(displayName = "columnExprMap", jsonOnly = true)
+  public Map<String, String> getColumnExprMapForExplain() {
+    Map<String, String> colExprMapForExplain = new HashMap<>();
+    for(String col:this.colExprMap.keySet()) {
+      colExprMapForExplain.put(col, this.colExprMap.get(col).getExprString());
+    }
+    return colExprMapForExplain;
+  }
+
+  @Override
+  public Map<String, ExprNodeDesc> getColumnExprMap() {
+    return this.colExprMap;
+  }
+
+  @Override
+  public void setColumnExprMap(Map<String, ExprNodeDesc> colExprMap) {
+    this.colExprMap = colExprMap;
+  }
 }
