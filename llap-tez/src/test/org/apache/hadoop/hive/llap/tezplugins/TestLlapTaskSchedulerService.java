@@ -56,6 +56,7 @@ import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.util.Clock;
 import org.apache.tez.common.TezUtils;
 import org.apache.tez.dag.api.UserPayload;
+import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.serviceplugins.api.TaskScheduler;
 import org.apache.tez.serviceplugins.api.TaskSchedulerContext;
@@ -1345,7 +1346,7 @@ public class TestLlapTaskSchedulerService {
     // With a timeout of 3000.
     LlapTaskSchedulerService.TaskInfo taskInfo =
         new LlapTaskSchedulerService.TaskInfo(localityDelayConf1, clock, new Object(), new Object(),
-            mock(Priority.class), mock(Resource.class), null, null, clock.getTime());
+            mock(Priority.class), mock(Resource.class), null, null, clock.getTime(), null);
 
     assertFalse(taskInfo.shouldForceLocality());
 
@@ -1366,7 +1367,7 @@ public class TestLlapTaskSchedulerService {
         new LlapTaskSchedulerService.LocalityDelayConf(0);
     taskInfo =
         new LlapTaskSchedulerService.TaskInfo(localityDelayConf2, clock, new Object(), new Object(),
-            mock(Priority.class), mock(Resource.class), null, null, clock.getTime());
+            mock(Priority.class), mock(Resource.class), null, null, clock.getTime(), null);
     assertFalse(taskInfo.shouldDelayForLocality(clock.getTime()));
     assertFalse(taskInfo.shouldForceLocality());
     assertTrue(taskInfo.getDelay(TimeUnit.MILLISECONDS) < 0);
@@ -1376,7 +1377,7 @@ public class TestLlapTaskSchedulerService {
         new LlapTaskSchedulerService.LocalityDelayConf(-1);
     taskInfo =
         new LlapTaskSchedulerService.TaskInfo(localityDelayConf3, clock, new Object(), new Object(),
-            mock(Priority.class), mock(Resource.class), null, null, clock.getTime());
+            mock(Priority.class), mock(Resource.class), null, null, clock.getTime(), null);
     assertTrue(taskInfo.shouldDelayForLocality(clock.getTime()));
     assertTrue(taskInfo.shouldForceLocality());
     assertFalse(taskInfo.getDelay(TimeUnit.MILLISECONDS) < 0);
@@ -1395,12 +1396,12 @@ public class TestLlapTaskSchedulerService {
 
     LlapTaskSchedulerService.TaskInfo taskInfo1 =
         new LlapTaskSchedulerService.TaskInfo(localityDelayConf, clock, new Object(), new Object(),
-            mock(Priority.class), mock(Resource.class), null, null, clock.getTime());
+            mock(Priority.class), mock(Resource.class), null, null, clock.getTime(), null);
 
     clock.setTime(clock.getTime() + 1000);
     LlapTaskSchedulerService.TaskInfo taskInfo2 =
         new LlapTaskSchedulerService.TaskInfo(localityDelayConf, clock, new Object(), new Object(),
-            mock(Priority.class), mock(Resource.class), null, null, clock.getTime());
+            mock(Priority.class), mock(Resource.class), null, null, clock.getTime(), null);
 
     delayedQueue.add(taskInfo1);
     delayedQueue.add(taskInfo2);
@@ -1740,6 +1741,14 @@ public class TestLlapTaskSchedulerService {
     public LlapTaskSchedulerServiceForTest(
         TaskSchedulerContext appClient, Clock clock) {
       super(appClient, clock, false);
+    }
+
+    @Override
+    protected TezTaskAttemptID getTaskAttemptId(Object task) {
+      if (task instanceof TezTaskAttemptID) {
+        return (TezTaskAttemptID)task;
+      }
+      return null;
     }
 
     @Override
