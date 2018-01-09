@@ -70,6 +70,10 @@ import org.apache.hadoop.hive.llap.tezplugins.helpers.MonotonicClock;
 import org.apache.hadoop.hive.llap.tezplugins.scheduler.LoggingFutureCallback;
 import org.apache.hadoop.hive.llap.tezplugins.metrics.LlapTaskSchedulerMetrics;
 import org.apache.hadoop.util.JvmPauseMonitor;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.ContainerState;
@@ -89,6 +93,13 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.tez.common.TezUtils;
 import org.apache.tez.dag.api.TezUncheckedException;
+import org.apache.tez.dag.app.dag.DAG;
+import org.apache.tez.dag.app.dag.TaskAttempt;
+import org.apache.tez.dag.app.dag.Vertex;
+import org.apache.tez.dag.app.dag.impl.Edge;
+import org.apache.tez.dag.records.TezDAGID;
+import org.apache.tez.dag.records.TezTaskAttemptID;
+import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.serviceplugins.api.DagInfo;
 import org.apache.tez.serviceplugins.api.ServicePluginErrorDefaults;
 import org.apache.tez.serviceplugins.api.ServicePluginException;
@@ -97,6 +108,10 @@ import org.apache.tez.serviceplugins.api.TaskScheduler;
 import org.apache.tez.serviceplugins.api.TaskSchedulerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Maps;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 
 public class LlapTaskSchedulerService extends TaskScheduler {
 
@@ -203,6 +218,12 @@ public class LlapTaskSchedulerService extends TaskScheduler {
   private final JvmPauseMonitor pauseMonitor;
   private final Random random = new Random();
 
+  // We expect the DAGs to not be super large, so store full dependency set for each vertex to
+  // avoid traversing the tree later. To save memory, this could be an array (of byte arrays?).
+  private final Object outputsLock = new Object();
+  private TezDAGID depsDagId = null;
+  private Map<Integer, Set<Integer>> transitiveOutputs;
+
   public LlapTaskSchedulerService(TaskSchedulerContext taskSchedulerContext) {
     this(taskSchedulerContext, new MonotonicClock(), true);
   }
@@ -290,6 +311,85 @@ public class LlapTaskSchedulerService extends TaskScheduler {
     LOG.info(
         "Running with configuration: hosts={}, numSchedulableTasksPerNode={}, nodeBlacklistConf={}, localityConf={}",
         hostsString, numSchedulableTasksPerNode, nodeBlacklistConf, localityDelayConf);
+  }
+
+  private Map<Integer, Set<Integer>> getDependencyInfo(TezDAGID depsDagId) {
+    // This logic assumes one dag at a time; if it was not the case it'd keep rewriting it.
+    synchronized (outputsLock) {
+      if (depsDagId == this.depsDagId) return transitiveOutputs;
+      this.depsDagId = depsDagId;
+      if (!HiveConf.getBoolVar(conf, ConfVars.LLAP_TASK_SCHEDULER_PREEMPT_INDEPENDENT)) {
+        this.transitiveOutputs = getTransitiveVertexOutputs(getContext().getCurrentDagInfo());
+      }
+      return this.transitiveOutputs;
+    }
+  }
+
+  private static Map<Integer, Set<Integer>> getTransitiveVertexOutputs(DagInfo info) {
+    if (!(info instanceof DAG)) {
+      LOG.warn("DAG info is not a DAG - cannot derive dependencies");
+      return null;
+    }
+    DAG dag = (DAG) info;
+    int vc = dag.getVertices().size();
+    // All the vertices belong to the same DAG, so we just use numbers.
+    Map<Integer, Set<Integer>> result = Maps.newHashMapWithExpectedSize(vc);
+    LinkedList<TezVertexID> queue = new LinkedList<>();
+    // We assume a DAG is a DAG, and that it's connected. Add direct dependencies.
+    for (Vertex v : dag.getVertices().values()) {
+      Map<Vertex, Edge> out = v.getOutputVertices();
+      if (out == null) {
+        result.put(v.getVertexId().getId(), Sets.newHashSet());
+      } else {
+        Set<Integer> set = Sets.newHashSetWithExpectedSize(vc);
+        for (Vertex outV : out.keySet()) {
+          set.add(outV.getVertexId().getId());
+        }
+        result.put(v.getVertexId().getId(), set);
+      }
+      if (v.getOutputVerticesCount() == 0) {
+        queue.add(v.getVertexId());
+      }
+    }
+    Set<Integer> processed = Sets.newHashSetWithExpectedSize(vc);
+    while (!queue.isEmpty()) {
+      TezVertexID id = queue.poll();
+      if (processed.contains(id.getId())) continue; // Already processed. See backtracking.
+      Vertex v = dag.getVertex(id);
+      Map<Vertex, Edge> out = v.getOutputVertices();
+      if (out != null) {
+        // Check that all the outputs have been processed; if not, insert them into queue
+        // before the current vertex and try again. It's possible e.g. in a structure like this:
+        //   _1
+        //  / 2
+        // 3  4 where 1 may be added to the queue before 2
+        boolean doBacktrack = false;
+        for (Vertex outV : out.keySet()) {
+          TezVertexID outId = outV.getVertexId();
+          int outNum = outId.getId();
+          if (!processed.contains(outNum)) {
+            if (!doBacktrack) {
+              queue.addFirst(id);
+              doBacktrack = true;
+            }
+            queue.addFirst(outId);
+          }
+        }
+        if (doBacktrack) continue;
+      }
+      int num = id.getId();
+      processed.add(num);
+      Set<Integer> deps = result.get(num);
+      Map<Vertex, Edge> in = v.getInputVertices();
+      if (in != null) {
+        for (Vertex inV : in.keySet()) {
+          queue.add(inV.getVertexId());
+          // Our outputs are the transitive outputs of our inputs.
+          result.get(inV.getVertexId().getId()).addAll(deps);
+        }
+      }
+    }
+    return result;
   }
 
   @Override
@@ -588,7 +688,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
   public void allocateTask(Object task, Resource capability, String[] hosts, String[] racks,
       Priority priority, Object containerSignature, Object clientCookie) {
     TaskInfo taskInfo =
-        new TaskInfo(localityDelayConf, clock, task, clientCookie, priority, capability, hosts, racks, clock.getTime());
+        new TaskInfo(localityDelayConf, clock, task, clientCookie, priority, capability, hosts, racks, clock.getTime(), getTaskAttemptId(task));
     LOG.info("Received allocateRequest. task={}, priority={}, capability={}, hosts={}", task,
         priority, capability, Arrays.toString(hosts));
     writeLock.lock();
@@ -608,7 +708,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
     // Container affinity can be implemented as Host affinity for LLAP. Not required until
     // 1:1 edges are used in Hive.
     TaskInfo taskInfo =
-        new TaskInfo(localityDelayConf, clock, task, clientCookie, priority, capability, null, null, clock.getTime());
+        new TaskInfo(localityDelayConf, clock, task, clientCookie, priority, capability, null, null, clock.getTime(), getTaskAttemptId(task));
     LOG.info("Received allocateRequest. task={}, priority={}, capability={}, containerId={}", task,
         priority, capability, containerId);
     writeLock.lock();
@@ -622,6 +722,13 @@ public class LlapTaskSchedulerService extends TaskScheduler {
     trySchedulingPendingTasks();
   }
 
+  protected TezTaskAttemptID getTaskAttemptId(Object task) {
+    // TODO: why does Tez API use "Object" for this?
+    if (task instanceof TaskAttempt) {
+      return ((TaskAttempt)task).getID();
+    }
+    throw new AssertionError("LLAP plugin can only schedule task attempts");
+  }
 
   // This may be invoked before a container is ever assigned to a task. allocateTask... app decides
   // the task is no longer required, and asks for a de-allocation.
@@ -1207,12 +1314,13 @@ public class LlapTaskSchedulerService extends TaskScheduler {
                   break;
                 }
               }
+
               if (shouldPreempt) {
                 if (LOG.isDebugEnabled()) {
                   LOG.debug("Attempting to preempt for {} on potential hosts={}. TotalPendingPreemptions={}",
                       taskInfo.task, Arrays.toString(potentialHosts), pendingPreemptions.get());
                 }
-                preemptTasks(entry.getKey().getPriority(), 1, potentialHosts);
+                preemptTasks(entry.getKey().getPriority(), vertexNum(taskInfo), 1, potentialHosts);
               } else {
                 if (LOG.isDebugEnabled()) {
                   LOG.debug("Not preempting for {} on potential hosts={}. An existing preemption request exists",
@@ -1230,7 +1338,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
                       "Attempting to preempt for task={}, priority={} on any available host",
                       taskInfo.task, taskInfo.priority);
                 }
-                preemptTasks(entry.getKey().getPriority(), 1, null);
+                preemptTasks(entry.getKey().getPriority(), vertexNum(taskInfo), 1, null);
               } else {
                 if (LOG.isDebugEnabled()) {
                   LOG.debug(
@@ -1263,6 +1371,10 @@ public class LlapTaskSchedulerService extends TaskScheduler {
     } finally {
       writeLock.unlock();
     }
+  }
+
+  private static int vertexNum(TaskInfo taskInfo) {
+    return taskInfo.getAttemptId().getTaskID().getVertexID().getId(); // Sigh...
   }
 
   private String constructPendingTaskCountsLogMessage() {
@@ -1319,7 +1431,8 @@ public class LlapTaskSchedulerService extends TaskScheduler {
   // Removes tasks from the runningList and sends out a preempt request to the system.
   // Subsequent tasks will be scheduled again once the de-allocate request for the preempted
   // task is processed.
-  private void preemptTasks(int forPriority, int numTasksToPreempt, String []potentialHosts) {
+  private void preemptTasks(
+      int forPriority, int forVertex, int numTasksToPreempt, String []potentialHosts) {
     Set<String> preemptHosts = null;
     writeLock.lock();
     List<TaskInfo> preemptedTaskList = null;
@@ -1339,21 +1452,35 @@ public class LlapTaskSchedulerService extends TaskScheduler {
             if (!taskInfo.isRunning()) {
               continue;
             }
-            if (preemptHosts == null || preemptHosts.contains(taskInfo.assignedNode.getHost())) {
-              // Candidate for preemption.
-              preemptedCount++;
-              LOG.info("preempting {} for task at priority {} with potentialHosts={}", taskInfo,
-                  forPriority, potentialHosts == null ? "" : Arrays.toString(potentialHosts));
-              taskInfo.setPreemptedInfo(clock.getTime());
-              if (preemptedTaskList == null) {
-                preemptedTaskList = new LinkedList<>();
-              }
-              dagStats.registerTaskPreempted(taskInfo.assignedNode.getHost());
-              preemptedTaskList.add(taskInfo);
-              registerPendingPreemption(taskInfo.assignedNode.getHost());
-              // Remove from the runningTaskList
-              taskInfoIterator.remove();
+            if (preemptHosts != null && !preemptHosts.contains(taskInfo.assignedNode.getHost())) {
+              continue; // Not the right host.
             }
+            Map<Integer,Set<Integer>> depInfo = getDependencyInfo(
+                taskInfo.attemptId.getTaskID().getVertexID().getDAGId());
+            Set<Integer> vertexDepInfo = null;
+            if (depInfo != null) {
+              vertexDepInfo = depInfo.get(forVertex);
+            }
+            if (depInfo != null && vertexDepInfo == null) {
+              LOG.warn("Cannot find info for " + forVertex + " " + depInfo);
+            }
+            if (vertexDepInfo != null && !vertexDepInfo.contains(vertexNum(taskInfo))) {
+              // Only preempt if the task being preempted is "below" us in the dag.
+              continue;
+            }
+            // Candidate for preemption.
+            preemptedCount++;
+            LOG.info("preempting {} for task at priority {} with potentialHosts={}", taskInfo,
+                forPriority, potentialHosts == null ? "" : Arrays.toString(potentialHosts));
+            taskInfo.setPreemptedInfo(clock.getTime());
+            if (preemptedTaskList == null) {
+              preemptedTaskList = new LinkedList<>();
+            }
+            dagStats.registerTaskPreempted(taskInfo.assignedNode.getHost());
+            preemptedTaskList.add(taskInfo);
+            registerPendingPreemption(taskInfo.assignedNode.getHost());
+            // Remove from the runningTaskList
+            taskInfoIterator.remove();
           }
 
           // Remove entire priority level if it's been emptied.
@@ -1382,6 +1509,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
     // The schedule loop will be triggered again when the deallocateTask request comes in for the
     // preempted task.
   }
+
 
   private void registerPendingPreemption(String host) {
     writeLock.lock();
@@ -1969,13 +2097,14 @@ public class LlapTaskSchedulerService extends TaskScheduler {
     NodeInfo assignedNode;
     private State state = State.PENDING;
     boolean inDelayedQueue = false;
+    final TezTaskAttemptID attemptId;
 
     private int numAssignAttempts = 0;
 
     // TaskInfo instances for two different tasks will not be the same. Only a single instance should
     // ever be created for a taskAttempt
     public TaskInfo(LocalityDelayConf localityDelayConf, Clock clock, Object task, Object clientCookie, Priority priority, Resource capability,
-        String[] hosts, String[] racks, long requestTime) {
+        String[] hosts, String[] racks, long requestTime, TezTaskAttemptID id) {
       this.localityDelayConf = localityDelayConf;
       this.clock = clock;
       this.task = task;
@@ -1993,6 +2122,7 @@ public class LlapTaskSchedulerService extends TaskScheduler {
         localityDelayTimeout = requestTime + localityDelayConf.getNodeLocalityDelay();
       }
       this.uniqueId = ID_GEN.getAndIncrement();
+      this.attemptId = id;
     }
 
     synchronized void setAssignmentInfo(NodeInfo nodeInfo, ContainerId containerId, long assignedTime) {
@@ -2111,6 +2241,10 @@ public class LlapTaskSchedulerService extends TaskScheduler {
       } else {
         return 0;
       }
+    }
+
+    TezTaskAttemptID getAttemptId() {
+      return attemptId;
     }
   }
 

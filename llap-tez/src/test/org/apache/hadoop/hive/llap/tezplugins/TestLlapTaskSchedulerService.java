@@ -56,6 +56,10 @@ import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.util.Clock;
 import org.apache.tez.common.TezUtils;
 import org.apache.tez.dag.api.UserPayload;
+import org.apache.tez.dag.records.TezDAGID;
+import org.apache.tez.dag.records.TezTaskAttemptID;
+import org.apache.tez.dag.records.TezTaskID;
+import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.serviceplugins.api.TaskScheduler;
 import org.apache.tez.serviceplugins.api.TaskSchedulerContext;
@@ -84,7 +88,7 @@ public class TestLlapTaskSchedulerService {
       Priority priority1 = Priority.newInstance(1);
       String[] hosts1 = new String[]{HOST1};
 
-      Object task1 = new Object();
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = new Object();
 
       tsWrapper.controlScheduler(true);
@@ -107,7 +111,7 @@ public class TestLlapTaskSchedulerService {
     try {
       Priority priority1 = Priority.newInstance(1);
 
-      Object task1 = new Object();
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = new Object();
       tsWrapper.controlScheduler(true);
       tsWrapper.allocateTask(task1, null, priority1, clientCookie1);
@@ -128,11 +132,11 @@ public class TestLlapTaskSchedulerService {
     TestTaskSchedulerServiceWrapper tsWrapper = new TestTaskSchedulerServiceWrapper(2000, hosts, 2, 0);
     try {
 
-      Object task1 = "task1";
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = "cookie1";
-      Object task2 = "task2";
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = "cookie2";
-      Object task3 = "task3";
+      TezTaskAttemptID task3 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie3 = "cookie3";
 
       tsWrapper.controlScheduler(true);
@@ -190,13 +194,13 @@ public class TestLlapTaskSchedulerService {
     TestTaskSchedulerServiceWrapper tsWrapper = new TestTaskSchedulerServiceWrapper(2000, hosts, 1, 1);
     try {
 
-      Object task1 = "task1";
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = "cookie1";
-      Object task2 = "task2";
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = "cookie2";
-      Object task3 = "task3";
+      TezTaskAttemptID task3 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie3 = "cookie3";
-      Object task4 = "task4";
+      TezTaskAttemptID task4 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie4 = "cookie4";
 
       tsWrapper.controlScheduler(true);
@@ -255,7 +259,7 @@ public class TestLlapTaskSchedulerService {
     try {
       Priority priority1 = Priority.newInstance(1);
       String[] hosts1 = new String[]{HOST1};
-      Object task1 = new Object();
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = new Object();
       tsWrapper.controlScheduler(true);
       tsWrapper.allocateTask(task1, hosts1, priority1, clientCookie1);
@@ -287,7 +291,7 @@ public class TestLlapTaskSchedulerService {
       assertEquals((10000l), disabledNodeInfo.getDelay(TimeUnit.MILLISECONDS));
       assertEquals((10000l + 10000l), disabledNodeInfo.expireTimeMillis);
 
-      Object task2 = new Object();
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = new Object();
       tsWrapper.allocateTask(task2, hosts1, priority1, clientCookie2);
       while (true) {
@@ -318,11 +322,11 @@ public class TestLlapTaskSchedulerService {
       String[] hosts2 = new String[]{HOST2};
       String[] hosts3 = new String[]{HOST3};
 
-      Object task1 = new Object();
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = new Object();
-      Object task2 = new Object();
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = new Object();
-      Object task3 = new Object();
+      TezTaskAttemptID task3 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie3 = new Object();
 
       tsWrapper.controlScheduler(true);
@@ -353,11 +357,11 @@ public class TestLlapTaskSchedulerService {
       assertEquals(3, tsWrapper.ts.disabledNodesQueue.size());
 
 
-      Object task4 = new Object();
+      TezTaskAttemptID task4 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie4 = new Object();
-      Object task5 = new Object();
+      TezTaskAttemptID task5 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie5 = new Object();
-      Object task6 = new Object();
+      TezTaskAttemptID task6 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie6 = new Object();
       tsWrapper.allocateTask(task4, hosts1, priority1, clientCookie4);
       tsWrapper.allocateTask(task5, hosts2, priority1, clientCookie5);
@@ -411,15 +415,15 @@ public class TestLlapTaskSchedulerService {
     TestTaskSchedulerServiceWrapper tsWrapper = new TestTaskSchedulerServiceWrapper(2000, hosts, 1, 1, (forceLocality ? -1l : 0l));
 
     try {
-      Object task1 = "task1";
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = "cookie1";
-      Object task2 = "task2";
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = "cookie2";
-      Object task3 = "task3";
+      TezTaskAttemptID task3 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie3 = "cookie3";
-      Object task4 = "task4";
+      TezTaskAttemptID task4 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie4 = "cookie4";
-      Object task5 = "task5";
+      TezTaskAttemptID task5 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie5 = "cookie5";
 
       tsWrapper.controlScheduler(true);
@@ -496,10 +500,10 @@ public class TestLlapTaskSchedulerService {
     TestTaskSchedulerServiceWrapper tsWrapper =
         new TestTaskSchedulerServiceWrapper(2000, hostsKnown, 1, 1, -1l);
     try {
-      Object task1 = "task1";
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = "cookie1";
 
-      Object task2 = "task2";
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = "cookie2";
 
       tsWrapper.controlScheduler(true);
@@ -540,16 +544,16 @@ public class TestLlapTaskSchedulerService {
     TestTaskSchedulerServiceWrapper tsWrapper =
       new TestTaskSchedulerServiceWrapper(2000, hostsKnown, 1, 1, -1l);
     try {
-      Object task1 = "task1";
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = "cookie1";
 
-      Object task2 = "task2";
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = "cookie2";
 
-      Object task3 = "task3";
+      TezTaskAttemptID task3 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie3 = "cookie3";
 
-      Object task4 = "task4";
+      TezTaskAttemptID task4 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie4 = "cookie4";
 
       tsWrapper.controlScheduler(true);
@@ -602,13 +606,13 @@ public class TestLlapTaskSchedulerService {
     TestTaskSchedulerServiceWrapper tsWrapper =
       new TestTaskSchedulerServiceWrapper(2000, hostsKnown, 1, 0, 0l, false, hostsLive, true);
     try {
-      Object task1 = "task1";
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = "cookie1";
 
-      Object task2 = "task2";
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = "cookie2";
 
-      Object task3 = "task3";
+      TezTaskAttemptID task3 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie3 = "cookie3";
 
       tsWrapper.controlScheduler(true);
@@ -660,13 +664,13 @@ public class TestLlapTaskSchedulerService {
     TestTaskSchedulerServiceWrapper tsWrapper =
       new TestTaskSchedulerServiceWrapper(2000, hostsKnown, 1, 0, 0l, false, hostsLive, true);
     try {
-      Object task1 = "task1";
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = "cookie1";
 
-      Object task2 = "task2";
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = "cookie2";
 
-      Object task3 = "task3";
+      TezTaskAttemptID task3 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie3 = "cookie3";
 
       tsWrapper.controlScheduler(true);
@@ -723,13 +727,13 @@ public class TestLlapTaskSchedulerService {
     // Try running p1 task on host1 - should preempt
 
     try {
-      Object task1 = "task1";
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = "cookie1";
-      Object task2 = "task2";
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = "cookie2";
-      Object task3 = "task3";
+      TezTaskAttemptID task3 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie3 = "cookie3";
-      Object task4 = "task4";
+      TezTaskAttemptID task4 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie4 = "cookie4";
 
       tsWrapper.controlScheduler(true);
@@ -788,11 +792,11 @@ public class TestLlapTaskSchedulerService {
     TestTaskSchedulerServiceWrapper tsWrapper = new TestTaskSchedulerServiceWrapper(2000, hosts, 1, 1, -1l);
 
     try {
-      Object task1 = "task1";
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = "cookie1";
-      Object task2 = "task2";
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = "cookie2";
-      Object task3 = "task3";
+      TezTaskAttemptID task3 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie3 = "cookie3";
 
       tsWrapper.controlScheduler(true);
@@ -865,13 +869,13 @@ public class TestLlapTaskSchedulerService {
 
     try {
 
-      Object task1 = "task1";
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = "cookie1";
-      Object task2 = "task2";
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = "cookie2";
-      Object task3 = "task3";
+      TezTaskAttemptID task3 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie3 = "cookie3";
-      Object task4 = "task4";
+      TezTaskAttemptID task4 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie4 = "cookie4";
 
       tsWrapper.controlScheduler(true);
@@ -971,13 +975,13 @@ public class TestLlapTaskSchedulerService {
 
     try {
 
-      Object task1 = "task1";
+      TezTaskAttemptID task1 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie1 = "cookie1";
-      Object task2 = "task2";
+      TezTaskAttemptID task2 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie2 = "cookie2";
-      Object task3 = "task3";
+      TezTaskAttemptID task3 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie3 = "cookie3";
-      Object task4 = "task4";
+      TezTaskAttemptID task4 = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie4 = "cookie4";
 
       tsWrapper.controlScheduler(true);
@@ -1345,7 +1349,7 @@ public class TestLlapTaskSchedulerService {
     // With a timeout of 3000.
     LlapTaskSchedulerService.TaskInfo taskInfo =
         new LlapTaskSchedulerService.TaskInfo(localityDelayConf1, clock, new Object(), new Object(),
-            mock(Priority.class), mock(Resource.class), null, null, clock.getTime());
+            mock(Priority.class), mock(Resource.class), null, null, clock.getTime(), null);
 
     assertFalse(taskInfo.shouldForceLocality());
 
@@ -1366,7 +1370,7 @@ public class TestLlapTaskSchedulerService {
         new LlapTaskSchedulerService.LocalityDelayConf(0);
     taskInfo =
         new LlapTaskSchedulerService.TaskInfo(localityDelayConf2, clock, new Object(), new Object(),
-            mock(Priority.class), mock(Resource.class), null, null, clock.getTime());
+            mock(Priority.class), mock(Resource.class), null, null, clock.getTime(), null);
     assertFalse(taskInfo.shouldDelayForLocality(clock.getTime()));
     assertFalse(taskInfo.shouldForceLocality());
     assertTrue(taskInfo.getDelay(TimeUnit.MILLISECONDS) < 0);
@@ -1376,7 +1380,7 @@ public class TestLlapTaskSchedulerService {
         new LlapTaskSchedulerService.LocalityDelayConf(-1);
     taskInfo =
         new LlapTaskSchedulerService.TaskInfo(localityDelayConf3, clock, new Object(), new Object(),
-            mock(Priority.class), mock(Resource.class), null, null, clock.getTime());
+            mock(Priority.class), mock(Resource.class), null, null, clock.getTime(), null);
     assertTrue(taskInfo.shouldDelayForLocality(clock.getTime()));
     assertTrue(taskInfo.shouldForceLocality());
     assertFalse(taskInfo.getDelay(TimeUnit.MILLISECONDS) < 0);
@@ -1395,12 +1399,12 @@ public class TestLlapTaskSchedulerService {
 
     LlapTaskSchedulerService.TaskInfo taskInfo1 =
         new LlapTaskSchedulerService.TaskInfo(localityDelayConf, clock, new Object(), new Object(),
-            mock(Priority.class), mock(Resource.class), null, null, clock.getTime());
+            mock(Priority.class), mock(Resource.class), null, null, clock.getTime(), null);
 
     clock.setTime(clock.getTime() + 1000);
     LlapTaskSchedulerService.TaskInfo taskInfo2 =
         new LlapTaskSchedulerService.TaskInfo(localityDelayConf, clock, new Object(), new Object(),
-            mock(Priority.class), mock(Resource.class), null, null, clock.getTime());
+            mock(Priority.class), mock(Resource.class), null, null, clock.getTime(), null);
 
     delayedQueue.add(taskInfo1);
     delayedQueue.add(taskInfo2);
@@ -1662,6 +1666,14 @@ public class TestLlapTaskSchedulerService {
       ts.taskStateUpdated(task, TaskScheduler.SchedulerTaskState.STARTED);
     }
 
+    private static final AtomicInteger TASK_COUNTER = new AtomicInteger(0);
+    private static final TezVertexID VERTEX_ID = TezVertexID.getInstance(
+        TezDAGID.getInstance(ApplicationId.newInstance(1, 1), 0), 0);
+    public static TezTaskAttemptID generateTaskAttemptId() {
+      int taskId = TASK_COUNTER.getAndIncrement();
+      return TezTaskAttemptID.getInstance(TezTaskID.getInstance(VERTEX_ID, taskId), 0);
+    }
+
 
     void deallocateTask(Object task, boolean succeeded, TaskAttemptEndReason endReason) {
       ts.deallocateTask(task, succeeded, endReason, null);
@@ -1674,7 +1686,7 @@ public class TestLlapTaskSchedulerService {
 
     // More complex methods which may wrap multiple operations
     Object allocateTask(String[] hosts, Priority priority) {
-      Object task = new Object();
+      TezTaskAttemptID task = TestTaskSchedulerServiceWrapper.generateTaskAttemptId();
       Object clientCookie = new Object();
       allocateTask(task, hosts, priority, clientCookie);
       return task;
@@ -1740,6 +1752,14 @@ public class TestLlapTaskSchedulerService {
     public LlapTaskSchedulerServiceForTest(
         TaskSchedulerContext appClient, Clock clock) {
       super(appClient, clock, false);
+    }
+
+    @Override
+    protected TezTaskAttemptID getTaskAttemptId(Object task) {
+      if (task instanceof TezTaskAttemptID) {
+        return (TezTaskAttemptID)task;
+      }
+      return null;
     }
 
     @Override
