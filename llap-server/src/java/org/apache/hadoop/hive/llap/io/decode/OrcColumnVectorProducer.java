@@ -78,6 +78,10 @@ public class OrcColumnVectorProducer implements ColumnVectorProducer {
     this.tracePool = tracePool;
   }
 
+  public Configuration getConf() {
+    return conf;
+  }
+
   @Override
   public ReadPipeline createReadPipeline(
       Consumer<ColumnVectorBatch> consumer, FileSplit split, List<Integer> columnIds,
