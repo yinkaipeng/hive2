@@ -15,23 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hadoop.hive.ql.exec.repl.bootstrap.load.util;
+package org.apache.hadoop.hive.ql.parse.repl.dump.events;
 
-import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.metastore.Warehouse;
-import org.apache.hadoop.hive.metastore.api.MetaException;
-import org.apache.hadoop.hive.ql.metadata.Hive;
+import org.apache.hadoop.hive.metastore.api.NotificationEvent;
+import org.apache.hadoop.hive.ql.parse.repl.dump.Utils;
 
-public class Context {
-  public final HiveConf hiveConf;
-  public final Hive hiveDb;
-  public final Warehouse warehouse;
-  public final PathUtils utils;
+abstract class AbstractConstraintEventHandler extends AbstractEventHandler {
+  AbstractConstraintEventHandler(NotificationEvent event) {
+    super(event);
+  }
 
-  public Context(HiveConf hiveConf, Hive hiveDb) throws MetaException {
-    this.hiveConf = hiveConf;
-    this.hiveDb = hiveDb;
-    this.warehouse = new Warehouse(hiveConf);
-    this.utils = new PathUtils(hiveConf);
+  boolean shouldReplicate(Context withinContext) {
+    return Utils.shouldReplicate(
+        event,
+        withinContext.replicationSpec,
+        withinContext.db,
+        withinContext.hiveConf
+    );
   }
 }

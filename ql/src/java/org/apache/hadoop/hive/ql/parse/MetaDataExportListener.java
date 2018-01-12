@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -86,7 +86,8 @@ public class MetaDataExportListener extends MetaStorePreEventListener {
     Path outFile = new Path(metaPath, name + EximUtil.METADATA_NAME);
     try {
       SessionState.getConsole().printInfo("Beginning metadata export");
-      EximUtil.createExportDump(fs, outFile, mTbl, null, null);
+      EximUtil.createExportDump(fs, outFile, mTbl, null, null,
+          new HiveConf(hiveconf, MetaDataExportListener.class));
       if (moveMetadataToTrash == true) {
         wh.deleteDir(metaPath, true);
       }
