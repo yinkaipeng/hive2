@@ -322,13 +322,13 @@ public class OrcEncodedDataConsumer
   }
 
   @Override
-  public void setDone() {
+  public void setDone() throws InterruptedException {
     super.setDone();
     returnCodec();
   }
 
   @Override
-  public void setError(Throwable t) {
+  public void setError(Throwable t) throws InterruptedException {
     super.setError(t);
     returnCodec();
   }

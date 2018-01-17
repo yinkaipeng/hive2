@@ -85,8 +85,10 @@ public class LlapIoImpl implements LlapIo<VectorizedRowBatch> {
   private ObjectName buddyAllocatorMXBean;
   private final Allocator allocator;
   private final LlapOomDebugDump memoryDump;
+  private final Configuration daemonConf;
 
   private LlapIoImpl(Configuration conf) throws IOException {
+    this.daemonConf = conf;
     String ioMode = HiveConf.getVar(conf, HiveConf.ConfVars.LLAP_IO_MEMORY_MODE);
     boolean useLowLevelCache = LlapIoImpl.MODE_CACHE.equalsIgnoreCase(ioMode);
     LOG.info("Initializing LLAP IO in {} mode", useLowLevelCache ? LlapIoImpl.MODE_CACHE : "none");

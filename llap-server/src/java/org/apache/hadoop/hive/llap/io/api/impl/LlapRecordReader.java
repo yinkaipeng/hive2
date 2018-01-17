@@ -149,6 +149,10 @@ class LlapRecordReader
     this.counters = new QueryFragmentCounters(job, taskCounters);
     this.counters.setDesc(QueryFragmentCounters.Desc.MACHINE, hostName);
 
+    isAcidScan = HiveConf.getBoolVar(jobConf, ConfVars.HIVE_TRANSACTIONAL_TABLE_SCAN);
+    VectorizedRowBatchCtx ctx = mapWork.getVectorizedRowBatchCtx();
+    rbCtx = ctx != null ? ctx : LlapInputFormat.createFakeVrbCtx(mapWork);
+
     // Note: columnIds below makes additional changes for ACID. Don't use this var directly.
     if (includedCols == null) {
       // Assume including everything means the VRB will have everything.
@@ -157,10 +161,6 @@ class LlapRecordReader
         includedCols.add(i);
       }
     }
-
-    isAcidScan = HiveConf.getBoolVar(jobConf, ConfVars.HIVE_TRANSACTIONAL_TABLE_SCAN);
-    VectorizedRowBatchCtx ctx = mapWork.getVectorizedRowBatchCtx();
-    rbCtx = ctx != null ? ctx : LlapInputFormat.createFakeVrbCtx(mapWork);
 
     TypeDescription schema = OrcInputFormat.getDesiredRowTypeDescr(
         job, isAcidScan, Integer.MAX_VALUE);
