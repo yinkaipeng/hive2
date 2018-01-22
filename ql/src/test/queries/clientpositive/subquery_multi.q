@@ -109,6 +109,32 @@ having count(*) in (select count(*) from src s1 where s1.key > '9' and exists (s
 explain select * from part where p_name IN (select p_name from part p where part.p_type <> '1');
 select * from part where p_name IN (select p_name from part p where part.p_type <> '1');
 
+-- OR subqueries
+insert into tnull values(1, 'c');
+explain select * from part where p_partkey = 3 OR p_size NOT IN (select i from tnull);
+select * from part where p_partkey = 3 OR p_size NOT IN (select i from tnull);
+
+explain select count(*)  from src
+    where src.key in (select key from src s1 where s1.key > '9')
+        or src.value is not null
+        or exists(select key from src);
+
+select count(*)  from src
+    where src.key in (select key from src s1 where s1.key > '9')
+        or src.value is not null
+        or exists(select key from src);
+
+-- EXISTS and NOT EXISTS with non-equi predicate
+explain select * from part ws1 where
+    exists (select * from part ws2 where ws1.p_type= ws2.p_type
+                            and ws1.p_retailprice <> ws2.p_retailprice)
+    and not exists(select * from part_null wr1 where ws1.p_type = wr1.p_name);
+select * from part ws1 where
+    exists (select * from part ws2 where ws1.p_type= ws2.p_type
+                            and ws1.p_retailprice <> ws2.p_retailprice)
+    and not exists(select * from part_null wr1 where ws1.p_type = wr1.p_name);
+
+
 drop table tnull;
 drop table tempty;
 drop table part_null;
