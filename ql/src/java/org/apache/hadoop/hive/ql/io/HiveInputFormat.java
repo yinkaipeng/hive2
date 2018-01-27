@@ -217,7 +217,7 @@ public class HiveInputFormat<K extends WritableComparable, V extends Writable>
     }
     String ifName = inputFormat.getClass().getCanonicalName();
     boolean isSupported = inputFormat instanceof LlapWrappableInputFormatInterface;
-    boolean isVectorized = Utilities.getUseVectorizedInputFileFormat(conf);
+    boolean isVectorized = Utilities.getIsVectorized(conf);
     if (!isVectorized) {
       // Pretend it's vectorized if the non-vector wrapped is enabled.
       isVectorized = HiveConf.getBoolVar(conf, ConfVars.LLAP_IO_NONVECTOR_WRAPPER_ENABLED)
@@ -271,18 +271,6 @@ public class HiveInputFormat<K extends WritableComparable, V extends Writable>
           LOG.info("Not using LLAP IO because there's no partition spec for SerDe-based IF");
         }
         return inputFormat;
-      }
-      VectorPartitionDesc vpart =  part.getVectorPartitionDesc();
-      if (vpart != null) {
-        VectorMapOperatorReadType old = vpart.getVectorMapOperatorReadType();
-        if (old != VectorMapOperatorReadType.VECTORIZED_INPUT_FILE_FORMAT) {
-          if (LOG.isInfoEnabled()) {
-            LOG.info("Resetting VectorMapOperatorReadType from " + old + " for partition "
-              + part.getTableName() + " " + part.getPartSpec());
-          }
-          vpart.setVectorMapOperatorReadType(
-              VectorMapOperatorReadType.VECTORIZED_INPUT_FILE_FORMAT);
-        }
       }
       try {
         serde = part.getDeserializer(conf);

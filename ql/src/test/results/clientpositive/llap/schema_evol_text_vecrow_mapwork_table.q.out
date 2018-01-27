@@ -154,25 +154,53 @@ POSTHOOK: query: explain
 select insert_num,a,b from table_add_int_permute_select order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_add_int_permute_select
+                  Statistics: Num rows: 4 Data size: 48 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), a (type: int), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2
+                    Statistics: Num rows: 4 Data size: 48 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 48 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: int), _col2 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: int), VALUE._col1 (type: string)
+                outputColumnNames: _col0, _col1, _col2
+                Statistics: Num rows: 4 Data size: 48 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 48 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=12)
-          Output:["_col0","_col1","_col2"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=12)
-              Output:["_col0","_col1","_col2"]
-              TableScan [TS_0] (rows=4 width=12)
-                default@table_add_int_permute_select,table_add_int_permute_select,Tbl:COMPLETE,Col:NONE,Output:["insert_num","a","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,a,b from table_add_int_permute_select order by insert_num
 PREHOOK: type: QUERY
@@ -398,25 +426,53 @@ POSTHOOK: query: explain
 select insert_num,a,b from table_add_int_string_permute_select order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_add_int_string_permute_select
+                  Statistics: Num rows: 4 Data size: 48 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), a (type: int), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2
+                    Statistics: Num rows: 4 Data size: 48 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 48 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: int), _col2 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: int), VALUE._col1 (type: string)
+                outputColumnNames: _col0, _col1, _col2
+                Statistics: Num rows: 4 Data size: 48 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 48 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=12)
-          Output:["_col0","_col1","_col2"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=12)
-              Output:["_col0","_col1","_col2"]
-              TableScan [TS_0] (rows=4 width=12)
-                default@table_add_int_string_permute_select,table_add_int_string_permute_select,Tbl:COMPLETE,Col:NONE,Output:["insert_num","a","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,a,b from table_add_int_string_permute_select order by insert_num
 PREHOOK: type: QUERY
@@ -644,25 +700,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,b from table_change_string_group_double order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_string_group_double
+                  Statistics: Num rows: 4 Data size: 318 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: double), c2 (type: double), c3 (type: double), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                    Statistics: Num rows: 4 Data size: 318 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 318 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: double), _col2 (type: double), _col3 (type: double), _col4 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: double), VALUE._col1 (type: double), VALUE._col2 (type: double), VALUE._col3 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                Statistics: Num rows: 4 Data size: 318 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 318 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=79)
-          Output:["_col0","_col1","_col2","_col3","_col4"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=79)
-              Output:["_col0","_col1","_col2","_col3","_col4"]
-              TableScan [TS_0] (rows=4 width=79)
-                default@table_change_string_group_double,table_change_string_group_double,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,b from table_change_string_group_double order by insert_num
 PREHOOK: type: QUERY
@@ -780,25 +864,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,c4,c5,b from table_change_date_group_string_group_timestamp order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_date_group_string_group_timestamp
+                  Statistics: Num rows: 3 Data size: 450 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: string), c2 (type: char(50)), c3 (type: char(15)), c4 (type: varchar(50)), c5 (type: varchar(15)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5, _col6
+                    Statistics: Num rows: 3 Data size: 450 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 3 Data size: 450 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: string), _col2 (type: char(50)), _col3 (type: char(15)), _col4 (type: varchar(50)), _col5 (type: varchar(15)), _col6 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: string), VALUE._col1 (type: char(50)), VALUE._col2 (type: char(15)), VALUE._col3 (type: varchar(50)), VALUE._col4 (type: varchar(15)), VALUE._col5 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5, _col6
+                Statistics: Num rows: 3 Data size: 450 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 3 Data size: 450 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=3 width=150)
-          Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=3 width=150)
-              Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6"]
-              TableScan [TS_0] (rows=3 width=150)
-                default@table_change_date_group_string_group_timestamp,table_change_date_group_string_group_timestamp,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,c4,c5,b from table_change_date_group_string_group_timestamp order by insert_num
 PREHOOK: type: QUERY
@@ -940,25 +1052,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,c4,c5,b from table_change_date_group_string_group_date order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_date_group_string_group_date
+                  Statistics: Num rows: 3 Data size: 195 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: string), c2 (type: char(50)), c3 (type: char(15)), c4 (type: varchar(50)), c5 (type: varchar(15)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5, _col6
+                    Statistics: Num rows: 3 Data size: 195 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 3 Data size: 195 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: string), _col2 (type: char(50)), _col3 (type: char(15)), _col4 (type: varchar(50)), _col5 (type: varchar(15)), _col6 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: string), VALUE._col1 (type: char(50)), VALUE._col2 (type: char(15)), VALUE._col3 (type: varchar(50)), VALUE._col4 (type: varchar(15)), VALUE._col5 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5, _col6
+                Statistics: Num rows: 3 Data size: 195 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 3 Data size: 195 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=3 width=65)
-          Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=3 width=65)
-              Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6"]
-              TableScan [TS_0] (rows=3 width=65)
-                default@table_change_date_group_string_group_date,table_change_date_group_string_group_date,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,c4,c5,b from table_change_date_group_string_group_date order by insert_num
 PREHOOK: type: QUERY
@@ -1072,25 +1212,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,c4,b from table_change_numeric_group_string_group_multi_ints_string order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_numeric_group_string_group_multi_ints_string
+                  Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: string), c2 (type: string), c3 (type: string), c4 (type: string), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                    Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: string), _col2 (type: string), _col3 (type: string), _col4 (type: string), _col5 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: string), VALUE._col1 (type: string), VALUE._col2 (type: string), VALUE._col3 (type: string), VALUE._col4 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=37)
-          Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=37)
-              Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-              TableScan [TS_0] (rows=4 width=37)
-                default@table_change_numeric_group_string_group_multi_ints_string,table_change_numeric_group_string_group_multi_ints_string,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,c4,b from table_change_numeric_group_string_group_multi_ints_string order by insert_num
 PREHOOK: type: QUERY
@@ -1205,25 +1373,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,c4,b from table_change_numeric_group_string_group_multi_ints_char order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_numeric_group_string_group_multi_ints_char
+                  Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: char(50)), c2 (type: char(50)), c3 (type: char(50)), c4 (type: char(50)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                    Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: char(50)), _col2 (type: char(50)), _col3 (type: char(50)), _col4 (type: char(50)), _col5 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: char(50)), VALUE._col1 (type: char(50)), VALUE._col2 (type: char(50)), VALUE._col3 (type: char(50)), VALUE._col4 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=37)
-          Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=37)
-              Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-              TableScan [TS_0] (rows=4 width=37)
-                default@table_change_numeric_group_string_group_multi_ints_char,table_change_numeric_group_string_group_multi_ints_char,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,c4,b from table_change_numeric_group_string_group_multi_ints_char order by insert_num
 PREHOOK: type: QUERY
@@ -1338,25 +1534,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,c4,b from table_change_numeric_group_string_group_multi_ints_char_trunc order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_numeric_group_string_group_multi_ints_char_trunc
+                  Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: char(5)), c2 (type: char(5)), c3 (type: char(5)), c4 (type: char(5)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                    Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: char(5)), _col2 (type: char(5)), _col3 (type: char(5)), _col4 (type: char(5)), _col5 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: char(5)), VALUE._col1 (type: char(5)), VALUE._col2 (type: char(5)), VALUE._col3 (type: char(5)), VALUE._col4 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=37)
-          Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=37)
-              Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-              TableScan [TS_0] (rows=4 width=37)
-                default@table_change_numeric_group_string_group_multi_ints_char_trunc,table_change_numeric_group_string_group_multi_ints_char_trunc,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,c4,b from table_change_numeric_group_string_group_multi_ints_char_trunc order by insert_num
 PREHOOK: type: QUERY
@@ -1471,25 +1695,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,c4,b from table_change_numeric_group_string_group_multi_ints_varchar order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_numeric_group_string_group_multi_ints_varchar
+                  Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: varchar(50)), c2 (type: varchar(50)), c3 (type: varchar(50)), c4 (type: varchar(50)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                    Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: varchar(50)), _col2 (type: varchar(50)), _col3 (type: varchar(50)), _col4 (type: varchar(50)), _col5 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: varchar(50)), VALUE._col1 (type: varchar(50)), VALUE._col2 (type: varchar(50)), VALUE._col3 (type: varchar(50)), VALUE._col4 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=37)
-          Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=37)
-              Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-              TableScan [TS_0] (rows=4 width=37)
-                default@table_change_numeric_group_string_group_multi_ints_varchar,table_change_numeric_group_string_group_multi_ints_varchar,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,c4,b from table_change_numeric_group_string_group_multi_ints_varchar order by insert_num
 PREHOOK: type: QUERY
@@ -1604,25 +1856,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,c4,b from table_change_numeric_group_string_group_multi_ints_varchar_trunc order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_numeric_group_string_group_multi_ints_varchar_trunc
+                  Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: varchar(5)), c2 (type: varchar(5)), c3 (type: varchar(5)), c4 (type: varchar(5)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                    Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: varchar(5)), _col2 (type: varchar(5)), _col3 (type: varchar(5)), _col4 (type: varchar(5)), _col5 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: varchar(5)), VALUE._col1 (type: varchar(5)), VALUE._col2 (type: varchar(5)), VALUE._col3 (type: varchar(5)), VALUE._col4 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 150 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=37)
-          Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=37)
-              Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-              TableScan [TS_0] (rows=4 width=37)
-                default@table_change_numeric_group_string_group_multi_ints_varchar_trunc,table_change_numeric_group_string_group_multi_ints_varchar_trunc,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,c4,b from table_change_numeric_group_string_group_multi_ints_varchar_trunc order by insert_num
 PREHOOK: type: QUERY
@@ -1735,25 +2015,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,b from table_change_numeric_group_string_group_floating_string order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_numeric_group_string_group_floating_string
+                  Statistics: Num rows: 4 Data size: 207 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: string), c2 (type: string), c3 (type: string), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                    Statistics: Num rows: 4 Data size: 207 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 207 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: string), _col2 (type: string), _col3 (type: string), _col4 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: string), VALUE._col1 (type: string), VALUE._col2 (type: string), VALUE._col3 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                Statistics: Num rows: 4 Data size: 207 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 207 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=51)
-          Output:["_col0","_col1","_col2","_col3","_col4"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=51)
-              Output:["_col0","_col1","_col2","_col3","_col4"]
-              TableScan [TS_0] (rows=4 width=51)
-                default@table_change_numeric_group_string_group_floating_string,table_change_numeric_group_string_group_floating_string,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,b from table_change_numeric_group_string_group_floating_string order by insert_num
 PREHOOK: type: QUERY
@@ -1866,25 +2174,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,b from table_change_numeric_group_string_group_floating_char order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_numeric_group_string_group_floating_char
+                  Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: char(50)), c2 (type: char(50)), c3 (type: char(50)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                    Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: char(50)), _col2 (type: char(50)), _col3 (type: char(50)), _col4 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: char(50)), VALUE._col1 (type: char(50)), VALUE._col2 (type: char(50)), VALUE._col3 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=50)
-          Output:["_col0","_col1","_col2","_col3","_col4"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=50)
-              Output:["_col0","_col1","_col2","_col3","_col4"]
-              TableScan [TS_0] (rows=4 width=50)
-                default@table_change_numeric_group_string_group_floating_char,table_change_numeric_group_string_group_floating_char,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,b from table_change_numeric_group_string_group_floating_char order by insert_num
 PREHOOK: type: QUERY
@@ -1997,25 +2333,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,b from table_change_numeric_group_string_group_floating_char_trunc order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_numeric_group_string_group_floating_char_trunc
+                  Statistics: Num rows: 4 Data size: 207 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: char(7)), c2 (type: char(7)), c3 (type: char(7)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                    Statistics: Num rows: 4 Data size: 207 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 207 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: char(7)), _col2 (type: char(7)), _col3 (type: char(7)), _col4 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: char(7)), VALUE._col1 (type: char(7)), VALUE._col2 (type: char(7)), VALUE._col3 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                Statistics: Num rows: 4 Data size: 207 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 207 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=51)
-          Output:["_col0","_col1","_col2","_col3","_col4"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=51)
-              Output:["_col0","_col1","_col2","_col3","_col4"]
-              TableScan [TS_0] (rows=4 width=51)
-                default@table_change_numeric_group_string_group_floating_char_trunc,table_change_numeric_group_string_group_floating_char_trunc,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,b from table_change_numeric_group_string_group_floating_char_trunc order by insert_num
 PREHOOK: type: QUERY
@@ -2128,25 +2492,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,b from table_change_numeric_group_string_group_floating_varchar order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_numeric_group_string_group_floating_varchar
+                  Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: varchar(50)), c2 (type: varchar(50)), c3 (type: varchar(50)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                    Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: varchar(50)), _col2 (type: varchar(50)), _col3 (type: varchar(50)), _col4 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: varchar(50)), VALUE._col1 (type: varchar(50)), VALUE._col2 (type: varchar(50)), VALUE._col3 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=50)
-          Output:["_col0","_col1","_col2","_col3","_col4"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=50)
-              Output:["_col0","_col1","_col2","_col3","_col4"]
-              TableScan [TS_0] (rows=4 width=50)
-                default@table_change_numeric_group_string_group_floating_varchar,table_change_numeric_group_string_group_floating_varchar,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,b from table_change_numeric_group_string_group_floating_varchar order by insert_num
 PREHOOK: type: QUERY
@@ -2259,25 +2651,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,b from table_change_numeric_group_string_group_floating_varchar_trunc order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_numeric_group_string_group_floating_varchar_trunc
+                  Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: varchar(7)), c2 (type: varchar(7)), c3 (type: varchar(7)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                    Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: varchar(7)), _col2 (type: varchar(7)), _col3 (type: varchar(7)), _col4 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: varchar(7)), VALUE._col1 (type: varchar(7)), VALUE._col2 (type: varchar(7)), VALUE._col3 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 203 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=50)
-          Output:["_col0","_col1","_col2","_col3","_col4"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=50)
-              Output:["_col0","_col1","_col2","_col3","_col4"]
-              TableScan [TS_0] (rows=4 width=50)
-                default@table_change_numeric_group_string_group_floating_varchar_trunc,table_change_numeric_group_string_group_floating_varchar_trunc,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,b from table_change_numeric_group_string_group_floating_varchar_trunc order by insert_num
 PREHOOK: type: QUERY
@@ -2392,25 +2812,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,c4,b from table_change_string_group_string_group_string order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_string_group_string_group_string
+                  Statistics: Num rows: 4 Data size: 236 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: char(50)), c2 (type: char(9)), c3 (type: varchar(50)), c4 (type: char(9)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                    Statistics: Num rows: 4 Data size: 236 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 236 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: char(50)), _col2 (type: char(9)), _col3 (type: varchar(50)), _col4 (type: char(9)), _col5 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: char(50)), VALUE._col1 (type: char(9)), VALUE._col2 (type: varchar(50)), VALUE._col3 (type: char(9)), VALUE._col4 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                Statistics: Num rows: 4 Data size: 236 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 236 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=59)
-          Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=59)
-              Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-              TableScan [TS_0] (rows=4 width=59)
-                default@table_change_string_group_string_group_string,table_change_string_group_string_group_string,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,c4,b from table_change_string_group_string_group_string order by insert_num
 PREHOOK: type: QUERY
@@ -2523,25 +2971,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,b from table_change_string_group_string_group_char order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_string_group_string_group_char
+                  Statistics: Num rows: 4 Data size: 652 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: varchar(50)), c2 (type: varchar(9)), c3 (type: string), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                    Statistics: Num rows: 4 Data size: 652 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 652 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: varchar(50)), _col2 (type: varchar(9)), _col3 (type: string), _col4 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: varchar(50)), VALUE._col1 (type: varchar(9)), VALUE._col2 (type: string), VALUE._col3 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                Statistics: Num rows: 4 Data size: 652 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 652 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=163)
-          Output:["_col0","_col1","_col2","_col3","_col4"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=163)
-              Output:["_col0","_col1","_col2","_col3","_col4"]
-              TableScan [TS_0] (rows=4 width=163)
-                default@table_change_string_group_string_group_char,table_change_string_group_string_group_char,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,b from table_change_string_group_string_group_char order by insert_num
 PREHOOK: type: QUERY
@@ -2654,25 +3130,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,b from table_change_string_group_string_group_varchar order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_string_group_string_group_varchar
+                  Statistics: Num rows: 4 Data size: 187 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: char(50)), c2 (type: char(9)), c3 (type: string), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                    Statistics: Num rows: 4 Data size: 187 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 187 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: char(50)), _col2 (type: char(9)), _col3 (type: string), _col4 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: char(50)), VALUE._col1 (type: char(9)), VALUE._col2 (type: string), VALUE._col3 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                Statistics: Num rows: 4 Data size: 187 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 187 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=46)
-          Output:["_col0","_col1","_col2","_col3","_col4"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=46)
-              Output:["_col0","_col1","_col2","_col3","_col4"]
-              TableScan [TS_0] (rows=4 width=46)
-                default@table_change_string_group_string_group_varchar,table_change_string_group_string_group_varchar,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,b from table_change_string_group_string_group_varchar order by insert_num
 PREHOOK: type: QUERY
@@ -2791,25 +3295,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,c4,c5,c6,b from table_change_lower_to_higher_numeric_group_tinyint order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_lower_to_higher_numeric_group_tinyint
+                  Statistics: Num rows: 4 Data size: 118 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: smallint), c2 (type: int), c3 (type: bigint), c4 (type: float), c5 (type: double), c6 (type: decimal(38,18)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5, _col6, _col7
+                    Statistics: Num rows: 4 Data size: 118 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 118 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: smallint), _col2 (type: int), _col3 (type: bigint), _col4 (type: float), _col5 (type: double), _col6 (type: decimal(38,18)), _col7 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: smallint), VALUE._col1 (type: int), VALUE._col2 (type: bigint), VALUE._col3 (type: float), VALUE._col4 (type: double), VALUE._col5 (type: decimal(38,18)), VALUE._col6 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5, _col6, _col7
+                Statistics: Num rows: 4 Data size: 118 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 118 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=29)
-          Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=29)
-              Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6","_col7"]
-              TableScan [TS_0] (rows=4 width=29)
-                default@table_change_lower_to_higher_numeric_group_tinyint,table_change_lower_to_higher_numeric_group_tinyint,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","c6","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,c4,c5,c6,b from table_change_lower_to_higher_numeric_group_tinyint order by insert_num
 PREHOOK: type: QUERY
@@ -2926,25 +3458,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,c4,c5,b from table_change_lower_to_higher_numeric_group_smallint order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_lower_to_higher_numeric_group_smallint
+                  Statistics: Num rows: 4 Data size: 130 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: int), c2 (type: bigint), c3 (type: float), c4 (type: double), c5 (type: decimal(38,18)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5, _col6
+                    Statistics: Num rows: 4 Data size: 130 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 130 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: int), _col2 (type: bigint), _col3 (type: float), _col4 (type: double), _col5 (type: decimal(38,18)), _col6 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: int), VALUE._col1 (type: bigint), VALUE._col2 (type: float), VALUE._col3 (type: double), VALUE._col4 (type: decimal(38,18)), VALUE._col5 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5, _col6
+                Statistics: Num rows: 4 Data size: 130 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 130 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=32)
-          Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=32)
-              Output:["_col0","_col1","_col2","_col3","_col4","_col5","_col6"]
-              TableScan [TS_0] (rows=4 width=32)
-                default@table_change_lower_to_higher_numeric_group_smallint,table_change_lower_to_higher_numeric_group_smallint,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","c5","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,c4,c5,b from table_change_lower_to_higher_numeric_group_smallint order by insert_num
 PREHOOK: type: QUERY
@@ -3059,25 +3619,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,c4,b from table_change_lower_to_higher_numeric_group_int order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_lower_to_higher_numeric_group_int
+                  Statistics: Num rows: 4 Data size: 132 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: bigint), c2 (type: float), c3 (type: double), c4 (type: decimal(38,18)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                    Statistics: Num rows: 4 Data size: 132 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 132 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: bigint), _col2 (type: float), _col3 (type: double), _col4 (type: decimal(38,18)), _col5 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: bigint), VALUE._col1 (type: float), VALUE._col2 (type: double), VALUE._col3 (type: decimal(38,18)), VALUE._col4 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5
+                Statistics: Num rows: 4 Data size: 132 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 132 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=33)
-          Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=33)
-              Output:["_col0","_col1","_col2","_col3","_col4","_col5"]
-              TableScan [TS_0] (rows=4 width=33)
-                default@table_change_lower_to_higher_numeric_group_int,table_change_lower_to_higher_numeric_group_int,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","c4","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,c4,b from table_change_lower_to_higher_numeric_group_int order by insert_num
 PREHOOK: type: QUERY
@@ -3190,25 +3778,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,c3,b from table_change_lower_to_higher_numeric_group_bigint order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_lower_to_higher_numeric_group_bigint
+                  Statistics: Num rows: 4 Data size: 127 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: float), c2 (type: double), c3 (type: decimal(38,18)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                    Statistics: Num rows: 4 Data size: 127 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 127 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: float), _col2 (type: double), _col3 (type: decimal(38,18)), _col4 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: float), VALUE._col1 (type: double), VALUE._col2 (type: decimal(38,18)), VALUE._col3 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3, _col4
+                Statistics: Num rows: 4 Data size: 127 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 127 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=31)
-          Output:["_col0","_col1","_col2","_col3","_col4"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=31)
-              Output:["_col0","_col1","_col2","_col3","_col4"]
-              TableScan [TS_0] (rows=4 width=31)
-                default@table_change_lower_to_higher_numeric_group_bigint,table_change_lower_to_higher_numeric_group_bigint,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","c3","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,c3,b from table_change_lower_to_higher_numeric_group_bigint order by insert_num
 PREHOOK: type: QUERY
@@ -3319,25 +3935,53 @@ POSTHOOK: query: explain
 select insert_num,c1,c2,b from table_change_lower_to_higher_numeric_group_float order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_lower_to_higher_numeric_group_float
+                  Statistics: Num rows: 4 Data size: 116 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: double), c2 (type: decimal(38,18)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2, _col3
+                    Statistics: Num rows: 4 Data size: 116 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 116 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: double), _col2 (type: decimal(38,18)), _col3 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: double), VALUE._col1 (type: decimal(38,18)), VALUE._col2 (type: string)
+                outputColumnNames: _col0, _col1, _col2, _col3
+                Statistics: Num rows: 4 Data size: 116 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 116 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=29)
-          Output:["_col0","_col1","_col2","_col3"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=29)
-              Output:["_col0","_col1","_col2","_col3"]
-              TableScan [TS_0] (rows=4 width=29)
-                default@table_change_lower_to_higher_numeric_group_float,table_change_lower_to_higher_numeric_group_float,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","c2","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,c2,b from table_change_lower_to_higher_numeric_group_float order by insert_num
 PREHOOK: type: QUERY
@@ -3446,25 +4090,53 @@ POSTHOOK: query: explain
 select insert_num,c1,b from table_change_lower_to_higher_numeric_group_double order by insert_num
 POSTHOOK: type: QUERY
 Explain
-Plan optimized by CBO.
+STAGE DEPENDENCIES:
+  Stage-1 is a root stage
+  Stage-0 depends on stages: Stage-1
 
-Vertex dependency in root stage
-Reducer 2 <- Map 1 (SIMPLE_EDGE)
+STAGE PLANS:
+  Stage: Stage-1
+    Tez
+#### A masked pattern was here ####
+      Edges:
+        Reducer 2 <- Map 1 (SIMPLE_EDGE)
+#### A masked pattern was here ####
+      Vertices:
+        Map 1 
+            Map Operator Tree:
+                TableScan
+                  alias: table_change_lower_to_higher_numeric_group_double
+                  Statistics: Num rows: 4 Data size: 78 Basic stats: COMPLETE Column stats: NONE
+                  Select Operator
+                    expressions: insert_num (type: int), c1 (type: decimal(38,18)), b (type: string)
+                    outputColumnNames: _col0, _col1, _col2
+                    Statistics: Num rows: 4 Data size: 78 Basic stats: COMPLETE Column stats: NONE
+                    Reduce Output Operator
+                      key expressions: _col0 (type: int)
+                      sort order: +
+                      Statistics: Num rows: 4 Data size: 78 Basic stats: COMPLETE Column stats: NONE
+                      value expressions: _col1 (type: decimal(38,18)), _col2 (type: string)
+            Execution mode: vectorized, llap
+        Reducer 2 
+            Execution mode: vectorized, llap
+            Reduce Operator Tree:
+              Select Operator
+                expressions: KEY.reducesinkkey0 (type: int), VALUE._col0 (type: decimal(38,18)), VALUE._col1 (type: string)
+                outputColumnNames: _col0, _col1, _col2
+                Statistics: Num rows: 4 Data size: 78 Basic stats: COMPLETE Column stats: NONE
+                File Output Operator
+                  compressed: false
+                  Statistics: Num rows: 4 Data size: 78 Basic stats: COMPLETE Column stats: NONE
+                  table:
+                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
+                      serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
-Stage-0
-  Fetch Operator
-    limit:-1
-    Stage-1
-      Reducer 2 vectorized, llap
-      File Output Operator [FS_8]
-        Select Operator [SEL_7] (rows=4 width=19)
-          Output:["_col0","_col1","_col2"]
-        <-Map 1 [SIMPLE_EDGE] vectorized, llap
-          SHUFFLE [RS_6]
-            Select Operator [SEL_5] (rows=4 width=19)
-              Output:["_col0","_col1","_col2"]
-              TableScan [TS_0] (rows=4 width=19)
-                default@table_change_lower_to_higher_numeric_group_double,table_change_lower_to_higher_numeric_group_double,Tbl:COMPLETE,Col:NONE,Output:["insert_num","c1","b"]
+  Stage: Stage-0
+    Fetch Operator
+      limit: -1
+      Processor Tree:
+        ListSink
 
 PREHOOK: query: select insert_num,c1,b from table_change_lower_to_higher_numeric_group_double order by insert_num
 PREHOOK: type: QUERY

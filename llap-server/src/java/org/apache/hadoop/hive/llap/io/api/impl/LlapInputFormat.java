@@ -110,7 +110,7 @@ public class LlapInputFormat implements InputFormat<NullWritable, VectorizedRowB
     RecordReader<NullWritable, VectorizedRowBatch> noLlap = checkLlapSplit(split, job, reporter);
     if (noLlap != null) return noLlap;
 
-    boolean isVectorized = Utilities.getUseVectorizedInputFileFormat(job);
+    boolean isVectorized = Utilities.getIsVectorized(job);
 
     FileSplit fileSplit = (FileSplit) split;
     reporter.setStatus(fileSplit.toString());

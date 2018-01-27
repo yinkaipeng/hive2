@@ -1,4 +1,4 @@
-set hive.explain.user=true;
+set hive.explain.user=false;
 set hive.cli.print.header=true;
 SET hive.exec.schema.evolution=true;
 SET hive.vectorized.use.vectorized.input.format=false;

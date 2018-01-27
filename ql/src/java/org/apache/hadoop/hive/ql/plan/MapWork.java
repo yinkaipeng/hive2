@@ -225,7 +225,7 @@ public class MapWork extends BaseWork {
     boolean canWrapAny = false, doCheckIfs = false;
     if (isLlapOn) {
       // We can wrap inputs if the execution is vectorized, or if we use a wrapper.
-      canWrapAny = Utilities.getUseVectorizedInputFileFormat(conf, this);
+      canWrapAny = Utilities.getIsVectorized(conf, this);
       // ExecDriver has no plan path, so we cannot derive VRB stuff for the wrapper.
       if (!canWrapAny && !isExecDriver) {
         canWrapAny = HiveConf.getBoolVar(conf, ConfVars.LLAP_IO_NONVECTOR_WRAPPER_ENABLED);
