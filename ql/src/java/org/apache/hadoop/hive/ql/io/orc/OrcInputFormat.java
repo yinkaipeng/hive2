@@ -482,7 +482,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
                                List<FileStatus> files
                               ) throws IOException {
 
-    if (Utilities.getUseVectorizedInputFileFormat(conf)) {
+    if (Utilities.getIsVectorized(conf)) {
       return new VectorizedOrcInputFormat().validateInput(fs, conf, files);
     }
 
@@ -1742,7 +1742,7 @@ public class OrcInputFormat implements InputFormat<NullWritable, OrcStruct>,
   public org.apache.hadoop.mapred.RecordReader<NullWritable, OrcStruct>
   getRecordReader(InputSplit inputSplit, JobConf conf,
                   Reporter reporter) throws IOException {
-    boolean vectorMode = Utilities.getUseVectorizedInputFileFormat(conf);
+    boolean vectorMode = Utilities.getIsVectorized(conf);
     boolean isAcidRead = isAcidRead(conf, inputSplit);
     if (!isAcidRead) {
       if (vectorMode) {

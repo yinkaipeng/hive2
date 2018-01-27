@@ -625,12 +625,14 @@ public class Vectorizer implements PhysicalPlanResolver {
 
       String inputFileFormatClassName = pd.getInputFileFormatClassName();
 
+      boolean isInputFileFormatVectorized = Utilities.isInputFileFormatVectorized(pd);
+
       // Look for Pass-Thru case where InputFileFormat has VectorizedInputFormatInterface
       // and reads VectorizedRowBatch as a "row".
 
       if (isAcidTable || useVectorizedInputFileFormat) {
 
-        if (Utilities.isInputFileFormatVectorized(pd)) {
+        if (isInputFileFormatVectorized) {
 
           if (!useVectorizedInputFileFormat) {
             LOG.info("ACID tables con only be vectorized for the input file format -- " +
@@ -721,13 +723,24 @@ public class Vectorizer implements PhysicalPlanResolver {
 
       if (useRowDeserialize) {
 
-        pd.setVectorPartitionDesc(
-            VectorPartitionDesc.createRowDeserialize(
-                inputFileFormatClassName,
-                Utilities.isInputFileFormatSelfDescribing(pd),
-                deserializerClassName));
+        if (!isInputFileFormatVectorized) {
+          pd.setVectorPartitionDesc(
+              VectorPartitionDesc.createRowDeserialize(
+                  inputFileFormatClassName,
+                  Utilities.isInputFileFormatSelfDescribing(pd),
+                  deserializerClassName));
 
-        return true;
+          return true;
+        } else {
+
+          /*
+           * Vectorizer does not vectorize in row deserialize mode if the input format has
+           * VectorizedInputFormat so input formats will be clear if the isVectorized flag
+           * is on, they are doing VRB work.
+           */
+          LOG.info("Row deserialization of vectorized input format not supported");
+          return false;
+        }
 
       }
 
