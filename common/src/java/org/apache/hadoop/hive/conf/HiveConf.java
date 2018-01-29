@@ -2876,6 +2876,9 @@ public class HiveConf extends Configuration {
         "internal use only, used to force always using the VectorUDFAdaptor.\n" +
         "The default is false, of course",
         true),
+    HIVE_VECTORIZATION_TESTING_REUSE_SCRATCH_COLUMNS("hive.vectorized.reuse.scratch.columns", true,
+         "internal use only. Disable this to debug scratch column state issues",
+         true),
 
     HIVE_TYPE_CHECK_ON_INSERT("hive.typecheck.on.insert", true, "This property has been extended to control "
         + "whether to check, convert, and normalize partition value to conform to its column type in "
