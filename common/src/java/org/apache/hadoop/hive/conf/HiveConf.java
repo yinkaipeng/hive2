@@ -1741,7 +1741,7 @@ public class HiveConf extends Configuration {
         "Whether column accesses are tracked in the QueryPlan.\n" +
         "This is useful to identify how tables are accessed and to determine if there are wasted columns that can be trimmed."),
     HIVE_STATS_NDV_ALGO("hive.stats.ndv.algo", "hll", new PatternSet("hll", "fm"),
-        "hll and fm stand for HyperLogLog and FM-sketch, respectively for computing ndv."), 
+        "hll and fm stand for HyperLogLog and FM-sketch, respectively for computing ndv."),
     HIVE_STATS_FETCH_BITVECTOR("hive.stats.fetch.bitvector", false,
         "Whether we fetch bitvector when we compute ndv. Users can turn it off if they want to use old schema"),
     // standard error allowed for ndv estimates for FM-sketch. A lower value indicates higher accuracy and a
@@ -1989,7 +1989,7 @@ public class HiveConf extends Configuration {
       new TimeValidator(TimeUnit.MILLISECONDS), "Time interval describing how often the reaper runs"),
     WRITE_SET_REAPER_INTERVAL("hive.writeset.reaper.interval", "60s",
       new TimeValidator(TimeUnit.MILLISECONDS), "Frequency of WriteSet reaper runs"),
-    
+
     MERGE_CARDINALITY_VIOLATION_CHECK("hive.merge.cardinality.check", true,
       "Set to true to ensure that each SQL Merge statement ensures that for each row in the target\n" +
         "table there is at most 1 matching row in the source table per SQL Specification."),
@@ -2827,7 +2827,9 @@ public class HiveConf extends Configuration {
         "1. chosen : use VectorUDFAdaptor for a small set of UDFs that were choosen for good performance\n" +
         "2. all    : use VectorUDFAdaptor for all UDFs"
     ),
-
+    HIVE_VECTORIZATION_TESTING_REUSE_SCRATCH_COLUMNS("hive.vectorized.reuse.scratch.columns", true,
+        "internal use only. Disable this to debug scratch column state issues",
+        true),
     HIVE_TYPE_CHECK_ON_INSERT("hive.typecheck.on.insert", true, "This property has been extended to control "
         + "whether to check, convert, and normalize partition value to conform to its column type in "
         + "partition operations including but not limited to insert, such as alter, describe etc."),
