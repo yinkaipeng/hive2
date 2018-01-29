@@ -42,6 +42,7 @@ import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
 import org.apache.hadoop.hive.common.type.HiveVarchar;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.ql.exec.ExprNodeEvaluator;
 import org.apache.hadoop.hive.ql.exec.ExprNodeEvaluatorFactory;
 import org.apache.hadoop.hive.ql.exec.FunctionInfo;
@@ -171,12 +172,20 @@ public class VectorizationContext {
 
   private HiveVectorAdaptorUsageMode hiveVectorAdaptorUsageMode;
 
+  private boolean reuseScratchColumns =
+      HiveConf.ConfVars.HIVE_VECTORIZATION_TESTING_REUSE_SCRATCH_COLUMNS.defaultBoolVal;
+
   private void setHiveConfVars(HiveConf hiveConf) {
     hiveVectorAdaptorUsageMode = HiveVectorAdaptorUsageMode.getHiveConfValue(hiveConf);
+    this.reuseScratchColumns =
+        HiveConf.getBoolVar(hiveConf, ConfVars.HIVE_VECTORIZATION_TESTING_REUSE_SCRATCH_COLUMNS);
+    this.ocm.setReuseColumns(reuseScratchColumns);
   }
 
   private void copyHiveConfVars(VectorizationContext vContextEnvironment) {
     hiveVectorAdaptorUsageMode = vContextEnvironment.hiveVectorAdaptorUsageMode;
+    this.reuseScratchColumns = vContextEnvironment.reuseScratchColumns;
+    this.ocm.setReuseColumns(reuseScratchColumns);
   }
 
   // Convenient constructor for initial batch creation takes
@@ -269,9 +278,11 @@ public class VectorizationContext {
 
   // Finishes the vectorization context after all the initial
   // columns have been added.
+  @VisibleForTesting
   public void finishedAddingInitialColumns() {
     int firstOutputColumnIndex = projectedColumns.size();
     this.ocm = new OutputColumnManager(firstOutputColumnIndex);
+    this.ocm.setReuseColumns(this.reuseScratchColumns);
     this.firstOutputColumnIndex = firstOutputColumnIndex;
   }
 
@@ -424,6 +435,7 @@ public class VectorizationContext {
   private static class OutputColumnManager {
     private final int initialOutputCol;
     private int outputColCount = 0;
+    private boolean reuseScratchColumns = true;
 
     protected OutputColumnManager(int initialOutputCol) {
       this.initialOutputCol = initialOutputCol;
@@ -479,7 +491,7 @@ public class VectorizationContext {
     }
 
     void freeOutputColumn(int index) {
-      if (initialOutputCol < 0) {
+      if (initialOutputCol < 0 || reuseScratchColumns == false) {
         // This is a test
         return;
       }
@@ -495,6 +507,12 @@ public class VectorizationContext {
         treeSet.add(initialOutputCol + col);
       }
       return ArrayUtils.toPrimitive(treeSet.toArray(new Integer[0]));
+    }
+    
+    // Allow debugging by disabling column reuse (input cols are never reused by design, only
+    // scratch cols are)
+    public void setReuseColumns(boolean reuseColumns) {
+      this.reuseScratchColumns = reuseColumns;
     }
   }
 
