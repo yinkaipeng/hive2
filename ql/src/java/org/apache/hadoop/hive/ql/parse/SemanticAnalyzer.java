@@ -11897,6 +11897,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
   @Override
   public void validate() throws SemanticException {
     LOG.debug("validation start");
+    boolean wasAcidChecked = false;
     // Validate inputs and outputs have right protectmode to execute the query
     for (ReadEntity readEntity : getInputs()) {
       ReadEntity.Type type = readEntity.getType();
@@ -11916,7 +11917,10 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       }
       if (tbl != null && AcidUtils.isAcidTable(tbl)) {
         acidInQuery = true;
-        checkAcidTxnManager(tbl);
+        if (!wasAcidChecked) {
+          checkAcidTxnManager(tbl);
+        }
+        wasAcidChecked = true;
       }
     }
 
@@ -11929,6 +11933,13 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         try {
           Partition usedp = writeEntity.getPartition();
           Table tbl = usedp.getTable();
+          if (AcidUtils.isAcidTable(tbl)) {
+            acidInQuery = true;
+            if (!wasAcidChecked) {
+              checkAcidTxnManager(tbl);
+            }
+            wasAcidChecked = true;
+          }
 
           LOG.debug("validated " + usedp.getName());
           LOG.debug(usedp.getTable().getTableName());
@@ -11942,44 +11953,21 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
               conflictingArchive);
           throw new SemanticException(message);
         }
+      } else if (type == WriteEntity.Type.TABLE) {
+        Table tbl = writeEntity.getTable();
+        if (AcidUtils.isAcidTable(tbl)) {
+          acidInQuery = true;
+          if (!wasAcidChecked) {
+            checkAcidTxnManager(tbl);
+          }
+          wasAcidChecked = true;
+        }
       }
 
       if (type != WriteEntity.Type.TABLE &&
           type != WriteEntity.Type.PARTITION) {
         LOG.debug("not validating writeEntity, because entity is neither table nor partition");
         continue;
-      }
-
-      Table tbl;
-      Partition p;
-
-
-      if (type == WriteEntity.Type.PARTITION) {
-        Partition inputPartition = writeEntity.getPartition();
-
-        // If it is a partition, Partition's metastore is not fetched. We
-        // need to fetch it.
-        try {
-          p = Hive.get().getPartition(
-              inputPartition.getTable(), inputPartition.getSpec(), false);
-          if (p != null) {
-            tbl = p.getTable();
-          } else {
-            // if p is null, we assume that we insert to a new partition
-            tbl = inputPartition.getTable();
-          }
-        } catch (HiveException e) {
-          throw new SemanticException(e);
-        }
-      }
-      else {
-        LOG.debug("Not a partition.");
-        tbl = writeEntity.getTable();
-      }
-
-      if (tbl != null && AcidUtils.isAcidTable(tbl)) {
-        acidInQuery = true;
-        checkAcidTxnManager(tbl);
       }
     }
 
