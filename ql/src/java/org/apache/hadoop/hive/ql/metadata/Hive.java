@@ -2146,28 +2146,7 @@ private void constructOneLBLocationMap(FileStatus fSta,
 
   public Partition getPartition(Table tbl, Map<String, String> partSpec,
       boolean forceCreate) throws HiveException {
-    return getPartition(tbl, partSpec, forceCreate, null, true, null);
-  }
-
-  /**
-   * Returns partition metadata
-   *
-   * @param tbl
-   *          the partition's table
-   * @param partSpec
-   *          partition keys and values
-   * @param forceCreate
-   *          if this is true and partition doesn't exist then a partition is
-   *          created
-   * @param partPath the path where the partition data is located
-   * @param inheritTableSpecs whether to copy over the table specs for if/of/serde
-   * @return result partition object or null if there is no partition
-   * @throws HiveException
-   */
-  public Partition getPartition(Table tbl, Map<String, String> partSpec, boolean forceCreate,
-                                String partPath, boolean inheritTableSpecs)
-      throws HiveException {
-    return getPartition(tbl, partSpec, forceCreate, partPath, inheritTableSpecs, null);
+    return getPartition(tbl, partSpec, forceCreate, null, true);
   }
 
   /**
@@ -2188,8 +2167,7 @@ private void constructOneLBLocationMap(FileStatus fSta,
    * @throws HiveException
    */
   public Partition getPartition(Table tbl, Map<String, String> partSpec,
-      boolean forceCreate, String partPath, boolean inheritTableSpecs, List<Path> newFiles)
-      throws HiveException {
+      boolean forceCreate, String partPath, boolean inheritTableSpecs) throws HiveException {
     tbl.validatePartColumnNames(partSpec, true);
     List<String> pvals = new ArrayList<String>();
     for (FieldSchema field : tbl.getPartCols()) {
@@ -2249,7 +2227,7 @@ private void constructOneLBLocationMap(FileStatus fSta,
         }
         else {
           alterPartitionSpec(tbl, partSpec, tpart, inheritTableSpecs, partPath);
-          fireInsertEvent(tbl, partSpec, true, newFiles);
+          fireInsertEvent(tbl, partSpec, true, null);
         }
       }
       if (tpart == null) {
@@ -2313,20 +2291,8 @@ private void constructOneLBLocationMap(FileStatus fSta,
         InsertEventRequestData insertData = new InsertEventRequestData();
         insertData.setReplace(replace);
         data.setInsertData(insertData);
-        if (newFiles != null && newFiles.size() > 0) {
-          for (Path p : newFiles) {
-            insertData.addToFilesAdded(p.toString());
-            FileChecksum cksum = fileSystem.getFileChecksum(p);
-            // File checksum is not implemented for local filesystem (RawLocalFileSystem)
-            if (cksum != null) {
-              String checksumString =
-                  StringUtils.byteToHexString(cksum.getBytes(), 0, cksum.getLength());
-              insertData.addToFilesAddedChecksum(checksumString);
-            } else {
-              // Add an empty checksum string for filesystems that don't generate one
-              insertData.addToFilesAddedChecksum("");
-            }
-          }
+        if (newFiles != null && !newFiles.isEmpty()) {
+          addInsertFileInformation(newFiles, fileSystem, insertData);
         } else {
           insertData.setFilesAdded(new ArrayList<String>());
         }
@@ -2344,6 +2310,53 @@ private void constructOneLBLocationMap(FileStatus fSta,
       } catch (IOException | TException e) {
         throw new HiveException(e);
       }
+    }
+  }
+
+
+  private static void addInsertFileInformation(List<Path> newFiles, FileSystem fileSystem,
+      InsertEventRequestData insertData) throws IOException {
+    LinkedList<Path> directories = null;
+    for (Path p : newFiles) {
+      if (fileSystem.isDirectory(p)) {
+        if (directories == null) {
+          directories = new LinkedList<>();
+        }
+        directories.add(p);
+        continue;
+      }
+      addInsertNonDirectoryInformation(p, fileSystem, insertData);
+    }
+    if (directories == null) return;
+    // We don't expect any nesting in most cases, or a lot of it if it is present; union and LB
+    // are some examples where we would have 1, or few, levels respectively.
+    while (!directories.isEmpty()) {
+      Path dir = directories.poll();
+      FileStatus[] contents = fileSystem.listStatus(dir);
+      if (contents == null) continue;
+      for (FileStatus status : contents) {
+        if (status.isDirectory()) {
+          directories.add(status.getPath());
+          continue;
+        }
+        addInsertNonDirectoryInformation(status.getPath(), fileSystem, insertData);
+      }
+    }
+  }
+
+
+  private static void addInsertNonDirectoryInformation(Path p, FileSystem fileSystem,
+      InsertEventRequestData insertData) throws IOException {
+    insertData.addToFilesAdded(p.toString());
+    FileChecksum cksum = fileSystem.getFileChecksum(p);
+    // File checksum is not implemented for local filesystem (RawLocalFileSystem)
+    if (cksum != null) {
+      String checksumString =
+          StringUtils.byteToHexString(cksum.getBytes(), 0, cksum.getLength());
+      insertData.addToFilesAddedChecksum(checksumString);
+    } else {
+      // Add an empty checksum string for filesystems that don't generate one
+      insertData.addToFilesAddedChecksum("");
     }
   }
 
