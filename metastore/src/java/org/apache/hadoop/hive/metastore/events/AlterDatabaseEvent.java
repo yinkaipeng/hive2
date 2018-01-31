@@ -18,54 +18,39 @@
 
 package org.apache.hadoop.hive.metastore.events;
 
-import org.apache.hadoop.hive.metastore.HiveMetaStore.HMSHandler;
-
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
+import org.apache.hadoop.hive.metastore.HiveMetaStore;
+import org.apache.hadoop.hive.metastore.api.Database;
 
 /**
- * Base class for all the events which are defined for metastore.
+ * AlterDatabaseEvent.
+ * Event which is captured during database alters for owner info or properties or location
  */
+@InterfaceAudience.Public
+@InterfaceStability.Stable
+public class AlterDatabaseEvent extends ListenerEvent {
 
-public abstract class PreEventContext {
+  private final Database oldDb;
+  private final Database newDb;
 
-  public static enum PreEventType {
-    CREATE_TABLE,
-    DROP_TABLE,
-    ALTER_TABLE,
-    ADD_PARTITION,
-    DROP_PARTITION,
-    ALTER_PARTITION,
-    CREATE_DATABASE,
-    DROP_DATABASE,
-    LOAD_PARTITION_DONE,
-    AUTHORIZATION_API_CALL,
-    READ_TABLE,
-    READ_DATABASE,
-    ADD_INDEX,
-    ALTER_INDEX,
-    DROP_INDEX,
-    ALTER_DATABASE
-  }
-
-  private final PreEventType eventType;
-  private final HMSHandler handler;
-
-  public PreEventContext(PreEventType eventType, HMSHandler  handler) {
-    this.eventType = eventType;
-    this.handler = handler;
+  public AlterDatabaseEvent(Database oldDb, Database newDb, boolean status, HiveMetaStore.HMSHandler handler) {
+    super(status, handler);
+    this.oldDb = oldDb;
+    this.newDb = newDb;
   }
 
   /**
-   * @return the event type
+   * @return the old db
    */
-  public PreEventType getEventType() {
-    return eventType;
+  public Database getOldDatabase() {
+    return oldDb;
   }
 
   /**
-   * @return the handler
+   * @return the new db
    */
-  public HMSHandler getHandler() {
-    return handler;
+  public Database getNewDatabase() {
+    return newDb;
   }
-
 }

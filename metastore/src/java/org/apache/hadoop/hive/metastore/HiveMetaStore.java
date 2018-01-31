@@ -56,6 +56,7 @@ import org.apache.hadoop.hive.metastore.events.AddForeignKeyEvent;
 import org.apache.hadoop.hive.metastore.events.AddIndexEvent;
 import org.apache.hadoop.hive.metastore.events.AddPartitionEvent;
 import org.apache.hadoop.hive.metastore.events.AddPrimaryKeyEvent;
+import org.apache.hadoop.hive.metastore.events.AlterDatabaseEvent;
 import org.apache.hadoop.hive.metastore.events.AlterIndexEvent;
 import org.apache.hadoop.hive.metastore.events.AlterPartitionEvent;
 import org.apache.hadoop.hive.metastore.events.AlterTableEvent;
@@ -74,6 +75,7 @@ import org.apache.hadoop.hive.metastore.events.InsertEvent;
 import org.apache.hadoop.hive.metastore.events.LoadPartitionDoneEvent;
 import org.apache.hadoop.hive.metastore.events.PreAddIndexEvent;
 import org.apache.hadoop.hive.metastore.events.PreAddPartitionEvent;
+import org.apache.hadoop.hive.metastore.events.PreAlterDatabaseEvent;
 import org.apache.hadoop.hive.metastore.events.PreAlterIndexEvent;
 import org.apache.hadoop.hive.metastore.events.PreAlterPartitionEvent;
 import org.apache.hadoop.hive.metastore.events.PreAlterTableEvent;
@@ -1024,18 +1026,48 @@ public class HiveMetaStore extends ThriftHiveMetastore {
     }
 
     @Override
-    public void alter_database(final String dbName, final Database db)
+    public void alter_database(final String dbName, final Database newDB)
         throws NoSuchObjectException, TException, MetaException {
       startFunction("alter_database" + dbName);
       boolean success = false;
       Exception ex = null;
+      RawStore ms = getMS();
+      Database oldDB = null;
+      Map<String, String> transactionalListenersResponses = Collections.emptyMap();
+
       try {
-        getMS().alterDatabase(dbName, db);
-        success = true;
+        oldDB = get_database_core(dbName);
+        if (oldDB == null) {
+          throw new MetaException("Could not alter database \"" + dbName + "\". Could not retrieve old definition.");
+        }
+        firePreEvent(new PreAlterDatabaseEvent(oldDB, newDB, this));
+
+        ms.openTransaction();
+        ms.alterDatabase(dbName, newDB);
+
+        if (!transactionalListeners.isEmpty()) {
+          transactionalListenersResponses =
+                  MetaStoreListenerNotifier.notifyEvent(transactionalListeners,
+                          EventType.ALTER_DATABASE,
+                          new AlterDatabaseEvent(oldDB, newDB, true, this));
+        }
+
+        success = ms.commitTransaction();
       } catch (Exception e) {
         ex = e;
         rethrowException(e);
       } finally {
+        if (!success) {
+          ms.rollbackTransaction();
+        }
+
+        if ((null != oldDB) && (!listeners.isEmpty())) {
+          MetaStoreListenerNotifier.notifyEvent(listeners,
+                  EventType.ALTER_DATABASE,
+                  new AlterDatabaseEvent(oldDB, newDB, success, this),
+                  null,
+                  transactionalListenersResponses);
+        }
         endFunction("alter_database", success, ex);
       }
     }

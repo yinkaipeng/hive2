@@ -19,6 +19,7 @@ package org.apache.hadoop.hive.ql.parse.repl;
 
 import org.apache.hadoop.hive.ql.parse.repl.load.message.AddForeignKeyHandler;
 import org.apache.hadoop.hive.ql.parse.repl.load.message.AddPrimaryKeyHandler;
+import org.apache.hadoop.hive.ql.parse.repl.load.message.AlterDatabaseHandler;
 import org.apache.hadoop.hive.ql.parse.repl.load.message.CreateFunctionHandler;
 import org.apache.hadoop.hive.ql.parse.repl.load.message.DefaultHandler;
 import org.apache.hadoop.hive.ql.parse.repl.load.message.DropConstraintHandler;
@@ -63,6 +64,12 @@ public enum DumpType {
     @Override
     public MessageHandler handler() {
       return new DropPartitionHandler();
+    }
+  },
+  EVENT_ALTER_DATABASE("EVENT_ALTER_DATABASE") {
+    @Override
+    public MessageHandler handler() {
+      return new AlterDatabaseHandler();
     }
   },
   EVENT_ALTER_TABLE("EVENT_ALTER_TABLE") {

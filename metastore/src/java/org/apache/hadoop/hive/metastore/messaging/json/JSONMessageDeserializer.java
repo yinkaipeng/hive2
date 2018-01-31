@@ -22,6 +22,7 @@ package org.apache.hadoop.hive.metastore.messaging.json;
 import org.apache.hadoop.hive.metastore.messaging.AddForeignKeyMessage;
 import org.apache.hadoop.hive.metastore.messaging.AddPartitionMessage;
 import org.apache.hadoop.hive.metastore.messaging.AddPrimaryKeyMessage;
+import org.apache.hadoop.hive.metastore.messaging.AlterDatabaseMessage;
 import org.apache.hadoop.hive.metastore.messaging.AlterIndexMessage;
 import org.apache.hadoop.hive.metastore.messaging.AlterPartitionMessage;
 import org.apache.hadoop.hive.metastore.messaging.AlterTableMessage;
@@ -61,7 +62,18 @@ public class JSONMessageDeserializer extends MessageDeserializer {
       return mapper.readValue(messageBody, JSONCreateDatabaseMessage.class);
     }
     catch (Exception exception) {
-      throw new IllegalArgumentException("Could not construct JSONCreateDatabaseMessage.", exception);
+      throw new IllegalArgumentException("Could not construct JSONCreateDatabaseMessage.",
+                                        exception);
+    }
+  }
+
+  @Override
+  public AlterDatabaseMessage getAlterDatabaseMessage(String messageBody) {
+    try {
+      return mapper.readValue(messageBody, JSONAlterDatabaseMessage.class);
+    } catch (Exception exception) {
+      throw new IllegalArgumentException("Could not construct JSONAlterDatabaseMessage.",
+                                        exception);
     }
   }
 
@@ -141,7 +153,8 @@ public class JSONMessageDeserializer extends MessageDeserializer {
       return mapper.readValue(messageBody, JSONCreateFunctionMessage.class);
     }
     catch (Exception exception) {
-      throw new IllegalArgumentException("Could not construct JSONCreateFunctionMessage.", exception);
+      throw new IllegalArgumentException("Could not construct JSONCreateFunctionMessage.",
+                                        exception);
     }
   }
 
