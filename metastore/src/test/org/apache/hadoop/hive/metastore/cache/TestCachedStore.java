@@ -678,7 +678,7 @@ public class TestCachedStore {
 
   @Test
   public void testAggrStatsRepeatedRead() throws Exception {
-    String dbName = "testTableColStatsOps";
+    String dbName = "testtablecolstatsops";
     String tblName = "tbl";
     String colName = "f1";
 
@@ -710,9 +710,9 @@ public class TestCachedStore {
         new Partition(partVals2, dbName, tblName, 0, 0, sd, new HashMap<String, String>());
     cachedStore.addPartition(ptn2);
 
-    ColumnStatistics stats = new ColumnStatistics();
+    ColumnStatistics stats1 = new ColumnStatistics();
     ColumnStatisticsDesc statsDesc = new ColumnStatisticsDesc(true, dbName, tblName);
-    statsDesc.setPartName("col");
+    statsDesc.setPartName("col=1");
     List<ColumnStatisticsObj> colStatObjs = new ArrayList<ColumnStatisticsObj>();
 
     ColumnStatisticsData data = new ColumnStatisticsData();
@@ -725,11 +725,13 @@ public class TestCachedStore {
     data.setLongStats(longStats);
     colStatObjs.add(colStats);
 
-    stats.setStatsDesc(statsDesc);
-    stats.setStatsObj(colStatObjs);
+    stats1.setStatsDesc(statsDesc);
+    stats1.setStatsObj(colStatObjs);
 
-    cachedStore.updatePartitionColumnStatistics(stats.deepCopy(), partVals1);
-    cachedStore.updatePartitionColumnStatistics(stats.deepCopy(), partVals2);
+    ColumnStatistics stats2 = stats1.deepCopy();
+    stats2.getStatsDesc().setPartName("col=2");
+    cachedStore.updatePartitionColumnStatistics(stats1.deepCopy(), partVals1);
+    cachedStore.updatePartitionColumnStatistics(stats2.deepCopy(), partVals2);
 
     List<String> colNames = new ArrayList<String>();
     colNames.add(colName);

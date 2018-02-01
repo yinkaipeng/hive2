@@ -677,7 +677,7 @@ POSTHOOK: type: DESCTABLE
 POSTHOOK: Input: default@employee_part
 # col_name            	data_type           	min                 	max                 	num_nulls           	distinct_count      	avg_col_len         	max_col_len         	num_trues           	num_falses          	bitVector           	comment             
 	 	 	 	 	 	 	 	 	 	 	 
-employeeID          	int                 	16                  	34                  	1                   	12                  	                    	                    	                    	                    	HL                  	from deserializer   
+employeeID          	int                 	16                  	34                  	2                   	12                  	                    	                    	                    	                    	HL                  	from deserializer   
 COLUMN_STATS_ACCURATE	{\"COLUMN_STATS\":{\"employeeid\":\"true\",\"employeename\":\"true\"}}	 	 	 	 	 	 	 	 	 	 
 PREHOOK: query: create database if not exists dummydb
 PREHOOK: type: CREATEDATABASE
