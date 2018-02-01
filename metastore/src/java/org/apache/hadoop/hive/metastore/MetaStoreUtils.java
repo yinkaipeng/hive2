@@ -1908,17 +1908,18 @@ public class MetaStoreUtils {
     Map<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>> colStatsMap = 
         new HashMap<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>>();
     // Group stats by colName for each partition
+    Map<String, ColumnStatsAggregator> aliasToAggregator = new HashMap<String, ColumnStatsAggregator>();
     for (ColumnStatistics css : partStats) {
       List<ColumnStatisticsObj> objs = css.getStatsObj();
       String partName = css.getStatsDesc().getPartName();
       for (ColumnStatisticsObj obj : objs) {
-        ColumnStatsAggregator colStatsAggregator = ColumnStatsAggregatorFactory
-            .getColumnStatsAggregator(obj.getStatsData().getSetField(),
-                useDensityFunctionForNDVEstimation, ndvTuner);
-        if (!colStatsMap.containsKey(colStatsAggregator)) {
-          colStatsMap.put(colStatsAggregator, new ArrayList<ColStatsObjWithSourceInfo>());
+        if (aliasToAggregator.get(obj.getColName()) == null) {
+          aliasToAggregator.put(obj.getColName(), ColumnStatsAggregatorFactory
+              .getColumnStatsAggregator(obj.getStatsData().getSetField(),
+                  useDensityFunctionForNDVEstimation, ndvTuner));
+          colStatsMap.put(aliasToAggregator.get(obj.getColName()), new ArrayList<ColStatsObjWithSourceInfo>());
         }
-        colStatsMap.get(colStatsAggregator).add(
+        colStatsMap.get(aliasToAggregator.get(obj.getColName())).add(
             new ColStatsObjWithSourceInfo(obj, dbName, tableName, partName));
       }
     }
