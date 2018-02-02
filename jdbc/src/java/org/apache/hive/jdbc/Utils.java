@@ -120,6 +120,8 @@ public class Utils {
     static final String HTTP_HEADER_PREFIX = "http.header.";
     // Set the fetchSize
     static final String FETCH_SIZE = "fetchSize";
+    // Cookie prefix
+    static final String HTTP_COOKIE_PREFIX = "http.cookie.";
 
     // --------------- Begin 2 way ssl options -------------------------
     // Use two way ssl. This param will take effect only when ssl=true
@@ -153,7 +155,7 @@ public class Utils {
 
     public JdbcConnectionParams() {
     }
-    
+
     public JdbcConnectionParams(JdbcConnectionParams params) {
       this.host = params.host;
       this.port = params.port;
@@ -389,7 +391,7 @@ public class Utils {
         connParams.getHiveVars().put(varMatcher.group(1), varMatcher.group(2));
       }
     }
-    
+
     // Apply configs supplied in the JDBC connection properties object
     for (Map.Entry<Object, Object> kv : info.entrySet()) {
       if ((kv.getKey() instanceof String)) {
