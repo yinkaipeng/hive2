@@ -389,7 +389,7 @@ public class LlapServiceDriver {
               org.apache.logging.log4j.core.Appender.class, // log4j-core
               org.apache.logging.slf4j.Log4jLogger.class, // log4j-slf4j
               // log4j-1.2-API needed for NDC
-              org.apache.log4j.NDC.class, };
+              org.apache.log4j.config.Log4j1ConfigurationFactory.class, };
 
           for (Class<?> c : dependencies) {
             Path jarPath = new Path(Utilities.jarFinderGetJar(c));
