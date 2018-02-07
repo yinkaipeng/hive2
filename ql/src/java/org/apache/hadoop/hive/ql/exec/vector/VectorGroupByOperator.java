@@ -31,8 +31,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.ql.CompilationOpContext;
 import org.apache.hadoop.hive.ql.exec.GroupByOperator;
+import org.apache.hadoop.hive.ql.exec.IConfigureJobConf;
 import org.apache.hadoop.hive.ql.exec.KeyWrapper;
 import org.apache.hadoop.hive.ql.exec.Operator;
+import org.apache.hadoop.hive.ql.exec.Utilities;
 import org.apache.hadoop.hive.ql.exec.vector.expressions.ConstantVectorExpression;
 import org.apache.hadoop.hive.ql.exec.vector.expressions.VectorExpression;
 import org.apache.hadoop.hive.ql.exec.vector.expressions.VectorExpressionWriter;
@@ -51,6 +53,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.mapred.JobConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,8 +65,8 @@ import com.google.common.base.Preconditions;
  * stores the aggregate operators' intermediate states. Emits row mode output.
  *
  */
-public class VectorGroupByOperator extends Operator<GroupByDesc> implements
-    VectorizationContextRegion {
+public class VectorGroupByOperator extends Operator<GroupByDesc>
+    implements VectorizationContextRegion, IConfigureJobConf {
 
   private static final Logger LOG = LoggerFactory.getLogger(
       VectorGroupByOperator.class.getName());
@@ -380,6 +383,20 @@ public class VectorGroupByOperator extends Operator<GroupByDesc> implements
       if (!aborted) {
         flush(true);
       }
+      if (!aborted && sumBatchSize == 0 && GroupByOperator.shouldEmitSummaryRow(conf)) {
+        // in case the empty grouping set is preset; but no output has done
+        // the "summary row" still needs to be emitted
+        VectorHashKeyWrapper kw = keyWrappersBatch.getVectorHashKeyWrappers()[0];
+        kw.setNull();
+        int pos = conf.getGroupingSetPosition();
+        if (pos >= 0) {
+          long val = (1 << pos) - 1;
+          keyWrappersBatch.setLongValue(kw, pos, val);
+        }
+        VectorAggregationBufferRow groupAggregators = allocateAggregationBuffer();
+        writeSingleRow(kw, groupAggregators);
+      }
+
     }
 
     /**
@@ -692,7 +709,6 @@ public class VectorGroupByOperator extends Operator<GroupByDesc> implements
     private boolean inGroup;
     private boolean first;
     private boolean isLastGroupBatch;
-    private boolean hasOutput;
 
     /**
      * The group vector key helper.
@@ -737,7 +753,6 @@ public class VectorGroupByOperator extends Operator<GroupByDesc> implements
     @Override
     public void processBatch(VectorizedRowBatch batch) throws HiveException {
       assert(inGroup);
-      hasOutput = true;
       if (first) {
         // Copy the group key to output batch now.  We'll copy in the aggregates at the end of the group.
         first = false;
@@ -754,15 +769,6 @@ public class VectorGroupByOperator extends Operator<GroupByDesc> implements
     public void close(boolean aborted) throws HiveException {
       if (!aborted && inGroup && !first) {
         writeGroupRow(groupAggregators, buffer);
-      }
-      if (!hasOutput && GroupByOperator.shouldEmitSummaryRow(conf)) {
-        VectorHashKeyWrapper kw = keyWrappersBatch.getVectorHashKeyWrappers()[0];
-        int pos = conf.getGroupingSetPosition();
-        if (pos >= 0) {
-          long val = (1 << pos) - 1;
-          keyWrappersBatch.setLongValue(kw, pos, val);
-        }
-        writeSingleRow(kw , groupAggregators);
       }
     }
   }
@@ -1020,6 +1026,14 @@ public class VectorGroupByOperator extends Operator<GroupByDesc> implements
 
   static public String getOperatorName() {
     return "GBY";
+  }
+
+  @Override
+  public void configureJobConf(JobConf job) {
+    // only needed when grouping sets are present
+    if (conf.getGroupingSetPosition() > 0 && GroupByOperator.shouldEmitSummaryRow(conf)) {
+      job.setBoolean(Utilities.ENSURE_OPERATORS_EXECUTED, true);
+    }
   }
 
 }

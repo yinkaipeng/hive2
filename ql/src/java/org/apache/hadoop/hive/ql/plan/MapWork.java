@@ -21,7 +21,6 @@ package org.apache.hadoop.hive.ql.plan;
 import org.apache.hadoop.hive.ql.exec.Utilities;
 
 import org.apache.hadoop.hive.ql.exec.TableScanOperator;
-import org.apache.hadoop.hive.ql.exec.Utilities;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +41,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.ql.exec.FileSinkOperator;
+import org.apache.hadoop.hive.ql.exec.IConfigureJobConf;
 import org.apache.hadoop.hive.ql.exec.Operator;
 import org.apache.hadoop.hive.ql.exec.OperatorUtils;
 import org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch;
@@ -165,6 +165,10 @@ public class MapWork extends BaseWork {
     this.pathToAliases = pathToAliases;
   }
 
+  public void removePathToAlias(Path path){
+    pathToAliases.remove(path);
+  }
+
   /**
    * This is used to display and verify output of "Path -> Alias" in test framework.
    *
@@ -199,6 +203,10 @@ public class MapWork extends BaseWork {
   public void setPathToPartitionInfo(
       final LinkedHashMap<String, PartitionDesc> pathToPartitionInfo) {
     this.pathToPartitionInfo = pathToPartitionInfo;
+  }
+
+  public void removePathToPartitionInfo(Path path) {
+    pathToPartitionInfo.remove(path);
   }
 
   /**
@@ -282,12 +290,27 @@ public class MapWork extends BaseWork {
   }
 
   private static String deriveLlapIoDescString(boolean isLlapOn, boolean canWrapAny,
-      boolean hasPathToPartInfo, boolean hasLlap, boolean hasNonLlap, boolean hasAcid) {
-    if (!isLlapOn) return null; // LLAP IO is off, don't output.
-    if (!canWrapAny) return "no inputs"; // Cannot use with input formats.
-    if (!hasPathToPartInfo) return "unknown"; // No information to judge.
-    if (hasAcid) return "may be used (ACID table)";
-    return (hasLlap ? (hasNonLlap ? "some inputs" : "all inputs") : "no inputs");
+		  boolean hasPathToPartInfo, boolean hasLlap, boolean hasNonLlap, boolean hasAcid) {
+    if (!isLlapOn) {
+      return null; // LLAP IO is off, don't output.
+    }
+    if (!canWrapAny) {
+      return "no inputs"; // Cannot use with input formats.
+    }
+    if (!hasPathToPartInfo) {
+      return "unknown"; // No information to judge.
+    }
+    int varieties = (hasAcid ? 1 : 0) + (hasLlap ? 1 : 0) + (hasNonLlap ? 1 : 0);
+    if (varieties > 1) {
+      return "some inputs"; // Will probably never actually happen.
+    }
+    if (hasAcid) {
+      return "may be used (ACID table)";
+    }
+    if (hasLlap) {
+      return "all inputs";
+    }
+    return "no inputs";
   }
 
   public void internTable(Interner<TableDesc> interner) {
@@ -605,6 +628,9 @@ public class MapWork extends BaseWork {
     Collection<Operator<?>> mappers = aliasToWork.values();
     for (FileSinkOperator fs : OperatorUtils.findOperators(mappers, FileSinkOperator.class)) {
       PlanUtils.configureJobConf(fs.getConf().getTableInfo(), job);
+    }
+    for (IConfigureJobConf icjc : OperatorUtils.findOperators(mappers, IConfigureJobConf.class)) {
+      icjc.configureJobConf(job);
     }
   }
 

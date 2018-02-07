@@ -52,7 +52,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -209,6 +208,12 @@ import org.slf4j.LoggerFactory;
  */
 @SuppressWarnings("nls")
 public final class Utilities {
+  /**
+   * A logger mostly used to trace-log the details of Hive table file operations. Filtering the
+   * logs for FileOperations (with trace logs present) allows one to debug what Hive has done with
+   * various files and directories while committing writes, as well as reading.
+   */
+  public static final Logger FILE_OP_LOGGER = LoggerFactory.getLogger("FileOperations");
 
   /**
    * The object in the reducer are composed of these top level fields.
@@ -226,6 +231,12 @@ public final class Utilities {
   public static final String USE_VECTORIZED_INPUT_FILE_FORMAT = "USE_VECTORIZED_INPUT_FILE_FORMAT";
   public static String MAPNAME = "Map ";
   public static String REDUCENAME = "Reducer ";
+  public static final String ENSURE_OPERATORS_EXECUTED = "ENSURE_OPERATORS_EXECUTED";
+
+  @Deprecated
+  protected static final String DEPRECATED_MAPRED_DFSCLIENT_PARALLELISM_MAX = "mapred.dfsclient.parallelism.max";
+
+  public static Random randGen = new Random();
 
   /**
    * ReduceField:
@@ -669,8 +680,6 @@ public final class Utilities {
   // we can make the following translation deprecated.
   public static String nullStringStorage = "\\N";
   public static String nullStringOutput = "NULL";
-
-  public static Random randGen = new Random();
 
   /**
    * Gets the task id if we are running as a Hadoop job. Gets a random number otherwise.

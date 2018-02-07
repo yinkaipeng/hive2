@@ -429,5 +429,9 @@ public class VectorHashKeyWrapper extends KeyWrapper {
   public HiveIntervalDayTime getIntervalDayTime(int i) {
     return intervalDayTimeValues[i];
   }
+
+  public void setNull() {
+    Arrays.fill(isNull, true);
+  }
 }
 

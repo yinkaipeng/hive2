@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +40,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.common.JavaUtils;
+import org.apache.hadoop.hive.common.ValidReadTxnList;
+import org.apache.hadoop.hive.common.ValidTxnList;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.io.HiveIOExceptionHandlerUtil;
@@ -74,6 +80,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hive.common.util.Ref;
 // import org.apache.hadoop.util.StringUtils;
 import org.apache.hive.common.util.ReflectionUtil;
 
@@ -205,6 +212,7 @@ public class HiveInputFormat<K extends WritableComparable, V extends Writable>
     }
   }
 
+  @Override
   public void configure(JobConf job) {
     this.job = job;
   }
@@ -324,6 +332,7 @@ public class HiveInputFormat<K extends WritableComparable, V extends Writable>
     return instance;
   }
 
+  @Override
   public RecordReader getRecordReader(InputSplit split, JobConf job,
       Reporter reporter) throws IOException {
     HiveInputSplit hsplit = (HiveInputSplit) split;
@@ -410,6 +419,7 @@ public class HiveInputFormat<K extends WritableComparable, V extends Writable>
   private void addSplitsForGroup(List<Path> dirs, TableScanOperator tableScan, JobConf conf,
       InputFormat inputFormat, Class<? extends InputFormat> inputFormatClass, int splits,
       TableDesc table, List<InputSplit> result) throws IOException {
+    ValidTxnList validTxnList = null; // for non-MM case
 
     Utilities.copyTablePropertiesToConf(table, conf);
 
@@ -434,6 +444,12 @@ public class HiveInputFormat<K extends WritableComparable, V extends Writable>
     InputSplit[] iss = inputFormat.getSplits(conf, splits);
     for (InputSplit is : iss) {
       result.add(new HiveInputSplit(is, inputFormatClass.getName()));
+    }
+    if (iss.length == 0 && !dirs.isEmpty() && conf.getBoolean(Utilities.ENSURE_OPERATORS_EXECUTED, false)) {
+      // If there are no inputs; the Execution engine skips the operator tree.
+      // To prevent it from happening; an opaque  ZeroRows input is added here - when needed.
+      result.add(new HiveInputSplit(new NullRowsInputFormat.DummyInputSplit(dirs.get(0).toString()),
+          ZeroRowsInputFormat.class.getName()));
     }
   }
 
@@ -465,6 +481,7 @@ public class HiveInputFormat<K extends WritableComparable, V extends Writable>
     return dirs;
   }
 
+  @Override
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
     PerfLogger perfLogger = SessionState.getPerfLogger();
     perfLogger.PerfLogBegin(CLASS_NAME, PerfLogger.GET_SPLITS);
