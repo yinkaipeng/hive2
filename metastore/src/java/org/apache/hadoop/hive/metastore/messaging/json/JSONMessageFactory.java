@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -95,13 +95,13 @@ public class JSONMessageFactory extends MessageFactory {
 
   @Override
   public CreateDatabaseMessage buildCreateDatabaseMessage(Database db) {
-    return new JSONCreateDatabaseMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL, db.getName(), now());
+    return new JSONCreateDatabaseMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL, db, now());
   }
 
   @Override
   public AlterDatabaseMessage buildAlterDatabaseMessage(Database beforeDb, Database afterDb) {
     return new JSONAlterDatabaseMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL,
-                                        beforeDb, afterDb, now());
+        beforeDb, afterDb, now());
   }
 
   @Override
@@ -117,13 +117,12 @@ public class JSONMessageFactory extends MessageFactory {
   @Override
   public AlterTableMessage buildAlterTableMessage(Table before, Table after, boolean isTruncateOp) {
     return new JSONAlterTableMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL,
-                                    before, after, isTruncateOp, now());
+        before, after, isTruncateOp, now());
   }
 
   @Override
   public DropTableMessage buildDropTableMessage(Table table) {
-    return new JSONDropTableMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL, table.getDbName(),
-        table.getTableName(), now());
+    return new JSONDropTableMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL, table, now());
   }
 
   @Override
@@ -137,7 +136,7 @@ public class JSONMessageFactory extends MessageFactory {
   public AlterPartitionMessage buildAlterPartitionMessage(Table table, Partition before,
       Partition after, boolean isTruncateOp) {
     return new JSONAlterPartitionMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL,
-                                        table, before, after, isTruncateOp, now());
+        table, before, after, isTruncateOp, now());
   }
 
   @Override
@@ -174,9 +173,9 @@ public class JSONMessageFactory extends MessageFactory {
 
   @Override
   public InsertMessage buildInsertMessage(Table tableObj, Partition partObj,
-                                          boolean replace, Iterator<String> fileIter) {
+      boolean replace, Iterator<String> fileIter) {
     return new JSONInsertMessage(MS_SERVER_URL, MS_SERVICE_PRINCIPAL,
-                                tableObj, partObj, replace, fileIter, now());
+        tableObj, partObj, replace, fileIter, now());
   }
 
   @Override
@@ -201,7 +200,7 @@ public class JSONMessageFactory extends MessageFactory {
   }
 
   static Map<String, String> getPartitionKeyValues(Table table, Partition partition) {
-    Map<String, String> partitionKeys = new LinkedHashMap<String, String>();
+    Map<String, String> partitionKeys = new LinkedHashMap<>();
     for (int i = 0; i < table.getPartitionKeysSize(); ++i)
       partitionKeys.put(table.getPartitionKeys().get(i).getName(), partition.getValues().get(i));
     return partitionKeys;
@@ -334,12 +333,12 @@ public class JSONMessageFactory extends MessageFactory {
     Iterable<JsonNode> jsonArrayIterator = jsonTree.get(objRefListName);
     com.google.common.base.Function<JsonNode,String> textExtractor =
         new com.google.common.base.Function<JsonNode, String>() {
-      @Nullable
-      @Override
-      public String apply(@Nullable JsonNode input) {
-        return input.asText();
-      }
-    };
+          @Nullable
+          @Override
+          public String apply(@Nullable JsonNode input) {
+            return input.asText();
+          }
+        };
     return getTObjs(Iterables.transform(jsonArrayIterator, textExtractor), objClass);
   }
 }

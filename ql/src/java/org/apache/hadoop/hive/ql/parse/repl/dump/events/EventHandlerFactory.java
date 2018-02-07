@@ -46,6 +46,8 @@ public class EventHandlerFactory {
     register(MessageFactory.ADD_PRIMARYKEY_EVENT, AddPrimaryKeyHandler.class);
     register(MessageFactory.ADD_FOREIGNKEY_EVENT, AddForeignKeyHandler.class);
     register(MessageFactory.DROP_CONSTRAINT_EVENT, DropConstraintHandler.class);
+    register(MessageFactory.CREATE_DATABASE_EVENT, CreateDatabaseHandler.class);
+    register(MessageFactory.DROP_DATABASE_EVENT, DropDatabaseHandler.class);
   }
 
   static void register(String event, Class<? extends EventHandler> handlerClazz) {
