@@ -61,7 +61,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileChecksum;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Options;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hive.common.FileUtils;
 import org.apache.hadoop.hive.common.HiveStatsUtils;
 import org.apache.hadoop.hive.common.ObjectPair;
@@ -3185,8 +3188,20 @@ private void constructOneLBLocationMap(FileStatus fSta,
             for (final FileStatus srcStatus : srcs) {
 
               final Path destFile = new Path(destf, srcStatus.getPath().getName());
+
+              final String poolMsg =
+                      "Unable to move source " + srcStatus.getPath() + " to destination " + destFile;
+
               if (null == pool) {
-                if(!destFs.rename(srcStatus.getPath(), destFile)) {
+                boolean success = false;
+                if (destFs instanceof DistributedFileSystem) {
+                  ((DistributedFileSystem)destFs).rename(srcStatus.getPath(), destFile, Options.Rename.OVERWRITE);
+                  success = true;
+                } else {
+                  destFs.delete(destFile, false);
+                  success = destFs.rename(srcStatus.getPath(), destFile);
+                }
+                if(!success) {
                   throw new IOException("rename for src path: " + srcStatus.getPath() + " to dest:"
                       + destf + " returned false");
                 }
@@ -3196,13 +3211,26 @@ private void constructOneLBLocationMap(FileStatus fSta,
                   public Void call() throws Exception {
                     SessionState.setCurrentSessionState(parentSession);
                     final String group = srcStatus.getGroup();
-                    if(destFs.rename(srcStatus.getPath(), destFile)) {
-                      if (inheritPerms) {
-                        HdfsUtils.setFullFileStatus(conf, desiredStatus, group, destFs, destFile, false);
+                    try {
+                      boolean success = false;
+                      if (destFs instanceof DistributedFileSystem) {
+                        ((DistributedFileSystem)destFs).rename(srcStatus.getPath(), destFile, Options.Rename.OVERWRITE);
+                        success = true;
+                      } else {
+                        destFs.delete(destFile, false);
+                        success = destFs.rename(srcStatus.getPath(), destFile);
                       }
-                    } else {
-                      throw new IOException("rename for src path: " + srcStatus.getPath() + " to dest path:"
-                          + destFile + " returned false");
+                      if (success) {
+                        if (inheritPerms) {
+                          HdfsUtils.setFullFileStatus(conf, desiredStatus, group, destFs, destFile, false);
+                        }
+                      } else {
+                        throw new IOException(
+                                "rename for src path: " + srcStatus.getPath() + " to dest path:"
+                                        + destFile + " returned false");
+                      }
+                    }catch (Exception e) {
+                      throw new HiveException(poolMsg, e);
                     }
                     return null;
                   }
