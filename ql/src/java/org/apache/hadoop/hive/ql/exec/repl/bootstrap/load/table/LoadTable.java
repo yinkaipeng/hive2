@@ -232,7 +232,7 @@ public class LoadTable {
     MoveWork moveWork =
         new MoveWork(new HashSet<ReadEntity>(), new HashSet<WriteEntity>(), loadTableWork, null,
             false);
-    Task<?> loadTableTask = TaskFactory.get(moveWork, context.hiveConf);
+    Task<?> loadTableTask = TaskFactory.get(moveWork, context.hiveConf, true);
     copyTask.addDependentTask(loadTableTask);
     return copyTask;
   }
