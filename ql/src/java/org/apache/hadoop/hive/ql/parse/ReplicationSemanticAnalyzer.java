@@ -46,6 +46,7 @@ import org.apache.hadoop.hive.ql.plan.AlterTableDesc;
 import org.apache.hadoop.hive.ql.plan.DDLWork;
 import org.apache.hadoop.hive.ql.plan.DependencyCollectionWork;
 import org.apache.hadoop.hive.ql.plan.PlanUtils;
+import org.apache.hadoop.hive.ql.metadata.Hive;
 
 import java.io.FileNotFoundException;
 import java.io.Serializable;
@@ -78,6 +79,9 @@ public class ReplicationSemanticAnalyzer extends BaseSemanticAnalyzer {
   // Added conf member to set the REPL command specific config entries without affecting the configs
   // of any other queries running in the session
   private HiveConf conf;
+
+  // This will be set to true only if repl-status is fired with "WITH" keyword
+  private boolean needNewdb;
 
   private static String testInjectDumpDir = null; // unit tests can overwrite this to affect default dump behaviour
   private static final String dumpSchema = "dump_dir,last_repl_id#string,string";
@@ -551,11 +555,29 @@ public class ReplicationSemanticAnalyzer extends BaseSemanticAnalyzer {
   }
 
   // REPL STATUS
-  private void initReplStatus(ASTNode ast) {
-    int numChildren = ast.getChildCount();
+  private void initReplStatus(ASTNode ast) throws SemanticException{
+    needNewdb = false;
     dbNameOrPattern = PlanUtils.stripQuotes(ast.getChild(0).getText());
-    if (numChildren > 1) {
-      tblNameOrPattern = PlanUtils.stripQuotes(ast.getChild(1).getText());
+    int numChildren = ast.getChildCount();
+    for (int i = 1; i < numChildren; i++) {
+      ASTNode childNode = (ASTNode) ast.getChild(i);
+      switch (childNode.getToken().getType()) {
+      case TOK_TABNAME:
+        tblNameOrPattern = PlanUtils.stripQuotes(childNode.getChild(0).getText());
+        break;
+      case TOK_REPL_CONFIG:
+        Map<String, String> replConfigs
+            = DDLSemanticAnalyzer.getProps((ASTNode) childNode.getChild(0));
+        if (null != replConfigs) {
+          for (Map.Entry<String, String> config : replConfigs.entrySet()) {
+            conf.set(config.getKey(), config.getValue());
+          }
+        }
+        needNewdb = true;
+        break;
+      default:
+        throw new SemanticException("Unrecognized token in REPL STATUS statement");
+      }
     }
   }
 
@@ -566,9 +588,16 @@ public class ReplicationSemanticAnalyzer extends BaseSemanticAnalyzer {
     String replLastId = null;
 
     try {
+      Hive newDb;
+      if (needNewdb) {
+        newDb = Hive.get(conf, false);
+      } else {
+        newDb = db;
+      }
+
       if (tblNameOrPattern != null) {
         // Checking for status of table
-        Table tbl = db.getTable(dbNameOrPattern, tblNameOrPattern);
+        Table tbl = newDb.getTable(dbNameOrPattern, tblNameOrPattern);
         if (tbl != null) {
           inputs.add(new ReadEntity(tbl));
           Map<String, String> params = tbl.getParameters();
@@ -578,7 +607,8 @@ public class ReplicationSemanticAnalyzer extends BaseSemanticAnalyzer {
         }
       } else {
         // Checking for status of a db
-        Database database = db.getDatabase(dbNameOrPattern);
+
+        Database database = newDb.getDatabase(dbNameOrPattern);
         if (database != null) {
           inputs.add(new ReadEntity(database));
           Map<String, String> params = database.getParameters();
