@@ -1532,10 +1532,10 @@ public class TestDbNotificationListener {
     InsertMessage insertMsg = md.getInsertMessage(event.getMessage());
     System.out.println("InsertMessage: " + insertMsg.toString());
     if (dbName != null ){
-      assertEquals(dbName, insertMsg.getTableObj().getDbName());
+      assertEquals(dbName, insertMsg.getDB());
     }
     if (tblName != null){
-      assertEquals(tblName, insertMsg.getTableObj().getTableName());
+      assertEquals(tblName, insertMsg.getTable());
     }
     // Should have files
     Iterator<String> files = insertMsg.getFiles().iterator();

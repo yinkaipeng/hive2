@@ -1199,6 +1199,7 @@ public final class Utilities {
    *          the src directory
    * @param dst
    *          the target directory
+   * @param jc
    * @throws IOException
    */
   public static void renameOrMoveFiles(FileSystem fs, Path src, Path dst) throws IOException,

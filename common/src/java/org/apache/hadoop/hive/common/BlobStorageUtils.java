@@ -29,9 +29,7 @@ import java.util.Collection;
  */
 public class BlobStorageUtils {
 
-    //
-    // Only porting enough of BlobStorageUtils for HIVE-17963
-    //
+    private static final boolean DISABLE_BLOBSTORAGE_AS_SCRATCHDIR = false;
 
     public static boolean isBlobStoragePath(final Configuration conf, final Path path) {
         return path != null && isBlobStorageScheme(conf, path.toUri().getScheme());
@@ -46,5 +44,22 @@ public class BlobStorageUtils {
                 conf.getStringCollection(HiveConf.ConfVars.HIVE_BLOBSTORE_SUPPORTED_SCHEMES.varname);
 
         return supportedBlobStoreSchemes.contains(scheme);
+    }
+
+    public static boolean isBlobStorageAsScratchDir(final Configuration conf) {
+        return conf.getBoolean(
+                HiveConf.ConfVars.HIVE_BLOBSTORE_USE_BLOBSTORE_AS_SCRATCHDIR.varname,
+                DISABLE_BLOBSTORAGE_AS_SCRATCHDIR
+        );
+    }
+
+    /**
+     * Returns true if {@link HiveConf.ConfVars#HIVE_BLOBSTORE_OPTIMIZATIONS_ENABLED} is true, false otherwise.
+     */
+    public static boolean areOptimizationsEnabled(final Configuration conf) {
+        return conf.getBoolean(
+                HiveConf.ConfVars.HIVE_BLOBSTORE_OPTIMIZATIONS_ENABLED.varname,
+                HiveConf.ConfVars.HIVE_BLOBSTORE_OPTIMIZATIONS_ENABLED.defaultBoolVal
+        );
     }
 }
