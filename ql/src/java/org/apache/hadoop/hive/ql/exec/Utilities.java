@@ -1184,6 +1184,7 @@ public final class Utilities {
    *          the src directory
    * @param dst
    *          the target directory
+   * @param jc
    * @throws IOException
    */
   public static void renameOrMoveFiles(FileSystem fs, Path src, Path dst) throws IOException,
@@ -1196,7 +1197,25 @@ public final class Utilities {
       // move file by file
       FileStatus[] files = fs.listStatus(src);
       for (FileStatus file : files) {
-        Utilities.moveFile(fs, file, dst);
+        Path srcFilePath = file.getPath();
+        String fileName = srcFilePath.getName();
+        Path dstFilePath = new Path(dst, fileName);
+        if (file.isDir()) {
+          renameOrMoveFiles(fs, srcFilePath, dstFilePath);
+        }
+        else {
+          if (fs.exists(dstFilePath)) {
+            int suffix = 0;
+            do {
+              suffix++;
+              dstFilePath = new Path(dst, fileName + "_" + suffix);
+            } while (fs.exists(dstFilePath));
+          }
+
+          if (!fs.rename(srcFilePath, dstFilePath)) {
+            throw new HiveException("Unable to move: " + src + " to: " + dst);
+          }
+        }
       }
     }
   }
@@ -1219,7 +1238,7 @@ public final class Utilities {
    * Group 6: copy     [copy keyword]
    * Group 8: 2        [copy file index]
    */
-  private static final String COPY_KEYWORD = "_copy_"; // copy keyword
+  public static final String COPY_KEYWORD = "_copy_"; // copy keyword
   private static final Pattern COPY_FILE_NAME_TO_TASK_ID_REGEX =
       Pattern.compile("^.*?"+ // any prefix
                       "([0-9]+)"+ // taskId

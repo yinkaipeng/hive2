@@ -564,6 +564,7 @@ public final class FileUtils {
 
   /**
    * Creates the directory and all necessary parent directories.
+   *
    * @param fs FileSystem to use
    * @param f path to create.
    * @param inheritPerms whether directory inherits the permission of the last-existing parent path
@@ -753,17 +754,26 @@ public final class FileUtils {
     } else {
       //rename the directory
       if (fs.rename(sourcePath, destPath)) {
-        try {
-          HdfsUtils.setFullFileStatus(conf, new HdfsUtils.HadoopFileStatus(conf, fs, destPath.getParent()), fs, destPath, true);
-        } catch (Exception e) {
-          LOG.warn("Error setting permissions or group of " + destPath, e);
-        }
-
+        HdfsUtils.setParentFileStatus(conf, fs, destPath, true);
         return true;
       }
 
       return false;
     }
+  }
+
+  public static boolean renameWithPermsNoCheck(FileSystem fs, Path sourcePath,
+      Path destPath,  Configuration conf) throws IOException {
+    return renameWithPermsNoCheck(fs, sourcePath, destPath, shouldInheritPerms(conf, fs), conf);
+  }
+
+  public static boolean renameWithPermsNoCheck(FileSystem fs, Path sourcePath,
+      Path destPath, boolean inheritPerms, Configuration conf) throws IOException {
+    LOG.debug("Renaming " + sourcePath + " to " + destPath);
+    boolean result = fs.rename(sourcePath, destPath);
+    if (!result || !inheritPerms) return result;
+    HdfsUtils.setParentFileStatus(conf, fs, destPath, true);
+    return true;
   }
 
   /**
@@ -962,13 +972,13 @@ public final class FileUtils {
 
   /**
    * Checks whenever path is inside the given subtree
-   * 
+   *
    * return true iff
    *  * path = subtree
    *  * subtreeContains(path,d) for any descendant of the subtree node
    * @param path    the path in question
    * @param subtree
-   * 
+   *
    * @return
    */
   public static boolean isPathWithinSubtree(Path path, Path subtree) {
@@ -986,5 +996,25 @@ public final class FileUtils {
       path = path.getParent();
     }
     return false;
+  }
+
+  public static boolean shouldInheritPerms(Configuration conf, FileSystem fs) {
+    return HiveConf.getBoolVar(conf,
+      HiveConf.ConfVars.HIVE_WAREHOUSE_SUBDIR_INHERIT_PERMS) && StorageUtils.shouldSetPerms(conf, fs);
+  }
+
+  public static void inheritPerms(Configuration conf, HdfsUtils.HadoopFileStatus sourceStatus, FileSystem fs, Path target,
+                                  boolean recursive) {
+    inheritPerms(conf, sourceStatus, null, fs, target, recursive);
+  }
+
+  public static void inheritPerms(Configuration conf, HdfsUtils.HadoopFileStatus sourceStatus, String targetGroup,
+                                  FileSystem fs, Path target, boolean recursive) {
+    inheritPerms(conf, sourceStatus, targetGroup, fs, target, recursive, true);
+  }
+
+  public static void inheritPerms(Configuration conf, HdfsUtils.HadoopFileStatus sourceStatus, String targetGroup,
+                                  FileSystem fs, Path target, boolean recursive, boolean isDir) {
+    HdfsUtils.setFullFileStatus(conf, sourceStatus, targetGroup, fs, target, recursive, isDir);
   }
 }
