@@ -2244,6 +2244,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
             ASTNode child = (ASTNode) ast.getChild(num);
             if (child != null) {
               if (storageFormat.fillStorageFormat(child)) {
+                directoryDesc.setInputFormat(storageFormat.getInputFormat());
                 directoryDesc.setOutputFormat(storageFormat.getOutputFormat());
                 directoryDesc.setSerName(storageFormat.getSerde());
                 directoryDescIsSet = true;
