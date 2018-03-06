@@ -64,14 +64,14 @@ STAGE PLANS:
         $hdt$_1:acid2 
           TableScan
             alias: acid2
-            Statistics: Num rows: 1 Data size: 839 Basic stats: COMPLETE Column stats: NONE
+            Statistics: Num rows: 1 Data size: 846 Basic stats: COMPLETE Column stats: NONE
             Filter Operator
               predicate: key is not null (type: boolean)
-              Statistics: Num rows: 1 Data size: 839 Basic stats: COMPLETE Column stats: NONE
+              Statistics: Num rows: 1 Data size: 846 Basic stats: COMPLETE Column stats: NONE
               Select Operator
                 expressions: key (type: int)
                 outputColumnNames: _col0
-                Statistics: Num rows: 1 Data size: 839 Basic stats: COMPLETE Column stats: NONE
+                Statistics: Num rows: 1 Data size: 846 Basic stats: COMPLETE Column stats: NONE
                 HashTable Sink Operator
                   keys:
                     0 _col0 (type: int)
@@ -82,21 +82,21 @@ STAGE PLANS:
       Map Operator Tree:
           TableScan
             alias: acid1
-            Statistics: Num rows: 1 Data size: 1251 Basic stats: COMPLETE Column stats: NONE
+            Statistics: Num rows: 1 Data size: 1262 Basic stats: COMPLETE Column stats: NONE
             Filter Operator
               predicate: key is not null (type: boolean)
-              Statistics: Num rows: 1 Data size: 1251 Basic stats: COMPLETE Column stats: NONE
+              Statistics: Num rows: 1 Data size: 1262 Basic stats: COMPLETE Column stats: NONE
               Select Operator
                 expressions: key (type: int)
                 outputColumnNames: _col0
-                Statistics: Num rows: 1 Data size: 1251 Basic stats: COMPLETE Column stats: NONE
+                Statistics: Num rows: 1 Data size: 1262 Basic stats: COMPLETE Column stats: NONE
                 Map Join Operator
                   condition map:
                        Inner Join 0 to 1
                   keys:
                     0 _col0 (type: int)
                     1 _col0 (type: int)
-                  Statistics: Num rows: 1 Data size: 1376 Basic stats: COMPLETE Column stats: NONE
+                  Statistics: Num rows: 1 Data size: 1388 Basic stats: COMPLETE Column stats: NONE
                   Group By Operator
                     aggregations: count()
                     mode: hash
