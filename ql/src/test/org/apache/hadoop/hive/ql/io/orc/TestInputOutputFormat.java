@@ -104,9 +104,12 @@ import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.IntObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.hive.shims.CombineHiveKey;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -121,6 +124,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Progressable;
 import org.apache.orc.OrcProto;
+import org.apache.orc.StripeInformation;
 import org.apache.orc.TypeDescription;
 import org.apache.orc.impl.PhysicalFsWriter;
 
@@ -2292,14 +2296,14 @@ public class TestInputOutputFormat {
     assertEquals("mock:/combinationAcid/p=0/base_0000010/bucket_00000",
         split.getPath().toString());
     assertEquals(0, split.getStart());
-    assertEquals(607, split.getLength());
+    assertEquals(612, split.getLength());
     split = (HiveInputFormat.HiveInputSplit) splits[1];
     assertEquals("org.apache.hadoop.hive.ql.io.orc.OrcInputFormat",
         split.inputFormatClassName());
     assertEquals("mock:/combinationAcid/p=0/base_0000010/bucket_00001",
         split.getPath().toString());
     assertEquals(0, split.getStart());
-    assertEquals(629, split.getLength());
+    assertEquals(635, split.getLength());
     CombineHiveInputFormat.CombineHiveInputSplit combineSplit =
         (CombineHiveInputFormat.CombineHiveInputSplit) splits[2];
     assertEquals(BUCKETS, combineSplit.getNumPaths());
@@ -3737,6 +3741,106 @@ public class TestInputOutputFormat {
       record += 1;
     }
     assertEquals(1000, record);
+    reader.close();
+  }
+
+  @Test
+  public void testAcidReadPastLastStripeOffset() throws Exception {
+    Path baseDir = new Path(workDir, "base_00100");
+    testFilePath = new Path(baseDir, "bucket_00000");
+    fs.mkdirs(baseDir);
+    fs.delete(testFilePath, true);
+    String typeStr = "struct<operation:int," +
+        "originalTransaction:bigint,bucket:int,rowId:bigint," +
+        "currentTransaction:bigint," +
+        "row:struct<a:int,b:struct<c:int>,d:string>>";
+    TypeInfo typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(typeStr);
+    OrcRecordUpdater.KeyIndexBuilder indexBuilder = new OrcRecordUpdater.KeyIndexBuilder();
+    Writer writer = OrcFile.createWriter(testFilePath,
+        OrcFile.writerOptions(conf)
+            .fileSystem(fs)
+            .inspector(OrcStruct.createObjectInspector(typeInfo))
+            .compress(CompressionKind.NONE)
+            .callback(indexBuilder)
+            .stripeSize(128));
+    // Create ORC file with small stripe size so we can write multiple stripes.
+    OrcStruct row = new OrcStruct(6);
+    row.setFieldValue(0, new IntWritable(0));
+    row.setFieldValue(1, new LongWritable(1));
+    row.setFieldValue(2, new IntWritable(0));
+    LongWritable rowId = new LongWritable();
+    row.setFieldValue(3, rowId);
+    row.setFieldValue(4, new LongWritable(1));
+    OrcStruct rowField = new OrcStruct(3);
+    row.setFieldValue(5, rowField);
+    IntWritable a = new IntWritable();
+    rowField.setFieldValue(0, a);
+    OrcStruct b = new OrcStruct(1);
+    rowField.setFieldValue(1, b);
+    IntWritable c = new IntWritable();
+    b.setFieldValue(0, c);
+    Text d = new Text();
+    rowField.setFieldValue(2, d);
+
+    // Minimum 5000 rows per stripe.
+    for(int r=0; r < 8000; r++) {
+      // row id
+      rowId.set(r);
+      // a
+      a.set(r * 42);
+      // b.c
+      c.set(r * 10001);
+      // d
+      d.set(Integer.toHexString(r));
+      indexBuilder.addKey(OrcRecordUpdater.INSERT_OPERATION, 1, 0, rowId.get());
+      writer.addRow(row);
+    }
+    writer.close();
+    long fileLength = fs.getFileStatus(testFilePath).getLen();
+
+    // Find the last stripe.
+    Reader orcReader = OrcFile.createReader(fs, testFilePath);
+    List<StripeInformation> stripes = orcReader.getStripes();
+    StripeInformation lastStripe = stripes.get(stripes.size() - 1);
+    long lastStripeOffset = lastStripe.getOffset();
+    long lastStripeLength = lastStripe.getLength();
+
+    RecordIdentifier[] keyIndex = OrcRecordUpdater.parseKeyIndex(orcReader);
+    assertEquals("Index length doesn't match number of stripes",
+        stripes.size(), keyIndex.length);
+    assertEquals("1st Index entry mismatch",
+        new RecordIdentifier(1, 0, 4999), keyIndex[0]);
+    assertEquals("2nd Index entry mismatch",
+        new RecordIdentifier(1, 0, 7999), keyIndex[1]);
+
+    // test with same schema with include
+    conf.set(ValidTxnList.VALID_TXNS_KEY, "100:99:");
+    conf.set(IOConstants.SCHEMA_EVOLUTION_COLUMNS, "a,b,d");
+    conf.set(IOConstants.SCHEMA_EVOLUTION_COLUMNS_TYPES, "int,struct<c:int>,string");
+    conf.set(ColumnProjectionUtils.READ_ALL_COLUMNS, "false");
+    conf.set(ColumnProjectionUtils.READ_COLUMN_IDS_CONF_STR, "0,2");
+
+    System.out.println("Last stripe " + stripes.size() +
+        ", offset " + lastStripeOffset + ", length " + lastStripeLength);
+    // Specify an OrcSplit that starts beyond the offset of the last stripe.
+    OrcSplit split = new OrcSplit(testFilePath, null, lastStripeOffset + 1, lastStripeLength,
+        new String[0], null, false, true,
+        new ArrayList<AcidInputFormat.DeltaMetaData>(), fileLength, fileLength);
+    OrcInputFormat inputFormat = new OrcInputFormat();
+    AcidInputFormat.RowReader<OrcStruct> reader = inputFormat.getReader(split,
+        new AcidInputFormat.Options(conf));
+
+    int record = 0;
+    RecordIdentifier id = reader.createKey();
+    OrcStruct struct = reader.createValue();
+    // Iterate through any records.
+    // Because our read offset was past the stripe offset, the rows from the last stripe will
+    // not be read. Thus 0 records.
+    while (reader.next(id, struct)) {
+      record += 1;
+    }
+    assertEquals(0, record);
+
     reader.close();
   }
 }
