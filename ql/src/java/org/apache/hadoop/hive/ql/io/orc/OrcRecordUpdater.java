@@ -445,6 +445,17 @@ public class OrcRecordUpdater implements RecordUpdater {
     int lastBucket;
     long lastRowId;
     AcidStats acidStats = new AcidStats();
+    /**
+     *  {@link #preStripeWrite(OrcFile.WriterContext)} is normally called by the
+     *  {@link org.apache.orc.MemoryManager} except on close().
+     *  {@link org.apache.orc.impl.WriterImpl#close()} calls preFooterWrite() before it calls
+     *  {@link WriterImpl#flushStripe()} which causes the {@link #ACID_KEY_INDEX_NAME} index to
+     *  have the last entry missing.  It should be also fixed in ORC but that requires upgrading
+     *  the ORC jars to have effect.
+     *
+     *  This is used to decide if we need to make preStripeWrite() call here.
+     */
+    private long numKeysCurrentStripe = 0;
 
     @Override
     public void preStripeWrite(OrcFile.WriterContext context
@@ -455,11 +466,15 @@ public class OrcRecordUpdater implements RecordUpdater {
       lastKey.append(',');
       lastKey.append(lastRowId);
       lastKey.append(';');
+      numKeysCurrentStripe = 0;
     }
 
     @Override
     public void preFooterWrite(OrcFile.WriterContext context
                                ) throws IOException {
+      if(numKeysCurrentStripe > 0) {
+        preStripeWrite(context);
+      }
       context.getWriter().addUserMetadata(ACID_KEY_INDEX_NAME,
           UTF8.encode(lastKey.toString()));
       context.getWriter().addUserMetadata(OrcAcidUtils.ACID_STATS,
@@ -483,6 +498,7 @@ public class OrcRecordUpdater implements RecordUpdater {
       lastTransaction = transaction;
       lastBucket = bucket;
       lastRowId = rowId;
+      numKeysCurrentStripe++;
     }
   }
 
