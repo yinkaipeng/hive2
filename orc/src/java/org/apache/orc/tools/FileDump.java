@@ -18,6 +18,8 @@
 package org.apache.orc.tools;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
@@ -430,9 +432,15 @@ public final class FileDump {
     System.out.println("\nFile length: " + fileLen + " bytes");
     System.out.println("Padding length: " + paddedBytes + " bytes");
     System.out.println("Padding ratio: " + format.format(percentPadding) + "%");
-    AcidStats acidStats = OrcAcidUtils.parseAcidStats(reader);
-    if (acidStats != null) {
-      System.out.println("ACID stats:" + acidStats);
+    //print out any user metadata properties
+    List<String> keys = reader.getMetadataKeys();
+    for(int i = 0; i < keys.size(); i++) {
+      if(i == 0) {
+        System.out.println("\nUser Metadata:");
+      }
+      ByteBuffer byteBuffer = reader.getMetadataValue(keys.get(i));
+      System.out.println("  " + keys.get(i) + "="
+        + StandardCharsets.UTF_8.decode(byteBuffer));
     }
     rows.close();
   }

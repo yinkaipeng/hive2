@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Arrays;
@@ -234,6 +235,11 @@ public class TestFileDump {
     if (batch.size > 0) {
       writer.addRowBatch(batch);
     }
+
+    // Add user metadata for testing
+    writer.addUserMetadata("hive.acid.key.index", StandardCharsets.UTF_8.encode("1,1,1;2,3,5;"));
+    writer.addUserMetadata("some.user.property", StandardCharsets.UTF_8.encode("foo#bar$baz&"));
+
     writer.close();
     PrintStream origOut = System.out;
     String outputFilename = "orc-file-dump.out";
