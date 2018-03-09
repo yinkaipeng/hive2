@@ -281,6 +281,7 @@ public class Worker extends CompactorThread {
           for (Map.Entry<String, String> ent : partitionColumnValues.entrySet()) {
             sb.append(ent.getKey()).append("='").append(ent.getValue()).append("',");
           }
+          sb.setLength(sb.length() - 1); //remove trailing ,
           sb.append(")");
         }
         sb.append(" compute statistics for columns ");
