@@ -59,7 +59,7 @@ public class TruncatePartitionHandler extends AbstractMessageHandler {
             context.eventOnlyReplicationSpec());
     Task<DDLWork> truncatePtnTask = TaskFactory.get(
             new DDLWork(readEntitySet, writeEntitySet, truncateTableDesc),
-            context.hiveConf);
+            context.hiveConf, true);
     context.log.debug("Added truncate ptn task : {}:{}", truncatePtnTask.getId(),
         truncateTableDesc.getTableName());
     updatedMetadata.set(context.dmd.getEventTo().toString(), actualDbName, actualTblName, partSpec);

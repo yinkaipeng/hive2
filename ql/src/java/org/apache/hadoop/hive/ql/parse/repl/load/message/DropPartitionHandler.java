@@ -54,7 +54,7 @@ public class DropPartitionHandler extends AbstractMessageHandler {
             partSpecs, false, true, context.eventOnlyReplicationSpec());
         Task<DDLWork> dropPtnTask = TaskFactory.get(
             new DDLWork(readEntitySet, writeEntitySet, dropPtnDesc),
-            context.hiveConf
+            context.hiveConf, true
         );
         context.log.debug("Added drop ptn task : {}:{},{}", dropPtnTask.getId(),
             dropPtnDesc.getTableName(), msg.getPartitions());

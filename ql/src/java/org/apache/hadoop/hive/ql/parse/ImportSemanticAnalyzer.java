@@ -367,7 +367,7 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
         Utilities.getTableDesc(table), new TreeMap<String, String>(),
         replace ? LoadFileType.REPLACE_ALL : LoadFileType.OVERWRITE_EXISTING);
     Task<?> loadTableTask = TaskFactory.get(new MoveWork(x.getInputs(),
-        x.getOutputs(), loadTableWork, null, false), x.getConf());
+        x.getOutputs(), loadTableWork, null, false), x.getConf(), true);
     copyTask.addDependentTask(loadTableTask);
     x.getTasks().add(copyTask);
     return loadTableTask;
@@ -405,7 +405,7 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
         x.getInputs(),
         x.getOutputs(),
         addPartitionDesc
-    ), x.getConf());
+    ), x.getConf(), true);
   }
 
  private static Task<?> addSinglePartition(URI fromURI, FileSystem fs, ImportTableDesc tblDesc,
@@ -418,7 +418,7 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
           + partSpecToString(partSpec.getPartSpec()));
       // addPartitionDesc already has the right partition location
       Task<?> addPartTask = TaskFactory.get(new DDLWork(x.getInputs(),
-          x.getOutputs(), addPartitionDesc), x.getConf());
+          x.getOutputs(), addPartitionDesc), x.getConf(), true);
       return addPartTask;
     } else {
       String srcLocation = partSpec.getLocation();
@@ -431,7 +431,7 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
       Task<?> copyTask = ReplCopyTask.getLoadCopyTask(
           replicationSpec, new Path(srcLocation), tmpPath, x.getConf());
       Task<?> addPartTask = TaskFactory.get(new DDLWork(x.getInputs(),
-          x.getOutputs(), addPartitionDesc), x.getConf());
+          x.getOutputs(), addPartitionDesc), x.getConf(), true);
       LoadTableDesc loadTableWork = new LoadTableDesc(tmpPath,
           Utilities.getTableDesc(table),
           partSpec.getPartSpec(),

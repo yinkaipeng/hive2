@@ -65,7 +65,7 @@ public class CreateFunctionHandler extends AbstractMessageHandler {
 
       context.log.debug("Loading function desc : {}", descToLoad.toString());
       Task<FunctionWork> createTask = TaskFactory.get(
-          new FunctionWork(descToLoad), context.hiveConf
+          new FunctionWork(descToLoad), context.hiveConf, true
       );
       context.log.debug("Added create function task : {}:{},{}", createTask.getId(),
           descToLoad.getFunctionName(), descToLoad.getClassName());
@@ -93,7 +93,7 @@ public class CreateFunctionHandler extends AbstractMessageHandler {
          *  which should only happen when the last task is finished, at which point the child of the barrier task is picked up.
          */
         Task<? extends Serializable> barrierTask =
-            TaskFactory.get(new DependencyCollectionWork(), context.hiveConf);
+            TaskFactory.get(new DependencyCollectionWork(), context.hiveConf, true);
         for(Task task: builder.replCopyTasks){
           task.addDependentTask(barrierTask);
         }
