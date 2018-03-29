@@ -296,6 +296,10 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
 
   public void alter_table_with_environmentContext(String dbname, String tbl_name, Table new_tbl,
       EnvironmentContext envContext) throws InvalidOperationException, MetaException, TException {
+    HiveMetaHook hook = getHook(new_tbl);
+    if (hook != null) {
+      hook.preAlterTable(new_tbl, envContext);
+    }
     client.alter_table_with_environment_context(dbname, tbl_name, new_tbl, envContext);
   }
 
@@ -2128,7 +2132,7 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
   public void addDynamicPartitions(long txnId, String dbName, String tableName,
                                    List<String> partNames) throws TException {
     client.add_dynamic_partitions(new AddDynamicPartitions(txnId, dbName, tableName, partNames));
-  }  
+  }
   @Override
   public void addDynamicPartitions(long txnId, String dbName, String tableName,
                                    List<String> partNames, DataOperationType operationType) throws TException {

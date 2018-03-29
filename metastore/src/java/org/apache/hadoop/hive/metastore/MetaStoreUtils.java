@@ -1444,7 +1444,11 @@ public class MetaStoreUtils {
       return false;
     }
 
-    return "TRUE".equalsIgnoreCase(params.get("EXTERNAL"));
+    return isExternal(params);
+  }
+
+  public static boolean isExternal(Map<String, String> tableParams){
+    return "TRUE".equalsIgnoreCase(tableParams.get("EXTERNAL"));
   }
 
   /**
@@ -1905,7 +1909,7 @@ public class MetaStoreUtils {
       String dbName, String tableName, List<String> partNames, List<String> colNames,
       boolean areAllPartsFound, boolean useDensityFunctionForNDVEstimation, double ndvTuner)
       throws MetaException {
-    Map<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>> colStatsMap = 
+    Map<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>> colStatsMap =
         new HashMap<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>>();
     // Group stats by colName for each partition
     Map<String, ColumnStatsAggregator> aliasToAggregator = new HashMap<String, ColumnStatsAggregator>();
@@ -2008,7 +2012,7 @@ public class MetaStoreUtils {
     }
     return metaException;
   }
-  
+
   // ColumnStatisticsObj with info about its db, table, partition (if table is partitioned)
   public static class ColStatsObjWithSourceInfo {
     private final ColumnStatisticsObj colStatsObj;

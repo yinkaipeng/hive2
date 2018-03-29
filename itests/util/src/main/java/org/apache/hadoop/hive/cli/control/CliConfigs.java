@@ -52,6 +52,7 @@ public class CliConfigs {
         excludesFrom(testConfigProps, "encrypted.query.files");
         excludesFrom(testConfigProps, "spark.only.query.files");
         excludesFrom(testConfigProps, "disabled.query.files");
+        excludesFrom(testConfigProps, "druid.query.files");
 
         setResultsDir("ql/src/test/results/clientpositive");
         setLogDir("itests/qtest/target/qfile-results/clientpositive");
