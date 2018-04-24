@@ -229,7 +229,7 @@ public class Initiator extends CompactorThread {
     if (runJobAsSelf(runAs)) {
       return determineCompactionType(ci, txns, sd, tblproperties);
     } else {
-      LOG.info("Going to initiate as user " + runAs);
+      LOG.info("Going to initiate as user " + runAs + " for " + ci.getFullPartitionName());
       UserGroupInformation ugi = UserGroupInformation.createProxyUser(runAs,
         UserGroupInformation.getLoginUser());
       CompactionType compactionType = ugi.doAs(new PrivilegedExceptionAction<CompactionType>() {

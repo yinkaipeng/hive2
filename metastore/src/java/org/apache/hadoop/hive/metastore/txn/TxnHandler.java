@@ -1015,9 +1015,9 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
             if(!updateTxnComponents) {
               continue;
             }
-            String dbName = lc.getDbname();
-            String tblName = lc.getTablename();
-            String partName = lc.getPartitionname();
+            String dbName = normalizeCase(lc.getDbname());
+            String tblName = normalizeCase(lc.getTablename());
+            String partName = normalizeCase(lc.getPartitionname());
             rows.add(txnid + ", ?, " +
                     (tblName == null ? "null" : "?") + ", " +
                     (partName == null ? "null" : "?")+ "," +
@@ -1056,9 +1056,9 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
               + lc + " agentInfo=" + rqst.getAgentInfo());
           }
           intLockId++;
-          String dbName = lc.getDbname();
-          String tblName = lc.getTablename();
-          String partName = lc.getPartitionname();
+          String dbName = normalizeCase(lc.getDbname());
+          String tblName = normalizeCase(lc.getTablename());
+          String partName = normalizeCase(lc.getPartitionname());
           LockType lockType = lc.getType();
           char lockChar = 'z';
           switch (lockType) {
@@ -1132,6 +1132,9 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
     catch(RetryException e) {
       return enqueueLockWithRetry(rqst);
     }
+  }
+  private static String normalizeCase(String s) {
+    return s == null ? null : s.toLowerCase();
   }
   private LockResponse checkLockWithRetry(Connection dbConn, long extLockId, long txnId)
     throws NoSuchLockException, NoSuchTxnException, TxnAbortedException, MetaException {
@@ -1749,8 +1752,8 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
         for (String partName : rqst.getPartitionnames()) {
           rows.add(rqst.getTxnid() + ",?,?,?," + quoteChar(ot.sqlConst));
           List<String> params = new ArrayList<>();
-          params.add(rqst.getDbname());
-          params.add(rqst.getTablename());
+          params.add(normalizeCase(rqst.getDbname()));
+          params.add(normalizeCase(rqst.getTablename()));
           params.add(partName);
           paramsList.add(params);
         }
