@@ -494,6 +494,7 @@ public class TestDbTxnManager {
     private final String queryId;
     
     MockQueryPlan(TestDbTxnManager test) {
+      super(null);
       inputs.addAll(test.readEntities);
       outputs.addAll(test.writeEntities);
       queryId = makeQueryId();

@@ -110,9 +110,9 @@ public class QueryPlan implements Serializable {
   private String threadName;
   private String userProvidedContext;
 
-  public QueryPlan() {
+  public QueryPlan(HiveOperation operation) {
     this.reducerTimeStatsPerJobList = new ArrayList<ReducerTimeStatsPerJob>();
-    operation = null;
+    this.operation = operation;
   }
 
   public QueryPlan(String queryString, BaseSemanticAnalyzer sem, Long startTime, String queryId,
