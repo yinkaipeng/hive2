@@ -127,6 +127,7 @@ class MetaStoreDirectSql {
   private final boolean isCompatibleDatastore;
   private final boolean isAggregateStatsCacheEnabled;
   private AggregateStatsCache aggrStatsCache;
+  private boolean isRunFromTest = false;
 
   @java.lang.annotation.Target(java.lang.annotation.ElementType.FIELD)
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
@@ -162,6 +163,9 @@ class MetaStoreDirectSql {
     defaultPartName = HiveConf.getVar(conf, ConfVars.DEFAULTPARTITIONNAME);
 
     String jdoIdFactory = HiveConf.getVar(conf, ConfVars.METASTORE_IDENTIFIER_FACTORY);
+    if (HiveConf.getBoolVar(conf, HiveConf.ConfVars.HIVE_IN_TEST)) {
+      isRunFromTest = true;
+    }
     if (! ("datanucleus1".equalsIgnoreCase(jdoIdFactory))){
       LOG.warn("Underlying metastore does not use 'datanuclues1' for its ORM naming scheme."
           + " Disabling directSQL as it uses hand-hardcoded SQL with that assumption.");
@@ -246,9 +250,10 @@ class MetaStoreDirectSql {
         however this has been changed and we used direct SQL
         queries via DataNucleus to interact with them now.
        */
-      pm.newQuery(MNotificationLog.class, "dbName == ''").execute();
-      pm.newQuery(MNotificationNextId.class, "nextEventId < -1").execute();
-
+      if (isRunFromTest) {
+        pm.newQuery(MNotificationLog.class, "dbName == ''").execute();
+        pm.newQuery(MNotificationNextId.class, "nextEventId < -1").execute();
+      }
       return true;
     } catch (Exception ex) {
       doCommit = false;
