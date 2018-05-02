@@ -444,7 +444,13 @@ public class DbNotificationListener extends MetaStoreEventListener {
 
     @Override
     public String next() {
-      String result = encodeFileUri(files.get(i), chksums != null? chksums.get(i) : null);
+      String result;
+      try {
+        result = ReplChangeManager.encodeFileUri(files.get(i), chksums != null ? chksums.get(i) : null);
+      } catch (IOException e) {
+        // If thrown IOException, it means, CM root is not set. So, just return original path.
+        result = files.get(i);
+      }
       i++;
       return result;
     }
@@ -591,15 +597,5 @@ public class DbNotificationListener extends MetaStoreEventListener {
       else ttl = (int)configTtl;
     }
 
-  }
-
-  // TODO: this needs to be enhanced once change management based filesystem is implemented
-  // Currently using fileuri#checksum as the format
-  private String encodeFileUri(String fileUriStr, String fileChecksum) {
-    if (fileChecksum != null) {
-      return fileUriStr + "#" + fileChecksum;
-    } else {
-      return fileUriStr;
-    }
   }
 }

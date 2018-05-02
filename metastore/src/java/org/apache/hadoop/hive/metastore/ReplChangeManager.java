@@ -182,7 +182,7 @@ public class ReplChangeManager {
         }
       } else {
         String fileCheckSum = checksumFor(path, fs);
-        Path cmPath = getCMPath(hiveConf, path.getName(), fileCheckSum);
+        Path cmPath = getCMPath(hiveConf, path.getName(), fileCheckSum, cmroot.toString());
 
         // set timestamp before moving to cmroot, so we can
         // avoid race condition CM remove the file before setting
@@ -200,17 +200,15 @@ public class ReplChangeManager {
         } else {
           switch (type) {
             case MOVE: {
-              if (LOG.isDebugEnabled()) {
-                LOG.debug("Moving {} to {}", path.toString(), cmPath.toString());
-              }
+              LOG.info("Moving " + path.toString() + " to " + cmPath.toString());
+
               // Rename fails if the file with same name already exist.
               success = fs.rename(path, cmPath);
               break;
             }
             case COPY: {
-              if (LOG.isDebugEnabled()) {
-                LOG.debug("Copying {} to {}", path.toString(), cmPath.toString());
-              }
+              LOG.info("Copying " + path.toString() + " to " + cmPath.toString());
+
               // It is possible to have a file with same checksum in cmPath but the content is
               // partially copied or corrupted. In this case, just overwrite the existing file with
               // new one.
@@ -278,10 +276,6 @@ public class ReplChangeManager {
     return checksumString;
   }
 
-  static public void setCmRoot(Path cmRoot) {
-    ReplChangeManager.cmroot = cmRoot;
-  }
-
   /***
    * Convert a path of file inside a partition or table (if non-partitioned)
    *   to a deterministic location of cmroot. So user can retrieve the file back
@@ -289,9 +283,11 @@ public class ReplChangeManager {
    * @param conf
    * @param name original filename
    * @param checkSum checksum of the file, can be retrieved by {@link #checksumFor(Path, FileSystem)}
+   * @param cmRootUri CM Root URI. (From remote source if REPL LOAD flow. From local config if recycle.)
    * @return Path
    */
-  static Path getCMPath(Configuration conf, String name, String checkSum) throws IOException, MetaException {
+  static Path getCMPath(Configuration conf, String name, String checkSum, String cmRootUri)
+          throws IOException, MetaException {
     String newFileName = name + "_" + checkSum;
     int maxLength = conf.getInt(DFSConfigKeys.DFS_NAMENODE_MAX_COMPONENT_LENGTH_KEY,
         DFSConfigKeys.DFS_NAMENODE_MAX_COMPONENT_LENGTH_DEFAULT);
@@ -300,7 +296,7 @@ public class ReplChangeManager {
       newFileName = newFileName.substring(0, maxLength-1);
     }
 
-    return new Path(cmroot, newFileName);
+    return new Path(cmRootUri, newFileName);
   }
 
   /***
@@ -308,10 +304,11 @@ public class ReplChangeManager {
    * matches, return the file; otherwise, use chksumString to retrieve it from cmroot
    * @param src Original file location
    * @param checksumString Checksum of the original file
+   * @param srcCMRootURI CM root URI of the source cluster
    * @param hiveConf
    * @return Corresponding FileInfo object
    */
-  public static FileInfo getFileInfo(Path src, String checksumString,
+  public static FileInfo getFileInfo(Path src, String checksumString, String srcCMRootURI,
       HiveConf hiveConf) throws MetaException {
     try {
       FileSystem srcFs = src.getFileSystem(hiveConf);
@@ -319,7 +316,7 @@ public class ReplChangeManager {
         return new FileInfo(srcFs, src);
       }
 
-      Path cmPath = getCMPath(hiveConf, src.getName(), checksumString);
+      Path cmPath = getCMPath(hiveConf, src.getName(), checksumString, srcCMRootURI);
       if (!srcFs.exists(src)) {
         return new FileInfo(srcFs, src, cmPath, checksumString, false);
       }
@@ -342,38 +339,46 @@ public class ReplChangeManager {
   }
 
   /***
-   * Concatenate filename and checksum with "#"
+   * Concatenate filename, checksum and source cmroot uri with "#"
    * @param fileUriStr Filename string
    * @param fileChecksum Checksum string
    * @return Concatenated Uri string
    */
   // TODO: this needs to be enhanced once change management based filesystem is implemented
-  // Currently using fileuri#checksum as the format
-  static public String encodeFileUri(String fileUriStr, String fileChecksum) {
-    if (fileChecksum != null) {
-      return fileUriStr + URI_FRAGMENT_SEPARATOR + fileChecksum;
+  // Currently using fileuri#checksum#cmrooturi as the format
+  public static String encodeFileUri(String fileUriStr, String fileChecksum) throws IOException {
+    if ((fileChecksum != null) && (cmroot != null)) {
+      String encodedUri =  fileUriStr + URI_FRAGMENT_SEPARATOR + fileChecksum
+                        + URI_FRAGMENT_SEPARATOR + FileUtils.makeQualified(cmroot, hiveConf);
+      LOG.debug("Encoded URI: " + encodedUri);
+      return encodedUri;
     } else {
       return fileUriStr;
     }
   }
 
   /***
-   * Split uri with fragment into file uri and checksum
+   * Split uri with fragment into file uri, checksum and source cmroot uri.
+   * Currently using fileuri#checksum#cmrooturi as the format.
    * @param fileURIStr uri with fragment
-   * @return array of file name and checksum
+   * @return array of file name, checksum and source CM root URI
    */
-  static public String[] getFileWithChksumFromURI(String fileURIStr) {
+  public static String[] getFileWithChksumAndCmRootFromURI(String fileURIStr) {
     String[] uriAndFragment = fileURIStr.split(URI_FRAGMENT_SEPARATOR);
-    String[] result = new String[2];
+    String[] result = new String[3];
     result[0] = uriAndFragment[0];
     if (uriAndFragment.length>1) {
       result[1] = uriAndFragment[1];
     }
+    if (uriAndFragment.length > 2) {
+      result[2] = uriAndFragment[2];
+    }
+    LOG.debug("Reading Encoded URI: " + result[0] + ":: " + result[1] + ":: " + result[2]);
     return result;
   }
 
   public static boolean isCMFileUri(Path fromPath, FileSystem srcFs) {
-    String[] result = getFileWithChksumFromURI(fromPath.toString());
+    String[] result = getFileWithChksumAndCmRootFromURI(fromPath.toString());
     return result[1] != null;
   }
 
