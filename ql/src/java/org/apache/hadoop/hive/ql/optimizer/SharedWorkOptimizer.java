@@ -35,6 +35,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.ql.exec.AppMasterEventOperator;
 import org.apache.hadoop.hive.ql.exec.DummyStoreOperator;
@@ -623,10 +624,12 @@ public class SharedWorkOptimizer extends Transform {
       }
     }
 
-    discardableInputOps.addAll(gatherDPPBranchOps(pctx, optimizerCache, discardableInputOps));
-    discardableInputOps.addAll(gatherDPPBranchOps(pctx, optimizerCache, discardableOps));
-    discardableInputOps.addAll(gatherDPPBranchOps(pctx, optimizerCache, retainableOps, discardableInputOps));
-    return new SharedResult(retainableOps, discardableOps, discardableInputOps, dataSize, maxDataSize);
+    discardableInputOps.addAll(gatherDPPBranchOps(pctx, optimizerCache,
+        Sets.union(discardableInputOps, discardableOps)));
+    discardableInputOps.addAll(gatherDPPBranchOps(pctx, optimizerCache, retainableOps,
+        discardableInputOps));
+    return new SharedResult(retainableOps, discardableOps, discardableInputOps,
+        dataSize, maxDataSize);
   }
 
   private static Multiset<String> extractConjsIgnoringDPPPreds(ExprNodeDesc predicate) {
@@ -658,11 +661,7 @@ public class SharedWorkOptimizer extends Transform {
         Collection<Operator<?>> c = optimizerCache.tableScanToDPPSource.get((TableScanOperator) op);
         for (Operator<?> dppSource : c) {
           // Remove the branches
-          Operator<?> currentOp = dppSource;
-          while (currentOp.getNumChild() <= 1) {
-            dppBranches.add(currentOp);
-            currentOp = currentOp.getParentOperators().get(0);
-          }
+          removeBranch(dppSource, dppBranches, ops);
         }
       }
     }
@@ -681,16 +680,29 @@ public class SharedWorkOptimizer extends Transform {
               findAscendantWorkOperators(pctx, optimizerCache, dppSource);
           if (!Collections.disjoint(ascendants, discardedOps)) {
             // Remove branch
-            Operator<?> currentOp = dppSource;
-            while (currentOp.getNumChild() <= 1) {
-              dppBranches.add(currentOp);
-              currentOp = currentOp.getParentOperators().get(0);
-            }
+            removeBranch(dppSource, dppBranches, ops);
           }
         }
       }
     }
     return dppBranches;
+  }
+
+  private static void removeBranch(Operator<?> currentOp, Set<Operator<?>> branchesOps,
+          Set<Operator<?>> discardableOps) {
+    if (currentOp.getNumChild() > 1) {
+      for (Operator<?> childOp : currentOp.getChildOperators()) {
+        if (!branchesOps.contains(childOp) && !discardableOps.contains(childOp)) {
+          return;
+        }
+      }
+    }
+    branchesOps.add(currentOp);
+    if (currentOp.getParentOperators() != null) {
+      for (Operator<?> parentOp : currentOp.getParentOperators()) {
+        removeBranch(parentOp, branchesOps, discardableOps);
+      }
+    }
   }
 
   private static List<Operator<?>> compareAndGatherOps(ParseContext pctx,
