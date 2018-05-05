@@ -93,7 +93,7 @@ public class DbNotificationListener extends MetaStoreEventListener {
   private HiveConf hiveConf;
   private MessageFactory msgFactory;
 
-  private synchronized void init(HiveConf conf) throws MetaException {
+  private static synchronized void init(HiveConf conf) throws MetaException {
     if (cleaner == null) {
       cleaner =
           new CleanerThread(conf, RawStoreProxy.getProxy(conf, conf,
@@ -108,7 +108,7 @@ public class DbNotificationListener extends MetaStoreEventListener {
     // with a Configuration parameter, so we have to declare config as Configuration.  But it
     // actually passes a HiveConf, which we need.  So we'll do this ugly down cast.
     hiveConf = (HiveConf)config;
-    init(hiveConf);
+    DbNotificationListener.init(hiveConf);
     msgFactory = MessageFactory.getInstance();
   }
 
@@ -572,7 +572,7 @@ public class DbNotificationListener extends MetaStoreEventListener {
     static private long sleepTime = 60000;
 
     CleanerThread(HiveConf conf, RawStore rs) {
-      super("CleanerThread");
+      super("DB-Notification-Cleaner");
       this.rs = rs;
       setTimeToLive(conf.getTimeVar(HiveConf.ConfVars.METASTORE_EVENT_DB_LISTENER_TTL,
           TimeUnit.SECONDS));
@@ -582,7 +582,16 @@ public class DbNotificationListener extends MetaStoreEventListener {
     @Override
     public void run() {
       while (true) {
-        rs.cleanNotificationEvents(ttl);
+        try {
+          rs.cleanNotificationEvents(ttl);
+        } catch (Exception ex) {
+          //catching exceptions here makes sure that the thread doesn't die in case of unexpected
+          //exceptions
+          LOG.warn(
+              "Exception received while cleaning notifications. More details can be found in debug mode",
+                  ex);
+        }
+
         LOG.debug("Cleaner thread done");
         try {
           Thread.sleep(sleepTime);

@@ -828,6 +828,8 @@ public class HiveConf extends Configuration {
     METASTORE_EVENT_DB_LISTENER_TTL("hive.metastore.event.db.listener.timetolive", "86400s",
         new TimeValidator(TimeUnit.SECONDS),
         "time after which events will be removed from the database listener queue"),
+    METASTORE_CLEAN_MAX_EVENTS("hive.metastore.event.db.clean.maxevents", 10000,
+            "Limit on number events to be cleaned at a time in metastore cleanNotificationEvents call, to avoid OOM"),
     METASTORE_AUTHORIZATION_STORAGE_AUTH_CHECKS("hive.metastore.authorization.storage.checks", false,
         "Should the metastore do authorization checks against the underlying storage (usually hdfs) \n" +
         "for operations like drop-partition (disallow the drop-partition if the user in\n" +
