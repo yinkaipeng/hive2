@@ -825,4 +825,13 @@ public class AcidUtils {
 
     return tableIsTransactional != null && tableIsTransactional.equalsIgnoreCase("true");
   }
+  
+  public static boolean isTransactionalTable(Table table) {
+    return isTransactionalTable(table == null ? null : table.getTTable());
+  }
+  
+  public static boolean isTransactionalTable(org.apache.hadoop.hive.metastore.api.Table table) {
+    return table != null && table.getParameters() != null &&
+        isTablePropertyTransactional(table.getParameters());
+  }
 }

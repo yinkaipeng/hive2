@@ -59,6 +59,8 @@ import org.apache.hadoop.util.ReflectionUtils;
  * This class represents a warehouse where data of Hive tables is stored
  */
 public class Warehouse {
+  private static final String CAT_DB_TABLE_SEPARATOR = ".";
+  
   private Path whRoot;
   private final Configuration conf;
   private final String whRootString;
@@ -190,6 +192,10 @@ public class Warehouse {
 
   public static String getQualifiedName(Table table) {
     return table.getDbName() + "." + table.getTableName();
+  }
+
+  public static String getQualifiedName(String dbName, String tableName) {
+    return dbName + CAT_DB_TABLE_SEPARATOR + tableName;
   }
 
   public static String getQualifiedName(Partition partition) {
