@@ -152,7 +152,7 @@ PREHOOK: type: QUERY
 PREHOOK: Input: default@test_acid
 #### A masked pattern was here ####
 Stage-1 FILE SYSTEM COUNTERS:
-   HDFS_BYTES_READ: 1567
+   HDFS_BYTES_READ: 1588
    HDFS_BYTES_WRITTEN: 230
    HDFS_READ_OPS: 14
    HDFS_LARGE_READ_OPS: 0
