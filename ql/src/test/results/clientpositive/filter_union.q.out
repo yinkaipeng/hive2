@@ -60,7 +60,7 @@ STAGE PLANS:
                   value expressions: _col1 (type: bigint)
                   auto parallelism: false
       Path -> Alias:
-        nullscan://null/default.src/part_ [null-subquery1-subquery1-subquery1:$hdt$_2-subquery1-subquery1-subquery1:src]
+        nullscan://null/default.src/part_ [$hdt$_2-subquery1-subquery1-subquery1:src]
       Path -> Partition:
         nullscan://null/default.src/part_ 
           Partition
@@ -106,7 +106,7 @@ STAGE PLANS:
               name: default.src
             name: default.src
       Truncated Path -> Alias:
-        nullscan://null/default.src/part_ [null-subquery1-subquery1-subquery1:$hdt$_2-subquery1-subquery1-subquery1:src]
+        nullscan://null/default.src/part_ [$hdt$_2-subquery1-subquery1-subquery1:src]
       Needs Tagging: false
       Reduce Operator Tree:
         Group By Operator
@@ -357,7 +357,7 @@ STAGE PLANS:
                   value expressions: _col1 (type: bigint)
                   auto parallelism: false
       Path -> Alias:
-        nullscan://null/default.src/part_ [null-subquery1-subquery1-subquery2:$hdt$_2-subquery1-subquery1-subquery2:src]
+        nullscan://null/default.src/part_ [$hdt$_2-subquery1-subquery1-subquery2:src]
       Path -> Partition:
         nullscan://null/default.src/part_ 
           Partition
@@ -403,7 +403,7 @@ STAGE PLANS:
               name: default.src
             name: default.src
       Truncated Path -> Alias:
-        nullscan://null/default.src/part_ [null-subquery1-subquery1-subquery2:$hdt$_2-subquery1-subquery1-subquery2:src]
+        nullscan://null/default.src/part_ [$hdt$_2-subquery1-subquery1-subquery2:src]
       Needs Tagging: false
       Reduce Operator Tree:
         Group By Operator
@@ -508,7 +508,7 @@ STAGE PLANS:
               name: default.src
             name: default.src
       Truncated Path -> Alias:
-        /src [null-subquery1-subquery2:$hdt$_2-subquery1-subquery2:src]
+        /src [$hdt$_2-subquery1-subquery2:src]
       Needs Tagging: false
       Reduce Operator Tree:
         Group By Operator
@@ -613,7 +613,7 @@ STAGE PLANS:
               name: default.src
             name: default.src
       Truncated Path -> Alias:
-        /src [null-subquery2:$hdt$_2-subquery2:src]
+        /src [$hdt$_2-subquery2:src]
       Needs Tagging: false
       Reduce Operator Tree:
         Group By Operator
