@@ -18,6 +18,8 @@
 
 package org.apache.hadoop.hive.ql.exec.vector;
 
+import java.util.Arrays;
+
 
 /**
  * This class supports string and binary data by value reference -- i.e. each field is
@@ -170,7 +172,9 @@ public class BytesColumnVector extends ColumnVector {
     if ((nextFree + length) > buffer.length) {
       increaseBufferSpace(length);
     }
-    System.arraycopy(sourceBuf, start, buffer, nextFree, length);
+    if (length > 0) {
+      System.arraycopy(sourceBuf, start, buffer, nextFree, length);
+    }
     vector[elementNum] = buffer;
     this.start[elementNum] = nextFree;
     this.length[elementNum] = length;
@@ -312,43 +316,69 @@ public class BytesColumnVector extends ColumnVector {
   public void copySelected(
       boolean selectedInUse, int[] sel, int size, BytesColumnVector output) {
 
-    // Output has nulls if and only if input has nulls.
-    output.noNulls = noNulls;
+    boolean[] outputIsNull = output.isNull;
+
+    // We do not need to do a column reset since we are carefully changing the output.
     output.isRepeating = false;
 
     // Handle repeating case
     if (isRepeating) {
-      output.setVal(0, vector[0], start[0], length[0]);
-      output.isNull[0] = isNull[0];
+      if (noNulls || !isNull[0]) {
+        outputIsNull[0] = false;
+        output.setVal(0, vector[0], start[0], length[0]);
+      } else {
+        outputIsNull[0] = true;
+        output.noNulls = false;
+      }
       output.isRepeating = true;
       return;
     }
 
     // Handle normal case
 
-    // Copy data values over
-    if (selectedInUse) {
-      for (int j = 0; j < size; j++) {
-        int i = sel[j];
-        output.setVal(i, vector[i], start[i], length[i]);
-      }
-    }
-    else {
-      for (int i = 0; i < size; i++) {
-        output.setVal(i, vector[i], start[i], length[i]);
-      }
-    }
+    if (noNulls) {
 
-    // Copy nulls over if needed
-    if (!noNulls) {
+      // Since HIVE-18622 has not been fully back ported yet, we always set the isNull flags.
+
+      if (selectedInUse) {
+        for(int j = 0; j != size; j++) {
+         final int i = sel[j];
+         // Set isNull before call in case it changes it mind.
+         outputIsNull[i] = false;
+         output.setVal(i, vector[i], start[i], length[i]);
+       }
+      } else {
+        Arrays.fill(outputIsNull, false);
+        output.noNulls = true;
+        for(int i = 0; i != size; i++) {
+          output.setVal(i, vector[i], start[i], length[i]);
+        }
+      }
+    } else /* there are nulls in our column */ {
+
+      // Carefully handle NULLs...
+
       if (selectedInUse) {
         for (int j = 0; j < size; j++) {
           int i = sel[j];
-          output.isNull[i] = isNull[i];
+          if (!isNull[i]) {
+            output.isNull[i] = false;
+            output.setVal(i, vector[i], start[i], length[i]);
+          } else {
+            output.isNull[i] = true;
+            output.noNulls = false;
+          }
         }
-      }
-      else {
-        System.arraycopy(isNull, 0, output.isNull, 0, size);
+      } else {
+        for (int i = 0; i < size; i++) {
+          if (!isNull[i]) {
+            output.isNull[i] = false;
+            output.setVal(i, vector[i], start[i], length[i]);
+          } else {
+            output.isNull[i] = true;
+            output.noNulls = false;
+          }
+        }
       }
     }
   }
@@ -371,14 +401,13 @@ public class BytesColumnVector extends ColumnVector {
       // at position 0 is undefined if the position 0 value is null.
       if (noNulls || !isNull[0]) {
 
-        // loops start at position 1 because position 0 is already set
         if (selectedInUse) {
-          for (int j = 1; j < size; j++) {
+          for (int j = 0; j < size; j++) {
             int i = sel[j];
             this.setRef(i, vector[0], start[0], length[0]);
           }
         } else {
-          for (int i = 1; i < size; i++) {
+          for (int i = 0; i < size; i++) {
             this.setRef(i, vector[0], start[0], length[0]);
           }
         }
@@ -392,7 +421,8 @@ public class BytesColumnVector extends ColumnVector {
   public void fill(byte[] value) {
     noNulls = true;
     isRepeating = true;
-    setRef(0, value, 0, value.length);
+    isNull[0] = false;
+    setVal(0, value, 0, value.length);
   }
 
   // Fill the column vector with nulls

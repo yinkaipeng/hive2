@@ -52,12 +52,16 @@ public abstract class IfExprTimestampColumnColumnBase extends VectorExpression {
 
     LongColumnVector arg1ColVector = (LongColumnVector) batch.cols[arg1Column];
     TimestampColumnVector arg2ColVector = (TimestampColumnVector) batch.cols[arg2Column];
+    boolean[] arg2IsNull = arg2ColVector.isNull;
     TimestampColumnVector arg3ColVector = (TimestampColumnVector) batch.cols[arg3Column];
+    boolean[] arg3IsNull = arg3ColVector.isNull;
     TimestampColumnVector outputColVector = (TimestampColumnVector) batch.cols[outputColumn];
     int[] sel = batch.selected;
     boolean[] outputIsNull = outputColVector.isNull;
-    outputColVector.noNulls = arg2ColVector.noNulls && arg3ColVector.noNulls;
-    outputColVector.isRepeating = false; // may override later
+
+    // We do not need to do a column reset since we are carefully changing the output.
+    outputColVector.isRepeating = false;
+
     int n = batch.size;
     long[] vector1 = arg1ColVector.vector;
 
@@ -73,7 +77,7 @@ public abstract class IfExprTimestampColumnColumnBase extends VectorExpression {
      * of code paths.
      */
     if (arg1ColVector.isRepeating) {
-      if (vector1[0] == 1) {
+      if ((arg1ColVector.noNulls || !arg1ColVector.isNull[0]) && vector1[0] == 1) {
         arg2ColVector.copySelected(batch.selectedInUse, sel, n, outputColVector);
       } else {
         arg3ColVector.copySelected(batch.selectedInUse, sel, n, outputColVector);
@@ -89,32 +93,86 @@ public abstract class IfExprTimestampColumnColumnBase extends VectorExpression {
       if (batch.selectedInUse) {
         for(int j = 0; j != n; j++) {
           int i = sel[j];
-          outputColVector.set(i, vector1[i] == 1 ? arg2ColVector.asScratchTimestamp(i) : arg3ColVector.asScratchTimestamp(i));
-          outputIsNull[i] = (vector1[i] == 1 ?
-              arg2ColVector.isNull[i] : arg3ColVector.isNull[i]);
+          if (vector1[i] == 1) {
+            if (!arg2IsNull[i]) {
+              outputIsNull[i] = false;
+              outputColVector.set(i, arg2ColVector.asScratchTimestamp(i));
+            } else {
+              outputIsNull[i] = true;
+              outputColVector.noNulls = false;
+            }
+          } else {
+            if (!arg3IsNull[i]) {
+              outputIsNull[i] = false;
+              outputColVector.set(i, arg3ColVector.asScratchTimestamp(i));
+            } else {
+              outputIsNull[i] = true;
+              outputColVector.noNulls = false;
+            }
+          }
         }
       } else {
         for(int i = 0; i != n; i++) {
-          outputColVector.set(i, vector1[i] == 1 ? arg2ColVector.asScratchTimestamp(i) : arg3ColVector.asScratchTimestamp(i));
-          outputIsNull[i] = (vector1[i] == 1 ?
-              arg2ColVector.isNull[i] : arg3ColVector.isNull[i]);
+          if (vector1[i] == 1) {
+            if (!arg2IsNull[i]) {
+              outputIsNull[i] = false;
+              outputColVector.set(i, arg2ColVector.asScratchTimestamp(i));
+            } else {
+              outputIsNull[i] = true;
+              outputColVector.noNulls = false;
+            }
+          } else {
+            if (!arg3IsNull[i]) {
+              outputIsNull[i] = false;
+              outputColVector.set(i, arg3ColVector.asScratchTimestamp(i));
+            } else {
+              outputIsNull[i] = true;
+              outputColVector.noNulls = false;
+            }
+          }
         }
       }
     } else /* there are nulls */ {
       if (batch.selectedInUse) {
         for(int j = 0; j != n; j++) {
           int i = sel[j];
-          outputColVector.set(i, !arg1ColVector.isNull[i] && vector1[i] == 1 ?
-              arg2ColVector.asScratchTimestamp(i) : arg3ColVector.asScratchTimestamp(i));
-          outputIsNull[i] = (!arg1ColVector.isNull[i] && vector1[i] == 1 ?
-              arg2ColVector.isNull[i] : arg3ColVector.isNull[i]);
+          if (!arg1ColVector.isNull[i] && vector1[i] == 1) {
+            if (!arg2IsNull[i]) {
+              outputIsNull[i] = false;
+              outputColVector.set(i, arg2ColVector.asScratchTimestamp(i));
+            } else {
+              outputIsNull[i] = true;
+              outputColVector.noNulls = false;
+            }
+          } else {
+            if (!arg3IsNull[i]) {
+              outputIsNull[i] = false;
+              outputColVector.set(i, arg3ColVector.asScratchTimestamp(i));
+            } else {
+              outputIsNull[i] = true;
+              outputColVector.noNulls = false;
+            }
+          }
         }
       } else {
         for(int i = 0; i != n; i++) {
-          outputColVector.set(i, !arg1ColVector.isNull[i] && vector1[i] == 1 ?
-              arg2ColVector.asScratchTimestamp(i) : arg3ColVector.asScratchTimestamp(i));
-          outputIsNull[i] = (!arg1ColVector.isNull[i] && vector1[i] == 1 ?
-              arg2ColVector.isNull[i] : arg3ColVector.isNull[i]);
+          if (!arg1ColVector.isNull[i] && vector1[i] == 1) {
+            if (!arg2IsNull[i]) {
+              outputIsNull[i] = false;
+              outputColVector.set(i, arg2ColVector.asScratchTimestamp(i));
+            } else {
+              outputIsNull[i] = true;
+              outputColVector.noNulls = false;
+            }
+          } else {
+            if (!arg3IsNull[i]) {
+              outputIsNull[i] = false;
+              outputColVector.set(i, arg3ColVector.asScratchTimestamp(i));
+            } else {
+              outputIsNull[i] = true;
+              outputColVector.noNulls = false;
+            }
+          }
         }
       }
     }

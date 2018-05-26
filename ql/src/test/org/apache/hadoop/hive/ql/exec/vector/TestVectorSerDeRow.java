@@ -97,7 +97,10 @@ public class TestVectorSerDeRow extends TestCase {
       PrimitiveCategory primitiveCategory = primitiveCategories[i];
       PrimitiveTypeInfo primitiveTypeInfo = source.primitiveTypeInfos()[i];
       if (!deserializeRead.readNextField()) {
-        throw new HiveException("Unexpected NULL");
+        if (expected != null) {
+          TestCase.fail("NULL field mismatch for " + primitiveCategory + " type");
+        }
+        continue;
       }
       switch (primitiveCategory) {
       case BOOLEAN:
@@ -313,7 +316,8 @@ public class TestVectorSerDeRow extends TestCase {
     String[] emptyScratchTypeNames = new String[0];
 
     VectorRandomRowSource source = new VectorRandomRowSource();
-    source.init(r);
+
+    source.init(r, VectorRandomRowSource.SupportedTypes.PRIMITIVES, 4, false);
 
     VectorizedRowBatchCtx batchContext = new VectorizedRowBatchCtx();
     batchContext.init(source.rowStructObjectInspector(), emptyScratchTypeNames);
@@ -527,7 +531,7 @@ public class TestVectorSerDeRow extends TestCase {
     tbl.setProperty("columns", fieldNames);
     tbl.setProperty("columns.types", fieldTypes);
 
-    tbl.setProperty(serdeConstants.SERIALIZATION_NULL_FORMAT, "NULL");
+    tbl.setProperty(serdeConstants.SERIALIZATION_NULL_FORMAT, "\\N");
   }
 
   private LazySerDeParameters getSerDeParams( StructObjectInspector rowObjectInspector) throws SerDeException {
@@ -549,7 +553,7 @@ public class TestVectorSerDeRow extends TestCase {
     String[] emptyScratchTypeNames = new String[0];
 
     VectorRandomRowSource source = new VectorRandomRowSource();
-    source.init(r);
+    source.init(r, VectorRandomRowSource.SupportedTypes.PRIMITIVES, 4, false);
 
     VectorizedRowBatchCtx batchContext = new VectorizedRowBatchCtx();
     batchContext.init(source.rowStructObjectInspector(), emptyScratchTypeNames);

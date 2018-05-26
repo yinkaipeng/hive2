@@ -57,8 +57,7 @@ public class IfExprDoubleColumnDoubleColumn extends VectorExpression {
     DoubleColumnVector outputColVector = (DoubleColumnVector) batch.cols[outputColumn];
     int[] sel = batch.selected;
     boolean[] outputIsNull = outputColVector.isNull;
-    outputColVector.noNulls = arg2ColVector.noNulls && arg3ColVector.noNulls;
-    outputColVector.isRepeating = false; // may override later
+
     int n = batch.size;
     long[] vector1 = arg1ColVector.vector;
     double[] vector2 = arg2ColVector.vector;
@@ -70,6 +69,9 @@ public class IfExprDoubleColumnDoubleColumn extends VectorExpression {
       return;
     }
 
+    // We do not need to do a column reset since we are carefully changing the output.
+    outputColVector.isRepeating = false;
+
     /* All the code paths below propagate nulls even if neither arg2 nor arg3
      * have nulls. This is to reduce the number of code paths and shorten the
      * code, at the expense of maybe doing unnecessary work if neither input
@@ -77,7 +79,7 @@ public class IfExprDoubleColumnDoubleColumn extends VectorExpression {
      * of code paths.
      */
     if (arg1ColVector.isRepeating) {
-      if (vector1[0] == 1) {
+      if ((arg1ColVector.noNulls || !arg1ColVector.isNull[0]) && vector1[0] == 1) {
         arg2ColVector.copySelected(batch.selectedInUse, sel, n, outputColVector);
       } else {
         arg3ColVector.copySelected(batch.selectedInUse, sel, n, outputColVector);
@@ -90,6 +92,15 @@ public class IfExprDoubleColumnDoubleColumn extends VectorExpression {
     arg3ColVector.flatten(batch.selectedInUse, sel, n);
 
     if (arg1ColVector.noNulls) {
+
+      // Carefully handle NULLs...
+
+      /*
+       * For better performance on LONG/DOUBLE we don't want the conditional
+       * statements inside the for loop.
+       */
+      outputColVector.noNulls = false;
+
       if (batch.selectedInUse) {
         for(int j = 0; j != n; j++) {
           int i = sel[j];
@@ -104,7 +115,16 @@ public class IfExprDoubleColumnDoubleColumn extends VectorExpression {
               arg2ColVector.isNull[i] : arg3ColVector.isNull[i]);
         }
       }
-    } else /* there are nulls */ {
+    } else /* there are nulls in the inputColVector */ {
+
+      // Carefully handle NULLs...
+
+      /*
+       * For better performance on LONG/DOUBLE we don't want the conditional
+       * statements inside the for loop.
+       */
+      outputColVector.noNulls = false;
+
       if (batch.selectedInUse) {
         for(int j = 0; j != n; j++) {
           int i = sel[j];

@@ -263,44 +263,67 @@ public class IntervalDayTimeColumnVector extends ColumnVector {
   public void copySelected(
       boolean selectedInUse, int[] sel, int size, IntervalDayTimeColumnVector output) {
 
-    // Output has nulls if and only if input has nulls.
-    output.noNulls = noNulls;
+    boolean[] outputIsNull = output.isNull;
+
+    // We do not need to do a column reset since we are carefully changing the output.
     output.isRepeating = false;
 
     // Handle repeating case
     if (isRepeating) {
-      output.totalSeconds[0] = totalSeconds[0];
-      output.nanos[0] = nanos[0];
-      output.isNull[0] = isNull[0];
+      if (noNulls || !isNull[0]) {
+        outputIsNull[0] = false;
+        output.totalSeconds[0] = totalSeconds[0];
+        output.nanos[0] = nanos[0];
+      } else {
+        outputIsNull[0] = true;
+        output.noNulls = false;
+      }
       output.isRepeating = true;
       return;
     }
 
     // Handle normal case
 
-    // Copy data values over
-    if (selectedInUse) {
-      for (int j = 0; j < size; j++) {
-        int i = sel[j];
-        output.totalSeconds[i] = totalSeconds[i];
-        output.nanos[i] = nanos[i];
-      }
-    }
-    else {
-      System.arraycopy(totalSeconds, 0, output.totalSeconds, 0, size);
-      System.arraycopy(nanos, 0, output.nanos, 0, size);
-    }
+    if (noNulls) {
 
-    // Copy nulls over if needed
-    if (!noNulls) {
+      // Since HIVE-18622 has not been fully back ported yet, we always set the isNull flags.
+
+      if (selectedInUse) {
+        for(int j = 0; j != size; j++) {
+          final int i = sel[j];
+          outputIsNull[i] = false;
+          output.totalSeconds[i] = totalSeconds[i];
+          output.nanos[i] = nanos[i];
+        }
+      } else {
+        Arrays.fill(outputIsNull, false);
+        output.noNulls = true;
+        for(int i = 0; i != size; i++) {
+          output.totalSeconds[i] = totalSeconds[i];
+          output.nanos[i] = nanos[i];
+        }
+      }
+    } else /* there are nulls in our column */ {
+
+      // Carefully handle NULLs...
+
+      /*
+       * For better performance on LONG/DOUBLE we don't want the conditional
+       * statements inside the for loop.
+       */
+      output.noNulls = false;
+
       if (selectedInUse) {
         for (int j = 0; j < size; j++) {
           int i = sel[j];
           output.isNull[i] = isNull[i];
+          output.totalSeconds[i] = totalSeconds[i];
+          output.nanos[i] = nanos[i];
         }
-      }
-      else {
+      } else {
         System.arraycopy(isNull, 0, output.isNull, 0, size);
+        System.arraycopy(totalSeconds, 0, output.totalSeconds, 0, size);
+        System.arraycopy(nanos, 0, output.nanos, 0, size);
       }
     }
   }
@@ -310,7 +333,6 @@ public class IntervalDayTimeColumnVector extends ColumnVector {
    * @param intervalDayTime
    */
   public void fill(HiveIntervalDayTime intervalDayTime) {
-    noNulls = true;
     isRepeating = true;
     totalSeconds[0] = intervalDayTime.getTotalSeconds();
     nanos[0] = intervalDayTime.getNanos();

@@ -170,13 +170,17 @@ public class VectorizationContext {
   }
 
   private HiveVectorAdaptorUsageMode hiveVectorAdaptorUsageMode;
+  private boolean testVectorAdaptorOverride;
 
   private void setHiveConfVars(HiveConf hiveConf) {
     hiveVectorAdaptorUsageMode = HiveVectorAdaptorUsageMode.getHiveConfValue(hiveConf);
+    testVectorAdaptorOverride =
+        HiveConf.getBoolVar(hiveConf, HiveConf.ConfVars.HIVE_TEST_VECTOR_ADAPTOR_OVERRIDE);
   }
 
   private void copyHiveConfVars(VectorizationContext vContextEnvironment) {
     hiveVectorAdaptorUsageMode = vContextEnvironment.hiveVectorAdaptorUsageMode;
+    testVectorAdaptorOverride = vContextEnvironment.testVectorAdaptorOverride;
   }
 
   // Convenient constructor for initial batch creation takes
@@ -614,8 +618,12 @@ public class VectorizationContext {
         // cast to decimal.
         List<ExprNodeDesc> childExpressions = getChildExpressionsWithImplicitCast(expr.getGenericUDF(),
             exprDesc.getChildren(), exprDesc.getTypeInfo());
-        ve = getGenericUdfVectorExpression(expr.getGenericUDF(),
-            childExpressions, mode, exprDesc.getTypeInfo());
+
+        // Are we forcing the usage of VectorUDFAdaptor for test purposes?
+        if (!testVectorAdaptorOverride) {
+          ve = getGenericUdfVectorExpression(expr.getGenericUDF(),
+              childExpressions, mode, exprDesc.getTypeInfo());
+        }
         if (ve == null) {
           // Ok, no vectorized class available.  No problem -- try to use the VectorUDFAdaptor
           // when configured.

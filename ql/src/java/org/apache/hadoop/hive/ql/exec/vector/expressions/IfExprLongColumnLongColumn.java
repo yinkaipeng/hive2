@@ -51,13 +51,16 @@ public class IfExprLongColumnLongColumn extends VectorExpression {
     }
 
     LongColumnVector arg1ColVector = (LongColumnVector) batch.cols[arg1Column];
+    boolean[] arg1IsNull = arg1ColVector.isNull;
     LongColumnVector arg2ColVector = (LongColumnVector) batch.cols[arg2Column];
     LongColumnVector arg3ColVector = (LongColumnVector) batch.cols[arg3Column];
     LongColumnVector outputColVector = (LongColumnVector) batch.cols[outputColumn];
     int[] sel = batch.selected;
     boolean[] outputIsNull = outputColVector.isNull;
-    outputColVector.noNulls = arg2ColVector.noNulls && arg3ColVector.noNulls;
-    outputColVector.isRepeating = false; // may override later
+
+    // We do not need to do a column reset since we are carefully changing the output.
+    outputColVector.isRepeating = false;
+
     int n = batch.size;
     long[] vector1 = arg1ColVector.vector;
     long[] vector2 = arg2ColVector.vector;
@@ -76,7 +79,7 @@ public class IfExprLongColumnLongColumn extends VectorExpression {
      * of code paths.
      */
     if (arg1ColVector.isRepeating) {
-      if (vector1[0] == 1) {
+      if ((arg1ColVector.noNulls || !arg1IsNull[0]) && vector1[0] == 1) {
         arg2ColVector.copySelected(batch.selectedInUse, sel, n, outputColVector);
       } else {
         arg3ColVector.copySelected(batch.selectedInUse, sel, n, outputColVector);
@@ -87,6 +90,9 @@ public class IfExprLongColumnLongColumn extends VectorExpression {
     // extend any repeating values and noNulls indicator in the inputs
     arg2ColVector.flatten(batch.selectedInUse, sel, n);
     arg3ColVector.flatten(batch.selectedInUse, sel, n);
+
+    // Carefully handle NULLs...
+    outputColVector.noNulls = false;
 
     if (arg1ColVector.noNulls) {
       if (batch.selectedInUse) {
@@ -107,14 +113,14 @@ public class IfExprLongColumnLongColumn extends VectorExpression {
       if (batch.selectedInUse) {
         for(int j = 0; j != n; j++) {
           int i = sel[j];
-          outputVector[i] = (!arg1ColVector.isNull[i] && vector1[i] == 1 ?
+          outputVector[i] = (!arg1IsNull[i] && vector1[i] == 1 ?
               vector2[i] : vector3[i]);
           outputIsNull[i] = (!arg1ColVector.isNull[i] && vector1[i] == 1 ?
               arg2ColVector.isNull[i] : arg3ColVector.isNull[i]);
         }
       } else {
         for(int i = 0; i != n; i++) {
-          outputVector[i] = (!arg1ColVector.isNull[i] && vector1[i] == 1 ?
+          outputVector[i] = (!arg1IsNull[i] && vector1[i] == 1 ?
               vector2[i] : vector3[i]);
           outputIsNull[i] = (!arg1ColVector.isNull[i] && vector1[i] == 1 ?
               arg2ColVector.isNull[i] : arg3ColVector.isNull[i]);

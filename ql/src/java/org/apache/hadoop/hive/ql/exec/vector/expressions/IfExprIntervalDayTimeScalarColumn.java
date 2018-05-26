@@ -59,11 +59,14 @@ public class IfExprIntervalDayTimeScalarColumn extends VectorExpression {
 
     LongColumnVector arg1ColVector = (LongColumnVector) batch.cols[arg1Column];
     IntervalDayTimeColumnVector arg3ColVector = (IntervalDayTimeColumnVector) batch.cols[arg3Column];
+    boolean[] arg3IsNull = arg3ColVector.isNull;
     IntervalDayTimeColumnVector outputColVector = (IntervalDayTimeColumnVector) batch.cols[outputColumn];
     int[] sel = batch.selected;
     boolean[] outputIsNull = outputColVector.isNull;
-    outputColVector.noNulls = arg3ColVector.noNulls; // nulls can only come from arg3 column vector
-    outputColVector.isRepeating = false; // may override later
+
+    // We do not need to do a column reset since we are carefully changing the output.
+    outputColVector.isRepeating = false;
+
     int n = batch.size;
     long[] vector1 = arg1ColVector.vector;
 
@@ -73,7 +76,7 @@ public class IfExprIntervalDayTimeScalarColumn extends VectorExpression {
     }
 
     if (arg1ColVector.isRepeating) {
-      if (vector1[0] == 1) {
+      if ((arg1ColVector.noNulls || !arg1ColVector.isNull[0]) && vector1[0] == 1) {
         outputColVector.fill(arg2Scalar);
       } else {
         arg3ColVector.copySelected(batch.selectedInUse, sel, n, outputColVector);
@@ -88,31 +91,72 @@ public class IfExprIntervalDayTimeScalarColumn extends VectorExpression {
     arg3ColVector.flatten(batch.selectedInUse, sel, n);
 
     if (arg1ColVector.noNulls) {
+
+      // FUTURE: We could check arg3ColVector.noNulls and optimize these loops.
       if (batch.selectedInUse) {
         for(int j = 0; j != n; j++) {
           int i = sel[j];
-          outputColVector.set(i, vector1[i] == 1 ? arg2Scalar : arg3ColVector.asScratchIntervalDayTime(i));
+          if (vector1[i] == 1) {
+            outputIsNull[i] = false;
+            outputColVector.set(i, arg2Scalar);
+          } else {
+            if (!arg3IsNull[i]) {
+              outputIsNull[i] = false;
+              outputColVector.set(i, arg3ColVector.asScratchIntervalDayTime(i));
+            } else {
+              outputIsNull[i] = true;
+              outputColVector.noNulls = false;
+            }
+          }
         }
       } else {
         for(int i = 0; i != n; i++) {
-          outputColVector.set(i, vector1[i] == 1 ? arg2Scalar : arg3ColVector.asScratchIntervalDayTime(i));
+          if (vector1[i] == 1) {
+            outputIsNull[i] = false;
+            outputColVector.set(i, arg2Scalar);
+          } else {
+            if (!arg3IsNull[i]) {
+              outputIsNull[i] = false;
+              outputColVector.set(i, arg3ColVector.asScratchIntervalDayTime(i));
+            } else {
+              outputIsNull[i] = true;
+              outputColVector.noNulls = false;
+            }
+          }
         }
       }
     } else /* there are nulls */ {
+
       if (batch.selectedInUse) {
         for(int j = 0; j != n; j++) {
           int i = sel[j];
-          outputColVector.set(i, !arg1ColVector.isNull[i] && vector1[i] == 1 ?
-              arg2Scalar : arg3ColVector.asScratchIntervalDayTime(i));
-          outputIsNull[i] = (!arg1ColVector.isNull[i] && vector1[i] == 1 ?
-              false : arg3ColVector.isNull[i]);
+          if (!arg1ColVector.isNull[i] && vector1[i] == 1) {
+            outputIsNull[i] = false;
+            outputColVector.set(i, arg2Scalar);
+          } else {
+            if (!arg3IsNull[i]) {
+              outputIsNull[i] = false;
+              outputColVector.set(i, arg3ColVector.asScratchIntervalDayTime(i));
+            } else {
+              outputIsNull[i] = true;
+              outputColVector.noNulls = false;
+            }
+          }
         }
       } else {
         for(int i = 0; i != n; i++) {
-          outputColVector.set(i, !arg1ColVector.isNull[i] && vector1[i] == 1 ?
-              arg2Scalar : arg3ColVector.asScratchIntervalDayTime(i));
-          outputIsNull[i] = (!arg1ColVector.isNull[i] && vector1[i] == 1 ?
-              false : arg3ColVector.isNull[i]);
+          if (!arg1ColVector.isNull[i] && vector1[i] == 1) {
+            outputIsNull[i] = false;
+            outputColVector.set(i, arg2Scalar);
+          } else {
+            if (!arg3IsNull[i]) {
+              outputIsNull[i] = false;
+              outputColVector.set(i, arg3ColVector.asScratchIntervalDayTime(i));
+            } else {
+              outputIsNull[i] = true;
+              outputColVector.noNulls = false;
+            }
+          }
         }
       }
     }
