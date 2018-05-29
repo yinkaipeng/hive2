@@ -187,6 +187,7 @@
     <stax.version>1.0.1</stax.version>
     <slf4j.version>1.7.10</slf4j.version>
     <ST4.version>4.0.4</ST4.version>
+    <storage-api.version>2.1.0.2.6.3.0-SNAPSHOT</storage-api.version>
     <tez.version>0.8.4.2.6.3.0-SNAPSHOT</tez.version>
     <slider.version>0.92.0.2.6.3.0-SNAPSHOT</slider.version>
     <super-csv.version>2.2.0</super-csv.version>
