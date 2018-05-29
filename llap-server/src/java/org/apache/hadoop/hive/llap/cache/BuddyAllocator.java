@@ -17,6 +17,7 @@
  */
 package org.apache.hadoop.hive.llap.cache;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -43,9 +44,10 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.llap.io.api.impl.LlapIoImpl;
 import org.apache.hadoop.hive.llap.metrics.LlapDaemonCacheMetrics;
+import org.apache.hadoop.hive.ql.io.orc.encoded.StoppableAllocator;
 
 public final class BuddyAllocator
-  implements EvictionAwareAllocator, BuddyAllocatorMXBean, LlapOomDebugDump {
+  implements EvictionAwareAllocator, StoppableAllocator, BuddyAllocatorMXBean, LlapOomDebugDump {
   private final Arena[] arenas;
   private final AtomicInteger allocatedArenas = new AtomicInteger(0);
 
@@ -182,9 +184,15 @@ public final class BuddyAllocator
     metrics.incrAllocatedArena();
   }
 
-  // TODO: would it make sense to return buffers asynchronously?
+
   @Override
   public void allocateMultiple(MemoryBuffer[] dest, int size)
+      throws AllocatorOutOfMemoryException {
+    allocateMultiple(dest, size, null);
+  }
+
+  @Override
+  public void allocateMultiple(MemoryBuffer[] dest, int size, AtomicBoolean isStopped)
       throws AllocatorOutOfMemoryException {
     assert size > 0 : "size is " + size;
     if (size > maxAllocation) {
@@ -196,7 +204,7 @@ public final class BuddyAllocator
     int allocLog2 = freeListIx + minAllocLog2;
     int allocationSize = 1 << allocLog2;
     // TODO: reserving the entire thing is not ideal before we alloc anything. Interleave?
-    memoryManager.reserveMemory(dest.length << allocLog2);
+    memoryManager.reserveMemory(dest.length << allocLog2, isStopped);
     int destAllocIx = 0;
     for (int i = 0; i < dest.length; ++i) {
       if (dest[i] != null) continue;
