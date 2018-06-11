@@ -419,7 +419,6 @@ public class BytesColumnVector extends ColumnVector {
 
   // Fill the all the vector entries with provided value
   public void fill(byte[] value) {
-    noNulls = true;
     isRepeating = true;
     isNull[0] = false;
     setVal(0, value, 0, value.length);

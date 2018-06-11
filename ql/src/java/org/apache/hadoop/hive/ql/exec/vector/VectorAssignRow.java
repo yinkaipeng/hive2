@@ -400,9 +400,16 @@ public class VectorAssignRow {
           break;
         case STRING:
           {
-            Text tw = (Text) object;
-            ((BytesColumnVector) batch.cols[projectionColumnNum]).setVal(
-                batchIndex, tw.getBytes(), 0, tw.getLength());
+            if (object instanceof String) {
+              String string = (String) object;
+              byte[] bytes = string.getBytes();
+              ((BytesColumnVector) batch.cols[projectionColumnNum]).setVal(
+                  batchIndex, bytes, 0, bytes.length);
+            } else {
+              Text tw = (Text) object;
+              ((BytesColumnVector) batch.cols[projectionColumnNum]).setVal(
+                  batchIndex, tw.getBytes(), 0, tw.getLength());
+            }
           }
           break;
         case VARCHAR:

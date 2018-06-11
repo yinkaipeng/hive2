@@ -380,6 +380,164 @@ public class NullUtil {
     }
   }
 
+  /*
+   * Propagate null values for a two-input operator and set isRepeating and noNulls appropriately.
+   */
+  public static void newPropagateNullsColCol(ColumnVector inputColVector1,
+      ColumnVector inputColVector2, ColumnVector outputColVector, int[] sel,
+      int n, boolean selectedInUse) {
+
+    // We do not need to do a column reset since we are carefully changing the output.
+    outputColVector.isRepeating = false;
+
+    if (inputColVector1.noNulls && inputColVector2.noNulls) {
+      if (inputColVector1.isRepeating && inputColVector2.isRepeating) {
+        outputColVector.isNull[0] = false;
+        outputColVector.isRepeating = true;
+      } else {
+        if (selectedInUse) {
+          for(int j = 0; j != n; j++) {
+            int i = sel[j];
+            outputColVector.isNull[i] = false;
+          }
+        } else {
+          Arrays.fill(outputColVector.isNull, 0, n, false);
+        }
+      }
+    } else if (inputColVector1.noNulls && !inputColVector2.noNulls) {
+
+      if (inputColVector1.isRepeating && inputColVector2.isRepeating) {
+        if (!inputColVector2.isNull[0]) {
+          outputColVector.isNull[0] = false;
+        } else {
+          outputColVector.isNull[0] = true;
+          outputColVector.noNulls = false;
+        }
+        outputColVector.isRepeating = true;
+      } else if (inputColVector2.isRepeating) {
+        if (!inputColVector2.isNull[0]) {
+          if (selectedInUse) {
+            for(int j = 0; j != n; j++) {
+              int i = sel[j];
+              outputColVector.isNull[i] = false;
+            }
+          } else {
+            Arrays.fill(outputColVector.isNull, 0, n, false);
+          }
+        } else {
+          outputColVector.isNull[0] = true;
+          outputColVector.noNulls = false;
+          outputColVector.isRepeating = true;   // Because every value will be NULL.
+        }
+      } else {
+        outputColVector.noNulls = false;
+        if (selectedInUse) {
+          for(int j = 0; j != n; j++) {
+            int i = sel[j];
+            outputColVector.isNull[i] = inputColVector2.isNull[i];
+          }
+        } else {
+          System.arraycopy(inputColVector2.isNull, 0, outputColVector.isNull, 0, n);
+        }
+      }
+    } else if (!inputColVector1.noNulls && inputColVector2.noNulls) {
+
+      if (inputColVector1.isRepeating && inputColVector2.isRepeating) {
+        if (!inputColVector1.isNull[0]) {
+          outputColVector.isNull[0] = false;
+        } else {
+          outputColVector.isNull[0] = true;
+          outputColVector.noNulls = false;
+        }
+        outputColVector.isRepeating = true;
+      } else if (inputColVector1.isRepeating) {
+        if (!inputColVector1.isNull[0]) {
+          if (selectedInUse) {
+            for(int j = 0; j != n; j++) {
+              int i = sel[j];
+              outputColVector.isNull[i] = false;
+            }
+          } else {
+            Arrays.fill(outputColVector.isNull, 0, n, false);
+          }
+        } else {
+          outputColVector.isNull[0] = true;
+          outputColVector.noNulls = false;
+          outputColVector.isRepeating = true;   // Because every value will be NULL.
+        }
+      } else {
+        outputColVector.noNulls = false;
+        if (selectedInUse) {
+          for(int j = 0; j != n; j++) {
+            int i = sel[j];
+            outputColVector.isNull[i] = inputColVector1.isNull[i];
+          }
+        } else {
+          System.arraycopy(inputColVector1.isNull, 0, outputColVector.isNull, 0, n);
+        }
+      }
+    } else if (!inputColVector1.noNulls && !inputColVector2.noNulls) {
+
+      if (inputColVector1.isRepeating && inputColVector2.isRepeating) {
+        if (!inputColVector1.isNull[0] && !inputColVector2.isNull[0]) {
+          outputColVector.isNull[0] = false;
+        } else {
+          outputColVector.isNull[0] = true;
+          outputColVector.noNulls = false;
+        }
+        outputColVector.isRepeating = true;
+      } else if (inputColVector1.isRepeating && !inputColVector2.isRepeating) {
+
+        if (inputColVector1.isNull[0]) {
+          outputColVector.isNull[0] = true;
+          outputColVector.noNulls = false;
+          outputColVector.isRepeating = true;   // Because every value will be NULL.
+        } else {
+          outputColVector.noNulls = false;
+          if (selectedInUse) {
+             for(int j = 0; j != n; j++) {
+               int i = sel[j];
+               outputColVector.isNull[i] = inputColVector2.isNull[i];
+             }
+          } else {
+
+            // copy nulls from the non-repeating side
+            System.arraycopy(inputColVector2.isNull, 0, outputColVector.isNull, 0, n);
+          }
+        }
+      } else if (!inputColVector1.isRepeating && inputColVector2.isRepeating) {
+        if (inputColVector2.isNull[0]) {
+          outputColVector.isNull[0] = true;
+          outputColVector.noNulls = false;
+          outputColVector.isRepeating = true;   // Because every value will be NULL.
+        } else {
+          outputColVector.noNulls = false;
+          if (selectedInUse) {
+             for(int j = 0; j != n; j++) {
+               int i = sel[j];
+               outputColVector.isNull[i] = inputColVector1.isNull[i];
+             }
+          } else {
+            // copy nulls from the non-repeating side
+            System.arraycopy(inputColVector1.isNull, 0, outputColVector.isNull, 0, n);
+          }
+        }
+      } else {                      // neither side is repeating
+        outputColVector.noNulls = false;
+        if (selectedInUse) {
+          for(int j = 0; j != n; j++) {
+            int i = sel[j];
+            outputColVector.isNull[i] = inputColVector1.isNull[i] || inputColVector2.isNull[i];
+          }
+        } else {
+          for(int i = 0; i != n; i++) {
+            outputColVector.isNull[i] = inputColVector1.isNull[i] || inputColVector2.isNull[i];
+          }
+        }
+      }
+    }
+  }
+
   /**
    * Follow the convention that null decimal values are internally set to the smallest
    * positive value available. Prevents accidental zero-divide later in expression
