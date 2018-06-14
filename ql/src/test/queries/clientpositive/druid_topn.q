@@ -73,3 +73,9 @@ WHERE floor_hour(`__time`)
 GROUP BY robot, floor_hour(`__time`)
 ORDER BY m
 LIMIT 100;
+
+EXPLAIN select count(DISTINCT `robot`), sum(added), min(variation)
+FROM druid_table_1 GROUP BY `__time`;
+
+EXPLAIN select count(DISTINCT `robot`), sum(added), min(variation)
+FROM druid_table_1 GROUP BY floor_year(`__time`);
