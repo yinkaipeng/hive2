@@ -168,6 +168,7 @@ import org.apache.hadoop.hive.ql.optimizer.calcite.reloperators.HiveUnion;
 import org.apache.hadoop.hive.ql.optimizer.calcite.rules.HiveAggregateJoinTransposeRule;
 import org.apache.hadoop.hive.ql.optimizer.calcite.rules.HiveAggregateProjectMergeRule;
 import org.apache.hadoop.hive.ql.optimizer.calcite.rules.HiveAggregatePullUpConstantsRule;
+import org.apache.hadoop.hive.ql.optimizer.calcite.rules.HiveDruidRules;
 import org.apache.hadoop.hive.ql.optimizer.calcite.rules.HiveExceptRewriteRule;
 import org.apache.hadoop.hive.ql.optimizer.calcite.rules.HiveExpandDistinctAggregatesRule;
 import org.apache.hadoop.hive.ql.optimizer.calcite.rules.HiveFilterAggregateTransposeRule;
@@ -1489,8 +1490,10 @@ public class CalcitePlanner extends SemanticAnalyzer {
               DruidRules.FILTER,
               DruidRules.PROJECT_FILTER_TRANSPOSE_RULE,
               DruidRules.AGGREGATE_FILTER_TRANSPOSE_RULE,
+              HiveDruidRules.EXPAND_SINGLE_DISTINCT_PROJECT_AGGREGATES_DRUID_RULE,
               DruidRules.PROJECT_AGGREGATE,
               DruidRules.PROJECT,
+              HiveDruidRules.EXPAND_SINGLE_DISTINCT_AGGREGATES_DRUID_RULE,
               DruidRules.AGGREGATE,
               DruidRules.FILTER_AGGREGATE_TRANSPOSE_RULE,
               DruidRules.FILTER_PROJECT_TRANSPOSE_RULE,
