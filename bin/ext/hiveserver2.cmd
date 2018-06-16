@@ -38,6 +38,12 @@ if defined HBASE_HOME (
 		for /f %%a IN ('dir /b htrace-core-**.jar') do (
 		  call :AddToHiveHbasePath  %HBASE_HOME%\lib\%%a
 		) 
+		for /f %%a IN ('dir /b htrace-core4-**.jar') do (
+		  call :AddToHiveHbasePath  %HBASE_HOME%\lib\%%a
+		) 
+		for /f %%a IN ('dir /b threadly-**.jar') do (
+		  call :AddToHiveHbasePath  %HBASE_HOME%\lib\%%a
+		) 
 		for /f %%a IN ('dir /b hbase-common-**-hadoop2.jar') do (
 		  call :AddToHiveHbasePath  %HBASE_HOME%\lib\%%a
 		) 
