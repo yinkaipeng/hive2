@@ -368,6 +368,7 @@ public class HiveProtoLoggingHook implements ExecuteWithHookContext {
       ApplicationId llapId = determineLlapId(conf, executionMode);
       if (llapId != null) {
         addMapEntry(builder, OtherInfoType.LLAP_APP_ID, llapId.toString());
+        builder.setQueue(conf.get(HiveConf.ConfVars.LLAP_DAEMON_QUEUE_NAME.varname));
       }
 
       conf.stripHiddenConfigurations(conf);
@@ -397,7 +398,14 @@ public class HiveProtoLoggingHook implements ExecuteWithHookContext {
         builder.setOperationId(hookContext.getOperationId());
       }
       addMapEntry(builder, OtherInfoType.STATUS, Boolean.toString(success));
-      JSONObject perfObj = new JSONObject(hookContext.getPerfLogger().getEndTimes());
+      JSONObject perfObj = new JSONObject();
+      for (String key : hookContext.getPerfLogger().getEndTimes().keySet()) {
+        try {
+          perfObj.put(key, hookContext.getPerfLogger().getDuration(key));
+        } catch (JSONException e) {
+          LOG.error("Error while creating json perfObj.", e);
+        }
+      }
       addMapEntry(builder, OtherInfoType.PERF, perfObj.toString());
 
       return builder.build();
