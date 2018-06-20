@@ -4665,7 +4665,6 @@ public class TestVectorStringExpressions {
         outCol.start[0], outCol.length[0]);
     Assert.assertEquals(0, cmp);
     Assert.assertTrue(outCol.isRepeating);
-    Assert.assertFalse(outCol.noNulls);
 
     // no nulls, is repeating
     batch = makeStringBatch();
@@ -4728,7 +4727,6 @@ public class TestVectorStringExpressions {
         outCol.start[0], outCol.length[0]);
     Assert.assertEquals(0, cmp);
     Assert.assertTrue(outCol.isRepeating);
-    Assert.assertFalse(outCol.noNulls);
 
     // no nulls, is repeating
     batch = makeStringBatch();
@@ -4791,7 +4789,6 @@ public class TestVectorStringExpressions {
         outCol.start[0], outCol.length[0]);
     Assert.assertEquals(0, cmp);
     Assert.assertTrue(outCol.isRepeating);
-    Assert.assertFalse(outCol.noNulls);
 
     // no nulls, is repeating
     batch = makeStringBatch();
@@ -4913,7 +4910,6 @@ public class TestVectorStringExpressions {
     batch.cols[0].noNulls = true;
     expr.evaluate(batch);
     Assert.assertEquals(false, outCol.isRepeating);
-    Assert.assertEquals(true,  outCol.noNulls);
     cmp = StringExpr.compare(red, 0, red.length, outCol.vector[2],
         outCol.start[2], outCol.length[2]);
     Assert.assertEquals(0, cmp);
