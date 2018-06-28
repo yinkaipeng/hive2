@@ -90,7 +90,7 @@ public class <ClassName> extends VectorExpression {
           // The following may override a "false" null setting if an error or overflow occurs.
           <FuncName>(i, vector[i], outputColVector);
         }
-     } else {
+      } else {
         // Assume it is almost always a performance win to fill all of isNull so we can
         // safely reset noNulls.
         Arrays.fill(outputIsNull, false);

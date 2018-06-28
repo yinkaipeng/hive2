@@ -24,6 +24,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
@@ -223,11 +228,11 @@ public class GenVectorCode extends Task {
       {"ColumnDivideScalar", "Modulo", "long", "double", "%"},
       {"ColumnDivideScalar", "Modulo", "double", "long", "%"},
       {"ColumnDivideScalar", "Modulo", "double", "double", "%"},
-      {"ScalarDivideColumn", "Modulo", "long", "long", "%"},
+      {"ScalarDivideColumn", "Modulo", "long", "long", "%", "MANUAL_DIVIDE_BY_ZERO_CHECK"},
       {"ScalarDivideColumn", "Modulo", "long", "double", "%"},
       {"ScalarDivideColumn", "Modulo", "double", "long", "%"},
       {"ScalarDivideColumn", "Modulo", "double", "double", "%"},
-      {"ColumnDivideColumn", "Modulo", "long", "long", "%"},
+      {"ColumnDivideColumn", "Modulo", "long", "long", "%", "MANUAL_DIVIDE_BY_ZERO_CHECK"},
       {"ColumnDivideColumn", "Modulo", "long", "double", "%"},
       {"ColumnDivideColumn", "Modulo", "double", "long", "%"},
       {"ColumnDivideColumn", "Modulo", "double", "double", "%"},
@@ -2430,6 +2435,7 @@ public class GenVectorCode extends Task {
     String inputColumnVectorType1 = this.getColumnVectorType(operandType1);
     String inputColumnVectorType2 = this.getColumnVectorType(operandType2);
     String operatorSymbol = tdesc[4];
+    String ifDefined = tdesc.length == 6 ? tdesc[5] : "";
 
     //Read the template into a string;
     File templateFile = new File(joinPath(this.expressionTemplateDirectory, tdesc[0] + ".txt"));
@@ -2444,6 +2450,9 @@ public class GenVectorCode extends Task {
     templateString = templateString.replaceAll("<OperandType2>", operandType2);
     templateString = templateString.replaceAll("<ReturnType>", returnType);
     templateString = templateString.replaceAll("<CamelReturnType>", getCamelCaseType(returnType));
+
+    templateString = evaluateIfDefined(templateString, ifDefined);
+
     writeFile(templateFile.lastModified(), expressionOutputDirectory, expressionClassesDirectory,
         className, templateString);
 
@@ -2507,6 +2516,8 @@ public class GenVectorCode extends Task {
     String inputColumnVectorType = this.getColumnVectorType(operandType1);
     String operatorSymbol = tdesc[4];
 
+    String ifDefined = (tdesc.length == 6 ? tdesc[5] : "");
+
     //Read the template into a string;
     File templateFile = new File(joinPath(this.expressionTemplateDirectory, tdesc[0] + ".txt"));
     String templateString = readFile(templateFile);
@@ -2518,6 +2529,9 @@ public class GenVectorCode extends Task {
     templateString = templateString.replaceAll("<OperandType1>", operandType1);
     templateString = templateString.replaceAll("<OperandType2>", operandType2);
     templateString = templateString.replaceAll("<ReturnType>", returnType);
+    templateString = templateString.replaceAll("<CamelReturnType>", getCamelCaseType(returnType));
+    templateString = evaluateIfDefined(templateString, ifDefined);
+
     writeFile(templateFile.lastModified(), expressionOutputDirectory, expressionClassesDirectory,
         className, templateString);
 
@@ -2587,6 +2601,7 @@ public class GenVectorCode extends Task {
              returnType == null ? "long" : returnType);
      String inputColumnVectorType = this.getColumnVectorType(operandType2);
      String operatorSymbol = tdesc[4];
+     String ifDefined = (tdesc.length == 6 ? tdesc[5] : "");
 
      //Read the template into a string;
      File templateFile = new File(joinPath(this.expressionTemplateDirectory, tdesc[0] + ".txt"));
@@ -2600,6 +2615,7 @@ public class GenVectorCode extends Task {
      templateString = templateString.replaceAll("<OperandType2>", operandType2);
      templateString = templateString.replaceAll("<ReturnType>", returnType);
      templateString = templateString.replaceAll("<CamelReturnType>", getCamelCaseType(returnType));
+     templateString = evaluateIfDefined(templateString, ifDefined);
      writeFile(templateFile.lastModified(), expressionOutputDirectory, expressionClassesDirectory,
         className, templateString);
 
@@ -3122,6 +3138,162 @@ public class GenVectorCode extends Task {
   private static boolean isTimestampIntervalType(String type) {
     return (type.equals("timestamp")
         || type.equals("interval_day_time"));
+  }
+
+  private boolean containsDefinedStrings(Set<String> defineSet, String commaDefinedString) {
+    String[] definedStrings = commaDefinedString.split(",");
+    boolean result = false;
+    for (String definedString : definedStrings) {
+      if (defineSet.contains(definedString)) {
+        result = true;
+        break;
+      }
+    }
+    return result;
+  }
+
+  private boolean matchesDefinedStrings(Set<String> defineSet, Set<String> newIfDefinedSet,
+      IfDefinedMode ifDefinedMode) {
+    switch (ifDefinedMode) {
+    case SINGLE:
+    case AND_ALL:
+      for (String candidateString : newIfDefinedSet) {
+        if (!defineSet.contains(candidateString)) {
+          return false;
+        }
+      }
+      return true;
+    case OR_ANY:
+      for (String candidateString : newIfDefinedSet) {
+        if (defineSet.contains(candidateString)) {
+          return true;
+        }
+      }
+      return false;
+    default:
+      throw new RuntimeException("Unexpected if defined mode " + ifDefinedMode);
+    }
+  }
+
+  public enum IfDefinedMode {
+    SINGLE,
+    AND_ALL,
+    OR_ANY;
+  }
+
+  private IfDefinedMode parseIfDefinedMode(String newIfDefinedString, Set<String> newIfDefinedSet) {
+    final String[] newIfDefinedStrings;
+    final IfDefinedMode ifDefinedMode;
+    int index = newIfDefinedString.indexOf("&&");
+    if (index != -1) {
+      newIfDefinedStrings = newIfDefinedString.split("&&");
+      ifDefinedMode = IfDefinedMode.AND_ALL;
+    } else {
+      index = newIfDefinedString.indexOf("||");
+      if (index == -1) {
+
+        // One element.
+        newIfDefinedSet.add(newIfDefinedString);
+        return IfDefinedMode.SINGLE;
+      } else {
+        newIfDefinedStrings = newIfDefinedString.split("\\|\\|");
+        ifDefinedMode = IfDefinedMode.OR_ANY;
+      }
+    }
+    for (String newDefinedString : newIfDefinedStrings) {
+      newIfDefinedSet.add(newDefinedString);
+    }
+    return ifDefinedMode;
+  }
+
+  private int doIfDefinedStatement(String[] lines, int index, Set<String> desiredIfDefinedSet,
+      boolean outerInclude, StringBuilder sb) {
+    String ifLine = lines[index];
+    final int ifLineNumber = index + 1;
+
+    String ifDefinedString = ifLine.substring("#IF ".length());
+    Set<String> ifDefinedSet = new HashSet<String>();
+    IfDefinedMode ifDefinedMode = parseIfDefinedMode(ifDefinedString, ifDefinedSet);
+    boolean includeBody = matchesDefinedStrings(desiredIfDefinedSet, ifDefinedSet, ifDefinedMode);
+
+    index++;
+    final int end = lines.length;
+    while (true) {
+      if (index >= end) {
+        throw new RuntimeException("Unmatched #IF at line " + index + " for " + ifDefinedString);
+      }
+      String line = lines[index];
+      if (line.length() == 0 || line.charAt(0) != '#') {
+        if (outerInclude && includeBody) {
+          sb.append(line);
+          sb.append("\n");
+        }
+        index++;
+        continue;
+      }
+
+      // A pound # statement (IF/ELSE/ENDIF).
+      if (line.startsWith("#IF ")) {
+        // Recurse.
+        index =
+            doIfDefinedStatement(
+                lines, index, desiredIfDefinedSet, outerInclude && includeBody, sb);
+      } else if (line.equals("#ELSE")) {
+        // Flip inclusion.
+        includeBody = !includeBody;
+        index++;
+      } else if (line.equals("#ENDIF")) {
+        throw new RuntimeException("Missing defined strings with #ENDIF on line " + (index + 1));
+      } else if (line.startsWith("#ENDIF ")) {
+        String endCommaDefinedString = line.substring("#ENDIF ".length());
+        if (!ifDefinedString.equals(endCommaDefinedString)) {
+          throw new RuntimeException(
+              "#ENDIF defined names \"" + endCommaDefinedString + "\" (line " + ifLineNumber +
+              " do not match \"" + ifDefinedString + "\" (line " + (index + 1) + ")");
+        }
+        return ++index;
+      } else {
+        throw new RuntimeException("Problem with #IF/#ELSE/#ENDIF on line " + (index + 1) + ": " + line);
+      }
+    }
+  }
+
+  private void doEvaluateIfDefined(String[] lines, int index, Set<String> definedSet,
+      boolean outerInclude, StringBuilder sb) {
+      final int end = lines.length;
+      while (true) {
+        if (index >= end) {
+          break;
+        }
+        String line = lines[index];
+        if (line.length() == 0 || line.charAt(0) != '#') {
+          if (outerInclude) {
+            sb.append(line);
+            sb.append("\n");
+          }
+          index++;
+          continue;
+        }
+
+        // A pound # statement (IF/ELSE/ENDIF).
+        if (line.startsWith("#IF ")) {
+          index = doIfDefinedStatement(lines, index, definedSet, outerInclude, sb);
+        } else {
+          throw new RuntimeException("Problem with #IF/#ELSE/#ENDIF on line " + (index + 1) + ": " + line);
+        }
+      }
+  }
+
+  private String evaluateIfDefined(String linesString, List<String> definedList) {
+    String[] lines = linesString.split("\n");
+    Set<String> definedSet = new HashSet<String>(definedList);
+    StringBuilder sb = new StringBuilder();
+    doEvaluateIfDefined(lines, 0, definedSet, true, sb);
+    return sb.toString();
+  }
+
+  private String evaluateIfDefined(String linesString, String definedString) {
+    return evaluateIfDefined(linesString, Arrays.asList(definedString.split(",")));
   }
 
   static void writeFile(long templateTime, String outputDir, String classesDir,
