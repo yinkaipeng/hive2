@@ -513,6 +513,13 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         Timer cleaner = new Timer("Repl Dump Dir Cleaner Thread", true);
         cleaner.schedule(new DumpDirCleanerTask(hiveConf), cleanFreq, cleanFreq);
       }
+
+      long cleanFreqHiveEvents = hiveConf.getTimeVar(ConfVars.HIVE_PROTO_EVENTS_CLEAN_FREQ, TimeUnit.MILLISECONDS);
+      if (cleanFreqHiveEvents > 0) {
+        // In default config, there is no timer.
+        Timer cleaner = new Timer("Hive Event Cleaner Thread", true);
+        cleaner.schedule(new HiveProtoEventsCleanerTask(hiveConf), cleanFreqHiveEvents, cleanFreqHiveEvents);
+      }
       expressionProxy = PartFilterExprUtil.createExpressionProxy(hiveConf);
       fileMetadataManager = new FileMetadataManager((ThreadLocalRawStore)this, hiveConf);
     }

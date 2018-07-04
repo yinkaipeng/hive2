@@ -60,7 +60,7 @@ public class TestHiveProtoLoggingHook {
   public void setup() throws Exception {
     conf = new HiveConf();
     tmpFolder = folder.newFolder().getAbsolutePath();
-    conf.set(HiveProtoLoggingHook.HIVE_EVENTS_BASE_PATH, tmpFolder);
+    conf.setVar(HiveConf.ConfVars.HIVE_PROTO_EVENTS_BASE_PATH, tmpFolder);
     QueryState state = new QueryState.Builder().withHiveConf(conf).build();
     @SuppressWarnings("serial")
     QueryPlan queryPlan = new QueryPlan(HiveOperation.QUERY) {};
@@ -69,7 +69,6 @@ public class TestHiveProtoLoggingHook {
     queryPlan.setRootTasks(new ArrayList<>());
     queryPlan.setInputs(new HashSet<>());
     queryPlan.setOutputs(new HashSet<>());
-
     PerfLogger perf = PerfLogger.getPerfLogger(conf, true);
     context = new HookContext(queryPlan, state, null, "test_user", "192.168.10.10",
         "hive_addr", "test_op_id", "test_session_id", "test_thread_id", true, perf);
