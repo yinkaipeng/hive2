@@ -435,6 +435,10 @@ public class QB {
     return encryptedTargetTablePaths;
   }
 
+  public boolean isMultiDestQuery() {
+    return qbp != null && qbp.getClauseNamesForDest() != null && qbp.getClauseNamesForDest().size() > 1;
+  }
+
   public HashMap<String, Table> getViewToTabSchema() {
     return viewAliasToViewSchema;
   }

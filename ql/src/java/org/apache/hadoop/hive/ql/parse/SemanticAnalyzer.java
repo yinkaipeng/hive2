@@ -11355,13 +11355,24 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
   }
 
   void analyzeInternal(ASTNode ast, PlannerContextFactory pcf) throws SemanticException {
-    // 1. Generate Resolved Parse tree from syntax tree
     LOG.info("Starting Semantic Analysis");
+    // 1. Generate Resolved Parse tree from syntax tree
     //change the location of position alias process here
     processPositionAlias(ast);
     PlannerContext plannerCtx = pcf.create();
     if (!genResolvedParseTree(ast, plannerCtx)) {
       return;
+    }
+
+    ASTNode astForMasking;
+    if (isCBOExecuted() && needsTransform() &&
+        (qb.isCTAS() || qb.isView() || qb.isMultiDestQuery())) {
+      // If we use CBO and we may apply masking/filtering policies, we create a copy of the ast.
+      // The reason is that the generation of the operator tree may modify the initial ast,
+      // but if we need to parse for a second time, we would like to parse the unmodified ast.
+      astForMasking = (ASTNode) ParseDriver.adaptor.dupTree(ast);
+    } else {
+      astForMasking = ast;
     }
 
     // 2. Gen OP Tree from resolved Parse Tree
@@ -11370,9 +11381,9 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     if (!unparseTranslator.isEnabled() &&
             (tableMask.isEnabled() && analyzeRewrite == null)) {
       // Here we rewrite the * and also the masking table
-      ASTNode tree = rewriteASTWithMaskAndFilter(tableMask, ast, ctx.getTokenRewriteStream(),
+      ASTNode tree = rewriteASTWithMaskAndFilter(tableMask, astForMasking, ctx.getTokenRewriteStream(),
               ctx, db, tabNameToTabObject, ignoredTokens);
-      if (tree != ast) {
+      if (tree != astForMasking) {
         plannerCtx = pcf.create();
         ctx.setSkipTableMasking(true);
         init(true);
@@ -13657,6 +13668,11 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     dot.addChild(new ASTNode(new CommonToken(HiveParser.Identifier, col)));
     selexpr.addChild(dot);
     return selexpr;
+  }
+  
+  private boolean needsTransform() {
+    return SessionState.get().getAuthorizerV2() != null &&
+        SessionState.get().getAuthorizerV2().needTransform();
   }
 
   private void copyInfoToQueryProperties(QueryProperties queryProperties) {
