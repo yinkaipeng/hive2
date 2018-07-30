@@ -53,6 +53,7 @@ STAGE PLANS:
                           serde: org.apache.hadoop.hive.ql.io.orc.OrcSerde
                           name: default.orcfile_merge2a
             Execution mode: llap
+            LLAP IO: no inputs
 
   Stage: Stage-2
     Dependency Collection

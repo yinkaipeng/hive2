@@ -417,7 +417,7 @@ STAGE PLANS:
             alias: decimal_2
             Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: NONE
             Select Operator
-              expressions: UDFToString(t) (type: string)
+              expressions: CAST( t AS STRING) (type: string)
               outputColumnNames: _col0
               Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: NONE
               Reduce Output Operator
@@ -452,7 +452,7 @@ POSTHOOK: query: select cast(t as string) from decimal_2 order by t
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@decimal_2
 #### A masked pattern was here ####
-17.29
+17.290000000
 PREHOOK: query: insert overwrite table decimal_2
   select cast('3404045.5044003' as decimal(18,9)) from src tablesample (1 rows)
 PREHOOK: type: QUERY
@@ -860,7 +860,7 @@ STAGE PLANS:
             alias: decimal_2
             Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: NONE
             Select Operator
-              expressions: UDFToString(t) (type: string)
+              expressions: CAST( t AS STRING) (type: string)
               outputColumnNames: _col0
               Statistics: Num rows: 1 Data size: 112 Basic stats: COMPLETE Column stats: NONE
               Reduce Output Operator
@@ -895,7 +895,7 @@ POSTHOOK: query: select cast(t as string) from decimal_2 order by t
 POSTHOOK: type: QUERY
 POSTHOOK: Input: default@decimal_2
 #### A masked pattern was here ####
-3404045.5044003
+3404045.504400300
 PREHOOK: query: explain
 select cast(3.14 as decimal(4,2)) as c from decimal_2 order by c
 PREHOOK: type: QUERY

@@ -31,6 +31,7 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorUtils.PrimitiveGrouping;
+import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 import org.junit.Test;
 
 import junit.framework.TestCase;
@@ -222,5 +223,18 @@ public class TestPrimitiveObjectInspectorUtils extends TestCase {
   public void testGetTimestampFromString() {
     DateFormat localDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     assertEquals("2015-02-07 00:00:00.000", localDateFormat.format(PrimitiveObjectInspectorUtils.getTimestampFromString("2015-02-07")));
+  }
+
+@Test public void testDecimalToString() {
+    HiveDecimal dec1 = HiveDecimal.create("0.0");
+    PrimitiveObjectInspector decOI_7_0 =
+        PrimitiveObjectInspectorFactory.getPrimitiveJavaObjectInspector(new DecimalTypeInfo(7, 0));
+    PrimitiveObjectInspector decOI_7_1 =
+        PrimitiveObjectInspectorFactory.getPrimitiveJavaObjectInspector(new DecimalTypeInfo(7, 1));
+    PrimitiveObjectInspector decOI_7_3 =
+        PrimitiveObjectInspectorFactory.getPrimitiveJavaObjectInspector(new DecimalTypeInfo(7, 3));
+    assertEquals("0", PrimitiveObjectInspectorUtils.getString(dec1, decOI_7_0));
+    assertEquals("0.0", PrimitiveObjectInspectorUtils.getString(dec1, decOI_7_1));
+    assertEquals("0.000", PrimitiveObjectInspectorUtils.getString(dec1, decOI_7_3));
   }
 }

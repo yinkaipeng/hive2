@@ -42,8 +42,7 @@ import org.apache.hadoop.hive.ql.plan.ExprNodeColumnDesc;
 import org.apache.hadoop.hive.ql.plan.ExprNodeConstantDesc;
 import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
 import org.apache.hadoop.hive.ql.plan.ExprNodeGenericFuncDesc;
-import org.apache.hadoop.hive.ql.udf.UDFLike;
-import org.apache.hadoop.hive.ql.udf.UDFToString;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDFToString;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPAnd;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPEqualOrGreaterThan;
@@ -384,12 +383,11 @@ public class TestAccumuloRangeGenerator {
     ExprNodeGenericFuncDesc addition = new ExprNodeGenericFuncDesc(TypeInfoFactory.intTypeInfo, plus, Arrays.asList(fourty, fifty));
 
     // cast(.... as string)
-    UDFToString stringCast = new UDFToString();
-    GenericUDFBridge stringCastBridge = new GenericUDFBridge("cast", false, stringCast.getClass().getName());
+    GenericUDFToString stringCast = new GenericUDFToString();
 
     // cast (40 + 50 as string)
     ExprNodeGenericFuncDesc cast = new ExprNodeGenericFuncDesc(TypeInfoFactory.stringTypeInfo,
-        stringCastBridge, "cast", Collections.<ExprNodeDesc> singletonList(addition));
+        stringCast, "cast", Collections.<ExprNodeDesc> singletonList(addition));
 
     ExprNodeDesc key = new ExprNodeColumnDesc(TypeInfoFactory.stringTypeInfo, "key", null,
         false);

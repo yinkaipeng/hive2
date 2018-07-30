@@ -280,6 +280,7 @@ STAGE DEPENDENCIES:
 STAGE PLANS:
   Stage: Stage-1
     Tez
+#### A masked pattern was here ####
       Edges:
         Reducer 2 <- Map 1 (SIMPLE_EDGE)
         Reducer 3 <- Reducer 2 (SIMPLE_EDGE)
@@ -291,7 +292,7 @@ STAGE PLANS:
                   alias: vectortab2korc
                   Statistics: Num rows: 2000 Data size: 918712 Basic stats: COMPLETE Column stats: NONE
                   Select Operator
-                    expressions: concat(concat(concat('Quarter ', UDFToString(UDFToInteger(((UDFToDouble((month(dt) - 1)) / 3.0) + 1.0)))), '-'), UDFToString(year(dt))) (type: string)
+                    expressions: concat(concat(concat('Quarter ', CAST( UDFToInteger(((UDFToDouble((month(dt) - 1)) / 3.0) + 1.0)) AS STRING)), '-'), CAST( year(dt) AS STRING)) (type: string)
                     outputColumnNames: _col0
                     Statistics: Num rows: 2000 Data size: 918712 Basic stats: COMPLETE Column stats: NONE
                     Group By Operator
@@ -304,7 +305,9 @@ STAGE PLANS:
                         sort order: +
                         Map-reduce partition columns: _col0 (type: string)
                         Statistics: Num rows: 2000 Data size: 918712 Basic stats: COMPLETE Column stats: NONE
+                        TopN Hash Memory Usage: 0.1
             Execution mode: vectorized, llap
+            LLAP IO: all inputs
         Reducer 2 
             Execution mode: vectorized, llap
             Reduce Operator Tree:
@@ -317,8 +320,9 @@ STAGE PLANS:
                   key expressions: _col0 (type: string)
                   sort order: +
                   Statistics: Num rows: 1000 Data size: 459356 Basic stats: COMPLETE Column stats: NONE
+                  TopN Hash Memory Usage: 0.1
         Reducer 3 
-            Execution mode: vectorized, uber
+            Execution mode: vectorized, llap
             Reduce Operator Tree:
               Select Operator
                 expressions: KEY.reducesinkkey0 (type: string)
@@ -331,8 +335,8 @@ STAGE PLANS:
                     compressed: false
                     Statistics: Num rows: 50 Data size: 22950 Basic stats: COMPLETE Column stats: NONE
                     table:
-                        input format: org.apache.hadoop.mapred.TextInputFormat
-                        output format: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+                        input format: org.apache.hadoop.mapred.SequenceFileInputFormat
+                        output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat
                         serde: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
 
   Stage: Stage-0

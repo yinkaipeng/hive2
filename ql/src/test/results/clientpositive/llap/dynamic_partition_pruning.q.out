@@ -2111,19 +2111,19 @@ STAGE PLANS:
             Map Operator Tree:
                 TableScan
                   alias: srcpart
-                  filterExpr: UDFToString((UDFToDouble(hr) * 2.0)) is not null (type: boolean)
+                  filterExpr: CAST( (UDFToDouble(hr) * 2.0) AS STRING) is not null (type: boolean)
                   Statistics: Num rows: 2000 Data size: 21248 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
-                    predicate: UDFToString((UDFToDouble(hr) * 2.0)) is not null (type: boolean)
+                    predicate: CAST( (UDFToDouble(hr) * 2.0) AS STRING) is not null (type: boolean)
                     Statistics: Num rows: 2000 Data size: 21248 Basic stats: COMPLETE Column stats: NONE
                     Select Operator
                       expressions: hr (type: string)
                       outputColumnNames: _col0
                       Statistics: Num rows: 2000 Data size: 21248 Basic stats: COMPLETE Column stats: NONE
                       Reduce Output Operator
-                        key expressions: UDFToString((UDFToDouble(_col0) * 2.0)) (type: string)
+                        key expressions: CAST( (UDFToDouble(_col0) * 2.0) AS STRING) (type: string)
                         sort order: +
-                        Map-reduce partition columns: UDFToString((UDFToDouble(_col0) * 2.0)) (type: string)
+                        Map-reduce partition columns: CAST( (UDFToDouble(_col0) * 2.0) AS STRING) (type: string)
                         Statistics: Num rows: 2000 Data size: 21248 Basic stats: COMPLETE Column stats: NONE
             Execution mode: llap
             LLAP IO: no inputs
@@ -2131,22 +2131,22 @@ STAGE PLANS:
             Map Operator Tree:
                 TableScan
                   alias: srcpart_double_hour
-                  filterExpr: ((UDFToDouble(hour) = 11.0) and UDFToString(hr) is not null) (type: boolean)
+                  filterExpr: ((UDFToDouble(hour) = 11.0) and CAST( hr AS STRING) is not null) (type: boolean)
                   Statistics: Num rows: 2 Data size: 14 Basic stats: COMPLETE Column stats: NONE
                   Filter Operator
-                    predicate: ((UDFToDouble(hour) = 11.0) and UDFToString(hr) is not null) (type: boolean)
+                    predicate: ((UDFToDouble(hour) = 11.0) and CAST( hr AS STRING) is not null) (type: boolean)
                     Statistics: Num rows: 1 Data size: 7 Basic stats: COMPLETE Column stats: NONE
                     Select Operator
                       expressions: hr (type: double)
                       outputColumnNames: _col0
                       Statistics: Num rows: 1 Data size: 7 Basic stats: COMPLETE Column stats: NONE
                       Reduce Output Operator
-                        key expressions: UDFToString(_col0) (type: string)
+                        key expressions: CAST( _col0 AS STRING) (type: string)
                         sort order: +
-                        Map-reduce partition columns: UDFToString(_col0) (type: string)
+                        Map-reduce partition columns: CAST( _col0 AS STRING) (type: string)
                         Statistics: Num rows: 1 Data size: 7 Basic stats: COMPLETE Column stats: NONE
                       Select Operator
-                        expressions: UDFToString(_col0) (type: string)
+                        expressions: CAST( _col0 AS STRING) (type: string)
                         outputColumnNames: _col0
                         Statistics: Num rows: 1 Data size: 7 Basic stats: COMPLETE Column stats: NONE
                         Group By Operator
@@ -2157,7 +2157,7 @@ STAGE PLANS:
                           Dynamic Partitioning Event Operator
                             Target column: hr (string)
                             Target Input: srcpart
-                            Partition key expr: UDFToString((UDFToDouble(hr) * 2.0))
+                            Partition key expr: CAST( (UDFToDouble(hr) * 2.0) AS STRING)
                             Statistics: Num rows: 1 Data size: 7 Basic stats: COMPLETE Column stats: NONE
                             Target Vertex: Map 1
             Execution mode: llap
@@ -2169,8 +2169,8 @@ STAGE PLANS:
                 condition map:
                      Inner Join 0 to 1
                 keys:
-                  0 UDFToString((UDFToDouble(_col0) * 2.0)) (type: string)
-                  1 UDFToString(_col0) (type: string)
+                  0 CAST( (UDFToDouble(_col0) * 2.0) AS STRING) (type: string)
+                  1 CAST( _col0 AS STRING) (type: string)
                 Statistics: Num rows: 2200 Data size: 23372 Basic stats: COMPLETE Column stats: NONE
                 Group By Operator
                   aggregations: count()

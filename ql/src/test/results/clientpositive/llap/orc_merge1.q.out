@@ -79,6 +79,7 @@ STAGE PLANS:
                           serde: org.apache.hadoop.hive.ql.io.orc.OrcSerde
                           name: default.orcfile_merge1
             Execution mode: llap
+            LLAP IO: no inputs
 
   Stage: Stage-2
     Dependency Collection
@@ -162,6 +163,7 @@ STAGE PLANS:
                           serde: org.apache.hadoop.hive.ql.io.orc.OrcSerde
                           name: default.orcfile_merge1b
             Execution mode: llap
+            LLAP IO: no inputs
 
   Stage: Stage-8
     Conditional Operator
@@ -290,6 +292,7 @@ STAGE PLANS:
                           serde: org.apache.hadoop.hive.ql.io.orc.OrcSerde
                           name: default.orcfile_merge1c
             Execution mode: llap
+            LLAP IO: no inputs
 
   Stage: Stage-8
     Conditional Operator
