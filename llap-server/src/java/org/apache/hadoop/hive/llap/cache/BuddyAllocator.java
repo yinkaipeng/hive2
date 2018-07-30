@@ -289,6 +289,14 @@ public final class BuddyAllocator
           String msg = "Failed to allocate " + size + "; at " + destAllocIx + " out of "
               + dest.length + " (entire cache is fragmented and locked, or an internal issue)";
           logOomErrorMessage(msg);
+          // Ensure all-or-nothing allocation.
+          for (int i = 0; i < destAllocIx; ++i) {
+            try {
+              deallocate(dest[i]);
+            } catch (Throwable t) {
+              LlapIoImpl.LOG.info("Failed to deallocate after a partially successful allocate: " + dest[i]);
+            }
+          }
           throw new AllocatorOutOfMemoryException(msg);
         }
         if (attempt == 0) {
