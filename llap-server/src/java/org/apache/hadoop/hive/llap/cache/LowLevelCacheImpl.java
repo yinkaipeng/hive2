@@ -20,6 +20,7 @@ package org.apache.hadoop.hive.llap.cache;
 import org.apache.orc.impl.RecordReaderUtils;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ import org.apache.hive.common.util.Ref;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 
 public class LowLevelCacheImpl implements LowLevelCache, BufferUsageManager, LlapOomDebugDump {
   private static final int DEFAULT_CLEANUP_INTERVAL = 600;
@@ -485,6 +487,10 @@ public class LowLevelCacheImpl implements LowLevelCache, BufferUsageManager, Lla
       try {
         int fileLocked = 0, fileUnlocked = 0, fileEvicted = 0;
         if (e.getValue().getCache().isEmpty()) continue;
+        List<LlapDataBuffer> lockedBufs = null;
+        if (LlapIoImpl.LOCKING_LOGGER.isTraceEnabled()) {
+          lockedBufs = new ArrayList<>();
+        }
         for (Map.Entry<Long, LlapDataBuffer> e2 : e.getValue().getCache().entrySet()) {
           int newRc = e2.getValue().incRef();
           if (newRc < 0) {
@@ -494,6 +500,9 @@ public class LowLevelCacheImpl implements LowLevelCache, BufferUsageManager, Lla
           try {
             if (newRc > 1) { // We hold one refcount.
               ++fileLocked;
+              if (lockedBufs != null) {
+                lockedBufs.add(e2.getValue());
+              }
             } else {
               ++fileUnlocked;
             }
@@ -506,6 +515,9 @@ public class LowLevelCacheImpl implements LowLevelCache, BufferUsageManager, Lla
         allEvicted += fileEvicted;
         sb.append("\n  file " + e.getKey() + ": " + fileLocked + " locked, "
             + fileUnlocked + " unlocked, " + fileEvicted + " evicted");
+        if (fileLocked > 0 && LlapIoImpl.LOCKING_LOGGER.isTraceEnabled()) {
+          LlapIoImpl.LOCKING_LOGGER.trace("locked-buffers: {}", lockedBufs);
+        }
       } finally {
         e.getValue().decRef();
       }

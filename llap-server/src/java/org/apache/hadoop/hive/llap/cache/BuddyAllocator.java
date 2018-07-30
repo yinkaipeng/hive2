@@ -721,6 +721,7 @@ public final class BuddyAllocator
     }
 
     public void deallocate(LlapDataBuffer buffer) {
+      if (buffer == null || buffer.byteBuffer == null) return; // TODO: hmm
       assert data != null;
       int headerIx = buffer.byteBuffer.position() >>> minAllocLog2,
           freeListIx = freeListFromHeader(headers[headerIx]);
