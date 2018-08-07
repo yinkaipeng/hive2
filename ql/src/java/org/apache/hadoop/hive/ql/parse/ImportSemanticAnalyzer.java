@@ -60,14 +60,11 @@ import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.metadata.InvalidTableException;
 import org.apache.hadoop.hive.ql.metadata.Table;
+import org.apache.hadoop.hive.ql.parse.repl.DumpType;
 import org.apache.hadoop.hive.ql.parse.repl.load.MetaData;
 import org.apache.hadoop.hive.ql.parse.repl.load.UpdatedMetaDataTracker;
-import org.apache.hadoop.hive.ql.plan.AddPartitionDesc;
-import org.apache.hadoop.hive.ql.plan.ImportTableDesc;
-import org.apache.hadoop.hive.ql.plan.DDLWork;
-import org.apache.hadoop.hive.ql.plan.LoadTableDesc;
+import org.apache.hadoop.hive.ql.plan.*;
 import org.apache.hadoop.hive.ql.plan.LoadTableDesc.LoadFileType;
-import org.apache.hadoop.hive.ql.plan.MoveWork;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.mapred.OutputFormat;
@@ -376,6 +373,13 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
 
   private static Task<?> createTableTask(ImportTableDesc tableDesc, EximUtil.SemanticAnalyzerWrapperContext x){
     return tableDesc.getCreateTableTask(x.getInputs(), x.getOutputs(), x.getConf());
+  }
+
+  private static Task<?> dropTableTask(Table table, EximUtil.SemanticAnalyzerWrapperContext x,
+                                       ReplicationSpec replicationSpec) {
+    DropTableDesc dropTblDesc = new DropTableDesc(table.getTableName(), table.isView(),
+            true, false, replicationSpec);
+    return TaskFactory.get(new DDLWork(x.getInputs(), x.getOutputs(), dropTblDesc), x.getConf());
   }
 
   private static Task<? extends Serializable> alterTableTask(ImportTableDesc tableDesc,
@@ -827,6 +831,7 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
       UpdatedMetaDataTracker updatedMetadata)
       throws HiveException, URISyntaxException, IOException, MetaException {
 
+    Task<?> dropTblTask = null;
     WriteEntity.WriteType lockType = WriteEntity.WriteType.DDL_NO_LOCK;
 
     // Normally, on import, trying to create a table or a partition in a db that does not yet exist
@@ -847,6 +852,15 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
         x.getLOG().info("Table {}.{} is not replaced as it is newer than the update",
                 tblDesc.getDatabaseName(), tblDesc.getTableName());
         return;
+      }
+
+      // If the table exists and we found a valid create table event, then need to drop the table first
+      // and then create it. This case is possible if the event sequence is drop_table(t1) -> create_table(t1).
+      // We need to drop here to handle the case where the previous incremental load created the table but
+      // didn't set the last repl ID due to some failure.
+      if (x.getEventType() == DumpType.EVENT_CREATE_TABLE) {
+        dropTblTask = dropTableTask(table, x, replicationSpec);
+        table = null;
       }
     } else {
       // If table doesn't exist, allow creating a new one only if the database state is older than the update.
@@ -894,7 +908,7 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
       }
 
       Task t = createTableTask(tblDesc, x);
-      table = new Table(tblDesc.getDatabaseName(), tblDesc.getTableName());
+      table = createNewTableMetadataObject(tblDesc);
 
       if (!replicationSpec.isMetadataOnly()) {
         if (isPartitioned(tblDesc)) {
@@ -911,8 +925,15 @@ public class ImportSemanticAnalyzer extends BaseSemanticAnalyzer {
           t.addDependentTask(loadTable(fromURI, table, true, new Path(tblDesc.getLocation()),replicationSpec, x));
         }
       }
-      // Simply create
-      x.getTasks().add(t);
+
+      if (dropTblTask != null) {
+        // Drop first and then create
+        dropTblTask.addDependentTask(t);
+        x.getTasks().add(dropTblTask);
+      } else {
+        // Simply create
+        x.getTasks().add(t);
+      }
     } else {
       // If table of current event has partition flag different from existing table, it means, some
       // of the previous events in same batch have drop and create table events with same same but
