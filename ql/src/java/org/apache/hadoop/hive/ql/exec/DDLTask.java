@@ -3997,6 +3997,12 @@ public class DDLTask extends Task<DDLWork> implements Serializable {
       // for dropping. Thus, we need a way to push this filter (replicationSpec.allowEventReplacementInto)
       // to the  metastore to allow it to do drop a partition or not, depending on a Predicate on the
       // parameter key values.
+
+      if (tbl == null) {
+        // If table is missing, then partitions are also would've been dropped. Just no-op.
+        return;
+      }
+
       for (DropTableDesc.PartSpec partSpec : dropTbl.getPartSpecs()){
         List<Partition> partitions = new ArrayList<>();
         try {
