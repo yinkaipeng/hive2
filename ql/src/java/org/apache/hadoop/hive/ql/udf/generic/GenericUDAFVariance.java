@@ -18,6 +18,8 @@
 package org.apache.hadoop.hive.ql.udf.generic;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +53,58 @@ import org.apache.hadoop.util.StringUtils;
 public class GenericUDAFVariance extends AbstractGenericUDAFResolver {
 
   static final Logger LOG = LoggerFactory.getLogger(GenericUDAFVariance.class.getName());
+
+  public static enum VarianceKind {
+    NONE,
+    VARIANCE,
+    VARIANCE_SAMPLE,
+    STANDARD_DEVIATION,
+    STANDARD_DEVIATION_SAMPLE;
+
+    public static final Map<String,VarianceKind> nameMap = new HashMap<String,VarianceKind>();
+    static
+    {
+      nameMap.put("variance", VARIANCE);
+      nameMap.put("var_pop", VARIANCE);
+
+      nameMap.put("var_samp", VARIANCE_SAMPLE);
+
+      nameMap.put("std", STANDARD_DEVIATION);
+      nameMap.put("stddev", STANDARD_DEVIATION);
+      nameMap.put("stddev_pop", STANDARD_DEVIATION);
+
+      nameMap.put("stddev_samp", STANDARD_DEVIATION_SAMPLE);
+    }
+  };
+
+  public static boolean isVarianceFamilyName(String name) {
+    return (VarianceKind.nameMap.get(name) != null);
+  }
+
+  public static boolean isVarianceNull(long count, VarianceKind varianceKind) {
+    switch (varianceKind) {
+    case VARIANCE:
+    case STANDARD_DEVIATION:
+      return (count == 0);
+    case VARIANCE_SAMPLE:
+    case STANDARD_DEVIATION_SAMPLE:
+      return (count <= 1);
+    default:
+      throw new RuntimeException("Unexpected variance kind " + varianceKind);
+    }
+  }
+
+  /*
+   * Use when calculating intermediate variance and count > 1.
+   *
+   * NOTE: count has been incremented; sum included value.
+   */
+  public static double calculateIntermediate(
+      long count, double sum, double value, double variance) {
+    double t = count * value - sum;
+    variance += (t * t) / ((double) count * (count - 1));
+    return variance;
+  }
 
   @Override
   public GenericUDAFEvaluator getEvaluator(TypeInfo[] parameters) throws SemanticException {

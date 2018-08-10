@@ -360,6 +360,7 @@ public class TestVectorDateAddSub {
       Object[][] randomRows, ColumnScalarMode columnScalarMode,
       ObjectInspector rowInspector, Object[] resultObjects) throws Exception {
 
+    /*
     System.out.println(
         "*DEBUG* dateTimeStringTypeInfo " + dateTimeStringTypeInfo.toString() +
         " integerTypeInfo " + integerTypeInfo +
@@ -367,6 +368,7 @@ public class TestVectorDateAddSub {
         " dateAddSubTestMode ROW_MODE" +
         " columnScalarMode " + columnScalarMode +
         " exprDesc " + exprDesc.toString());
+    */
 
     HiveConf hiveConf = new HiveConf();
     ExprNodeEvaluator evaluator =
@@ -449,10 +451,6 @@ public class TestVectorDateAddSub {
     while (true) {
       if (!batchSource.fillNextBatch(batch)) {
         break;
-      }
-      final int candidate = 2187;
-      if (candidate - rowIndex < batch.size) {
-        System.out.println("here");
       }
       vectorExpression.evaluate(batch);
       extractResultObjects(batch, rowIndex, resultVectorExtractRow, scrqtchRow,

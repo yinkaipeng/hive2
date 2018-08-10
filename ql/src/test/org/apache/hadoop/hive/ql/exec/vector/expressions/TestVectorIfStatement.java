@@ -47,7 +47,6 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorUtils.Object
 import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.PrimitiveTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
-import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.io.LongWritable;
 
@@ -157,7 +156,6 @@ public class TestVectorIfStatement {
 
   public enum IfStmtTestMode {
     ROW_MODE,
-    ADAPTOR,
     ADAPTOR_WHEN,
     VECTOR_EXPRESSION;
 
@@ -273,7 +271,6 @@ public class TestVectorIfStatement {
             typeInfo, columns, children, randomRows, rowSource.rowStructObjectInspector(),
             resultObjects);
         break;
-      case ADAPTOR:
       case ADAPTOR_WHEN:
       case VECTOR_EXPRESSION:
         doVectorIfTest(
@@ -378,7 +375,6 @@ public class TestVectorIfStatement {
 
     GenericUDF udf;
     switch (ifStmtTestMode) {
-    case ADAPTOR:
     case VECTOR_EXPRESSION:
       udf = new GenericUDFIf();
       break;
@@ -393,9 +389,9 @@ public class TestVectorIfStatement {
         new ExprNodeGenericFuncDesc(typeInfo, udf, children);
 
     HiveConf hiveConf = new HiveConf();
-    if (ifStmtTestMode == IfStmtTestMode.ADAPTOR) {
-      hiveConf.setBoolVar(HiveConf.ConfVars.HIVE_TEST_VECTOR_ADAPTOR_OVERRIDE, true);
-    }
+    // if (ifStmtTestMode == IfStmtTestMode.ADAPTOR) {
+    //   hiveConf.setBoolVar(HiveConf.ConfVars.HIVE_TEST_VECTOR_ADAPTOR_OVERRIDE, true);
+    // }
     // hiveConf.setVar(HiveConf.ConfVars.HIVE_VECTORIZED_IF_EXPR_MODE, ifExprMode);
 
     VectorizationContext vectorizationContext =
@@ -412,12 +408,13 @@ public class TestVectorIfStatement {
     resultVectorExtractRow.init(new TypeInfo[] { typeInfo }, new int[] { columns.size() });
     Object[] scrqtchRow = new Object[1];
 
+    /*
     System.out.println(
         "*DEBUG* typeInfo " + typeInfo.toString() +
         " ifStmtTestMode " + ifStmtTestMode +
         " columnScalarMode " + columnScalarMode +
-        " vectorExpression " + vectorExpression.getClass().getSimpleName() +
-        " udf " + udf.getClass().getSimpleName());
+        " vectorExpression " + vectorExpression.getClass().getSimpleName());
+    */
 
     batchSource.resetBatchIteration();
     int rowIndex = 0;

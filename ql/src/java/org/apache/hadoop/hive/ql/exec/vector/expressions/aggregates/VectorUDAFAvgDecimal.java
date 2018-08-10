@@ -58,23 +58,11 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
 
       transient private final HiveDecimalWritable sum = new HiveDecimalWritable();
       transient private long count;
-      transient private boolean isNull;
 
-      public void sumValueWithNullCheck(HiveDecimalWritable writable) {
-        if (isNull) {
-          // Make a copy since we intend to mutate sum.
-          sum.set(writable);
-          count = 1;
-          isNull = false;
-        } else {
-          // Note that if sum is out of range, mutateAdd will ignore the call.
-          // At the end, sum.isSet() can be checked for null.
-          sum.mutateAdd(writable);
-          count++;
-        }
-      }
+      public void avgValue(HiveDecimalWritable writable) {
 
-      public void sumValueNoNullCheck(HiveDecimalWritable writable) {
+        // Note that if sum is out of range, mutateAdd will ignore the call.
+        // At the end, sum.isSet() can be checked for null.
         sum.mutateAdd(writable);
         count++;
       }
@@ -86,7 +74,6 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
 
       @Override
       public void reset() {
-        isNull = true;
         sum.setFromLong(0L);
         count = 0;
       }
@@ -174,8 +161,10 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
 
       inputExpression.evaluate(batch);
 
-       DecimalColumnVector inputVector = ( DecimalColumnVector)batch.
-        cols[this.inputExpression.getOutputColumn()];
+       DecimalColumnVector inputVector =
+           (DecimalColumnVector) batch.cols[
+               this.inputExpression.getOutputColumn()];
+
       HiveDecimalWritable[] vector = inputVector.vector;
 
       if (inputVector.noNulls) {
@@ -196,15 +185,9 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
         }
       } else {
         if (inputVector.isRepeating) {
-          if (batch.selectedInUse) {
-            iterateHasNullsRepeatingSelectionWithAggregationSelection(
-              aggregationBufferSets, bufferIndex,
-              vector[0], batchSize, batch.selected, inputVector.isNull);
-          } else {
-            iterateHasNullsRepeatingWithAggregationSelection(
-              aggregationBufferSets, bufferIndex,
-              vector[0], batchSize, inputVector.isNull);
-          }
+          iterateHasNullsRepeatingWithAggregationSelection(
+            aggregationBufferSets, bufferIndex,
+            vector[0], batchSize, inputVector.isNull);
         } else {
           if (batch.selectedInUse) {
             iterateHasNullsSelectionWithAggregationSelection(
@@ -230,7 +213,7 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
           aggregationBufferSets,
           bufferIndex,
           i);
-        myagg.sumValueWithNullCheck(value);
+        myagg.avgValue(value);
       }
     }
 
@@ -246,7 +229,7 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
           aggregationBufferSets,
           bufferIndex,
           i);
-        myagg.sumValueWithNullCheck(values[selection[i]]);
+        myagg.avgValue(values[selection[i]]);
       }
     }
 
@@ -260,30 +243,8 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
           aggregationBufferSets,
           bufferIndex,
           i);
-        myagg.sumValueWithNullCheck(values[i]);
+        myagg.avgValue(values[i]);
       }
-    }
-
-    private void iterateHasNullsRepeatingSelectionWithAggregationSelection(
-      VectorAggregationBufferRow[] aggregationBufferSets,
-      int bufferIndex,
-      HiveDecimalWritable value,
-      int batchSize,
-      int[] selection,
-      boolean[] isNull) {
-
-      if (isNull[0]) {
-        return;
-      }
-
-      for (int i=0; i < batchSize; ++i) {
-        Aggregation myagg = getCurrentAggregationBuffer(
-          aggregationBufferSets,
-          bufferIndex,
-          i);
-        myagg.sumValueWithNullCheck(value);
-      }
-
     }
 
     private void iterateHasNullsRepeatingWithAggregationSelection(
@@ -302,7 +263,7 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
           aggregationBufferSets,
           bufferIndex,
           i);
-        myagg.sumValueWithNullCheck(value);
+        myagg.avgValue(value);
       }
     }
 
@@ -321,7 +282,7 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
             aggregationBufferSets,
             bufferIndex,
             j);
-          myagg.sumValueWithNullCheck(values[i]);
+          myagg.avgValue(values[i]);
         }
       }
    }
@@ -339,7 +300,7 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
             aggregationBufferSets,
             bufferIndex,
             i);
-          myagg.sumValueWithNullCheck(values[i]);
+          myagg.avgValue(values[i]);
         }
       }
    }
@@ -352,7 +313,8 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
         inputExpression.evaluate(batch);
 
         DecimalColumnVector inputVector =
-            (DecimalColumnVector)batch.cols[this.inputExpression.getOutputColumn()];
+            (DecimalColumnVector) batch.cols[
+                this.inputExpression.getOutputColumn()];
 
         int batchSize = batch.size;
 
@@ -365,12 +327,7 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
         HiveDecimalWritable[] vector = inputVector.vector;
 
         if (inputVector.isRepeating) {
-          if (inputVector.noNulls) {
-            if (myagg.isNull) {
-              myagg.isNull = false;
-              myagg.sum.setFromLong(0L);
-              myagg.count = 0;
-            }
+          if (inputVector.noNulls || !inputVector.isNull[0]) {
             HiveDecimal value = vector[0].getHiveDecimal();
             HiveDecimal multiple = value.multiply(HiveDecimal.create(batchSize));
             myagg.sum.mutateAdd(multiple);
@@ -403,7 +360,7 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
       for (int j=0; j< batchSize; ++j) {
         int i = selected[j];
         if (!isNull[i]) {
-          myagg.sumValueWithNullCheck(vector[i]);
+          myagg.avgValue(vector[i]);
         }
       }
     }
@@ -414,14 +371,8 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
         int batchSize,
         int[] selected) {
 
-      if (myagg.isNull) {
-        myagg.isNull = false;
-        myagg.sum.setFromLong(0L);
-        myagg.count = 0;
-      }
-
       for (int i=0; i< batchSize; ++i) {
-        myagg.sumValueNoNullCheck(vector[selected[i]]);
+        myagg.avgValue(vector[selected[i]]);
       }
     }
 
@@ -433,7 +384,7 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
 
       for(int i=0;i<batchSize;++i) {
         if (!isNull[i]) {
-          myagg.sumValueWithNullCheck(vector[i]);
+          myagg.avgValue(vector[i]);
         }
       }
     }
@@ -442,14 +393,9 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
         Aggregation myagg,
         HiveDecimalWritable[] vector,
         int batchSize) {
-      if (myagg.isNull) {
-        myagg.isNull = false;
-        myagg.sum.setFromLong(0L);
-        myagg.count = 0;
-      }
 
       for (int i=0;i<batchSize;++i) {
-        myagg.sumValueNoNullCheck(vector[i]);
+        myagg.avgValue(vector[i]);
       }
     }
 
@@ -468,12 +414,11 @@ public class VectorUDAFAvgDecimal extends VectorAggregateExpression {
     public Object evaluateOutput(
         AggregationBuffer agg) throws HiveException {
       Aggregation myagg = (Aggregation) agg;
-      // !isSet checks for overflow.
-      if (myagg.isNull || !myagg.sum.isSet()) {
+
+      // For AVG, we only mark NULL on actual overflow.
+      if (!myagg.sum.isSet()) {
         return null;
-      }
-      else {
-        assert(0 < myagg.count);
+      } else {
         resultCount.set (myagg.count);
         resultSum.set(myagg.sum);
         return partialResult;
