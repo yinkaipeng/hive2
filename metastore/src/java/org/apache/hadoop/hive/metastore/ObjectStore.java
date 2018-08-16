@@ -569,6 +569,7 @@ public class ObjectStore implements RawStore, Configurable {
 
   @Override
   public void shutdown() {
+    LOG.info(String.format("RawStore: %s, with PersistenceManager: %s will be shutdown", this, pm));
     if (pm != null) {
       LOG.info("RawStore: " + this + ", with PersistenceManager: " + pm +
           " will be shutdown");
