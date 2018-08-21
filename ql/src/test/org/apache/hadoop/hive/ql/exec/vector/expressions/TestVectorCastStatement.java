@@ -384,11 +384,13 @@ public class TestVectorCastStatement {
     ExprNodeGenericFuncDesc exprDesc =
         new ExprNodeGenericFuncDesc(targetTypeInfo, udf, children);
 
+    /*
     System.out.println(
         "*DEBUG* typeInfo " + typeInfo.toString() +
         " targetTypeInfo " + targetTypeInfo +
         " castStmtTestMode ROW_MODE" +
         " exprDesc " + exprDesc.toString());
+    */
 
     HiveConf hiveConf = new HiveConf();
     ExprNodeEvaluator evaluator =
@@ -467,11 +469,15 @@ public class TestVectorCastStatement {
             hiveConf);
     VectorExpression vectorExpression = vectorizationContext.getVectorExpression(exprDesc);
 
+    // System.out.println("*VECTOR EXPRESSION* " + vectorExpression.getClass().getSimpleName());
+
+    /*
     System.out.println(
         "*DEBUG* typeInfo " + typeInfo.toString() +
         " targetTypeInfo " + targetTypeInfo +
         " castStmtTestMode " + castStmtTestMode +
         " vectorExpression " + vectorExpression.toString());
+    */
 
     VectorRandomRowSource rowSource = batchSource.getRowSource();
     VectorizedRowBatchCtx batchContext =

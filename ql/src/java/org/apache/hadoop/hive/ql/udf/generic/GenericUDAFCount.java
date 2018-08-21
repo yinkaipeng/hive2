@@ -102,8 +102,12 @@ public class GenericUDAFCount implements GenericUDAFResolver2 {
       return PrimitiveObjectInspectorFactory.writableLongObjectInspector;
     }
 
-    private void setCountAllColumns(boolean countAllCols) {
+    public void setCountAllColumns(boolean countAllCols) {
       countAllColumns = countAllCols;
+    }
+
+    public boolean getCountAllColumns() {
+      return countAllColumns;
     }
 
     private void setCountDistinct(boolean countDistinct) {

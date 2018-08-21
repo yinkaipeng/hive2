@@ -29,6 +29,10 @@ import org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch;
 import org.apache.hadoop.hive.ql.exec.vector.TimestampColumnVector;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.plan.AggregationDesc;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFEvaluator;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFEvaluator.Mode;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFVariance;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFVariance.VarianceKind;
 import org.apache.hadoop.hive.ql.util.JavaDataModel;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.hive.serde2.io.DoubleWritable;
@@ -66,6 +70,23 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
         sum = 0;
         count = 0;
         variance = 0;
+      }
+
+      public void varianceValue(double value) {
+        if (isNull) {
+          sum = value;
+          count = 1;
+          variance = 0;
+          isNull = false;
+        } else {
+          sum += value;
+          count++;
+          if (count > 1) {
+            variance =
+                GenericUDAFVariance.calculateIntermediate(
+                    count, sum, value, variance);
+          }
+        }
       }
 
       @Override
@@ -140,8 +161,9 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
 
       inputExpression.evaluate(batch);
 
-      TimestampColumnVector inputColVector = (TimestampColumnVector)batch.
-        cols[this.inputExpression.getOutputColumn()];
+      TimestampColumnVector inputColVector =
+          (TimestampColumnVector) batch.cols[
+              this.inputExpression.getOutputColumn()];
 
       int batchSize = batch.size;
 
@@ -186,15 +208,7 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
           aggregationBufferSets,
           aggregateIndex,
           i);
-        if (myagg.isNull) {
-          myagg.init ();
-        }
-        myagg.sum += value;
-        myagg.count += 1;
-        if(myagg.count > 1) {
-          double t = myagg.count*value - myagg.sum;
-          myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
-        }
+        myagg.varianceValue(value);
       }
     }
 
@@ -213,16 +227,7 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
           j);
         int i = selected[j];
         if (!isNull[i]) {
-          double value = inputColVector.getDouble(i);
-          if (myagg.isNull) {
-            myagg.init ();
-          }
-          myagg.sum += value;
-          myagg.count += 1;
-          if(myagg.count > 1) {
-            double t = myagg.count*value - myagg.sum;
-            myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
-          }
+          myagg.varianceValue(inputColVector.getDouble(i));
         }
       }
     }
@@ -239,16 +244,7 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
           aggregationBufferSets,
           aggregateIndex,
           i);
-        double value = inputColVector.getDouble(selected[i]);
-        if (myagg.isNull) {
-          myagg.init ();
-        }
-        myagg.sum += value;
-        myagg.count += 1;
-        if(myagg.count > 1) {
-          double t = myagg.count*value - myagg.sum;
-          myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
-        }
+        myagg.varianceValue(inputColVector.getDouble(selected[i]));
       }
     }
 
@@ -265,16 +261,7 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
             aggregationBufferSets,
             aggregateIndex,
           i);
-          double value = inputColVector.getDouble(i);
-          if (myagg.isNull) {
-            myagg.init ();
-          }
-          myagg.sum += value;
-          myagg.count += 1;
-        if(myagg.count > 1) {
-          double t = myagg.count*value - myagg.sum;
-          myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
-        }
+          myagg.varianceValue(inputColVector.getDouble(i));
         }
       }
     }
@@ -290,16 +277,7 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
           aggregationBufferSets,
           aggregateIndex,
           i);
-        if (myagg.isNull) {
-          myagg.init ();
-        }
-        double value = inputColVector.getDouble(i);
-        myagg.sum += value;
-        myagg.count += 1;
-        if(myagg.count > 1) {
-          double t = myagg.count*value - myagg.sum;
-          myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
-        }
+        myagg.varianceValue(inputColVector.getDouble(i));
       }
     }
 
@@ -309,8 +287,9 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
 
       inputExpression.evaluate(batch);
 
-      TimestampColumnVector inputColVector = (TimestampColumnVector)batch.
-        cols[this.inputExpression.getOutputColumn()];
+      TimestampColumnVector inputColVector =
+          (TimestampColumnVector) batch.cols[
+              this.inputExpression.getOutputColumn()];
 
       int batchSize = batch.size;
 
@@ -321,7 +300,7 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
       Aggregation myagg = (Aggregation)agg;
 
       if (inputColVector.isRepeating) {
-        if (inputColVector.noNulls) {
+        if (inputColVector.noNulls || !inputColVector.isNull[0]) {
           iterateRepeatingNoNulls(myagg, inputColVector.getDouble(0), batchSize);
         }
       }
@@ -344,26 +323,8 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
         double value,
         int batchSize) {
 
-      if (myagg.isNull) {
-        myagg.init ();
-      }
-
-      // TODO: conjure a formula w/o iterating
-      //
-
-      myagg.sum += value;
-      myagg.count += 1;
-      if(myagg.count > 1) {
-        double t = myagg.count*value - myagg.sum;
-        myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
-      }
-
-      // We pulled out i=0 so we can remove the count > 1 check in the loop
-      for (int i=1; i<batchSize; ++i) {
-        myagg.sum += value;
-        myagg.count += 1;
-        double t = myagg.count*value - myagg.sum;
-        myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
+      for (int i=0; i<batchSize; ++i) {
+        myagg.varianceValue(value);
       }
     }
 
@@ -377,16 +338,7 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
       for (int j=0; j< batchSize; ++j) {
         int i = selected[j];
         if (!isNull[i]) {
-          double value = inputColVector.getDouble(i);
-          if (myagg.isNull) {
-            myagg.init ();
-          }
-          myagg.sum += value;
-          myagg.count += 1;
-        if(myagg.count > 1) {
-          double t = myagg.count*value - myagg.sum;
-          myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
-        }
+          myagg.varianceValue(inputColVector.getDouble(i));
         }
       }
     }
@@ -397,26 +349,8 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
         int batchSize,
         int[] selected) {
 
-      if (myagg.isNull) {
-        myagg.init ();
-      }
-
-      double value = inputColVector.getDouble(selected[0]);
-      myagg.sum += value;
-      myagg.count += 1;
-      if(myagg.count > 1) {
-        double t = myagg.count*value - myagg.sum;
-        myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
-      }
-
-      // i=0 was pulled out to remove the count > 1 check in the loop
-      //
-      for (int i=1; i< batchSize; ++i) {
-        value = inputColVector.getDouble(selected[i]);
-        myagg.sum += value;
-        myagg.count += 1;
-        double t = myagg.count*value - myagg.sum;
-        myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
+      for (int i=0; i< batchSize; ++i) {
+        myagg.varianceValue(inputColVector.getDouble(selected[i]));
       }
     }
 
@@ -428,16 +362,7 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
 
       for(int i=0;i<batchSize;++i) {
         if (!isNull[i]) {
-          double value = inputColVector.getDouble(i);
-          if (myagg.isNull) {
-            myagg.init ();
-          }
-          myagg.sum += value;
-          myagg.count += 1;
-        if(myagg.count > 1) {
-          double t = myagg.count*value - myagg.sum;
-          myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
-        }
+          myagg.varianceValue(inputColVector.getDouble(i));
         }
       }
     }
@@ -447,26 +372,8 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
         TimestampColumnVector inputColVector,
         int batchSize) {
 
-      if (myagg.isNull) {
-        myagg.init ();
-      }
-
-      double value = inputColVector.getDouble(0);
-      myagg.sum += value;
-      myagg.count += 1;
-
-      if(myagg.count > 1) {
-        double t = myagg.count*value - myagg.sum;
-        myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
-      }
-
-      // i=0 was pulled out to remove count > 1 check
-      for (int i=1; i<batchSize; ++i) {
-        value = inputColVector.getDouble(i);
-        myagg.sum += value;
-        myagg.count += 1;
-        double t = myagg.count*value - myagg.sum;
-        myagg.variance += (t*t) / ((double)myagg.count*(myagg.count-1));
+      for (int i=0; i<batchSize; ++i) {
+        myagg.varianceValue(inputColVector.getDouble(i));
       }
     }
 
@@ -485,16 +392,12 @@ public class VectorUDAFStdSampTimestamp extends VectorAggregateExpression {
     public Object evaluateOutput(
         AggregationBuffer agg) throws HiveException {
       Aggregation myagg = (Aggregation) agg;
-      if (myagg.isNull) {
-        return null;
-      }
-      else {
-        assert(0 < myagg.count);
-        resultCount.set (myagg.count);
-        resultSum.set (myagg.sum);
-        resultVariance.set (myagg.variance);
-        return partialResult;
-      }
+
+      // For Variance Family, we do not mark NULL if all inputs were NULL.
+      resultCount.set (myagg.count);
+      resultSum.set (myagg.sum);
+      resultVariance.set (myagg.variance);
+      return partialResult;
     }
   @Override
     public ObjectInspector getOutputObjectInspector() {

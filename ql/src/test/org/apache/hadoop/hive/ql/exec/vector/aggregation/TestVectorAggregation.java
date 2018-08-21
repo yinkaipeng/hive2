@@ -22,6 +22,7 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -34,6 +35,7 @@ import org.apache.hadoop.hive.ql.exec.vector.VectorRandomRowSource.GenerationSpe
 import org.apache.hadoop.hive.ql.exec.vector.expressions.aggregates.VectorAggregateExpression;
 import org.apache.hadoop.hive.ql.plan.ExprNodeColumnDesc;
 import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
+import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFCount.GenericUDAFCountEvaluator;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFEvaluator;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFVariance;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDAFEvaluator.AggregationBuffer;
@@ -45,6 +47,7 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.hive.serde2.typeinfo.VarcharTypeInfo;
+import org.apache.hadoop.hive.serde2.io.HiveDecimalWritable;
 import org.apache.hadoop.hive.serde2.io.ShortWritable;
 
 import junit.framework.Assert;
@@ -100,6 +103,22 @@ public class TestVectorAggregation extends AggregationBase {
   }
 
   @Test
+  public void testCountStar() throws Exception {
+    Random random = new Random(7743);
+
+    doTests(
+        random, "count", TypeInfoFactory.shortTypeInfo, true);
+    doTests(
+        random, "count", TypeInfoFactory.longTypeInfo, true);
+    doTests(
+        random, "count", TypeInfoFactory.doubleTypeInfo, true);
+    doTests(
+        random, "count", new DecimalTypeInfo(18, 10), true);
+    doTests(
+        random, "count", TypeInfoFactory.stringTypeInfo, true);
+  }
+
+  @Test
   public void testMax() throws Exception {
     Random random = new Random(7743);
 
@@ -139,10 +158,19 @@ public class TestVectorAggregation extends AggregationBase {
         random, "sum", TypeInfoFactory.doubleTypeInfo);
 
     // doDecimalTests("sum", random);
+
+    // doTests(
+    //     random, "sum", TypeInfoFactory.timestampTypeInfo);
   }
 
-  private final static Set<String> varianceNames =
-      GenericUDAFVariance.VarianceKind.nameMap.keySet();
+  private final static Set<String> varianceNames = new HashSet<String>();
+  static {
+    // Don't include synonyms.
+    varianceNames.add("variance");
+    varianceNames.add("var_samp");
+    varianceNames.add("std");
+    varianceNames.add("stddev_samp");
+  }
 
   @Test
   public void testVarianceIntegers() throws Exception {
@@ -168,6 +196,16 @@ public class TestVectorAggregation extends AggregationBase {
 
     for (String aggregationName : varianceNames) {
       doDecimalTests(aggregationName, random);
+    }
+  }
+
+  @Test
+  public void testVarianceTimestamp() throws Exception {
+    Random random = new Random(7743);
+
+    for (String aggregationName : varianceNames) {
+      doTests(
+          random, aggregationName, TypeInfoFactory.timestampTypeInfo);
     }
   }
 
@@ -368,6 +406,12 @@ public class TestVectorAggregation extends AggregationBase {
 
   private void doTests(Random random, String aggregationName, TypeInfo typeInfo)
       throws Exception {
+    doTests(random, aggregationName, typeInfo, false);
+  }
+
+  private void doTests(Random random, String aggregationName, TypeInfo typeInfo,
+      boolean isCountStar)
+          throws Exception {
 
     List<GenerationSpec> dataAggrGenerationSpecList = new ArrayList<GenerationSpec>();
 
@@ -384,7 +428,9 @@ public class TestVectorAggregation extends AggregationBase {
 
     ExprNodeColumnDesc dataAggrCol1Expr = new ExprNodeColumnDesc(typeInfo, "col1", "table", false);
     List<ExprNodeDesc> dataAggrParameters = new ArrayList<ExprNodeDesc>();
-    dataAggrParameters.add(dataAggrCol1Expr);
+    if (!isCountStar) {
+      dataAggrParameters.add(dataAggrCol1Expr);
+    }
     final int dataAggrParameterCount = dataAggrParameters.size();
     ObjectInspector[] dataAggrParameterObjectInspectors = new ObjectInspector[dataAggrParameterCount];
     for (int i = 0; i < dataAggrParameterCount; i++) {
@@ -426,6 +472,11 @@ public class TestVectorAggregation extends AggregationBase {
             null);
 
     GenericUDAFEvaluator partial1Evaluator = getEvaluator(aggregationName, typeInfo);
+    if (isCountStar) {
+      Assert.assertTrue(partial1Evaluator instanceof GenericUDAFCountEvaluator);
+      GenericUDAFCountEvaluator countEvaluator = (GenericUDAFCountEvaluator) partial1Evaluator;
+      countEvaluator.setCountAllColumns(true);
+    }
 
     /*
     System.out.println(

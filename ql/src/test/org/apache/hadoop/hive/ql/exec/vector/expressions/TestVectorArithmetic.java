@@ -113,10 +113,51 @@ public class TestVectorArithmetic {
   }
 
   @Test
-  public void testDecimals() throws Exception {
+  public void testDecimal() throws Exception {
     Random random = new Random(7743);
 
     doDecimalTests(random);
+  }
+
+  @Test
+  public void testInterval() throws Exception {
+    Random random = new Random(7743);
+
+    doIntervalTests(random);
+  }
+
+  @Test
+  public void testTimestampInterval() throws Exception {
+    Random random = new Random(7743);
+
+    doAddSubTests(random, TypeInfoFactory.timestampTypeInfo, TypeInfoFactory.intervalYearMonthTypeInfo);
+    doAddSubTests(random, TypeInfoFactory.timestampTypeInfo, TypeInfoFactory.intervalDayTimeTypeInfo);
+
+    doSubTests(random, TypeInfoFactory.timestampTypeInfo, TypeInfoFactory.timestampTypeInfo);
+
+    doAddTests(random, TypeInfoFactory.intervalYearMonthTypeInfo, TypeInfoFactory.timestampTypeInfo);
+    doAddTests(random, TypeInfoFactory.intervalDayTimeTypeInfo, TypeInfoFactory.timestampTypeInfo);
+  }
+
+  @Test
+  public void testTimestampDate() throws Exception {
+    Random random = new Random(7743);
+
+    doSubTests(random, TypeInfoFactory.dateTypeInfo, TypeInfoFactory.timestampTypeInfo);
+    doSubTests(random, TypeInfoFactory.timestampTypeInfo, TypeInfoFactory.dateTypeInfo);
+  }
+
+  @Test
+  public void testDateInterval() throws Exception {
+    Random random = new Random(7743);
+
+    doAddSubTests(random, TypeInfoFactory.dateTypeInfo, TypeInfoFactory.intervalYearMonthTypeInfo);
+    doAddSubTests(random, TypeInfoFactory.dateTypeInfo, TypeInfoFactory.intervalDayTimeTypeInfo);
+
+    doSubTests(random, TypeInfoFactory.dateTypeInfo, TypeInfoFactory.dateTypeInfo);
+
+    doAddTests(random, TypeInfoFactory.intervalYearMonthTypeInfo, TypeInfoFactory.dateTypeInfo);
+    doAddTests(random, TypeInfoFactory.intervalDayTimeTypeInfo, TypeInfoFactory.dateTypeInfo);
   }
 
   public enum ArithmeticTestMode {
@@ -210,6 +251,19 @@ public class TestVectorArithmetic {
     }
   }
 
+  private static TypeInfo[] intervalTypeInfos = new TypeInfo[] {
+    TypeInfoFactory.intervalYearMonthTypeInfo,
+    TypeInfoFactory.intervalDayTimeTypeInfo
+  };
+
+  private void doIntervalTests(Random random)
+      throws Exception {
+    for (TypeInfo typeInfo : intervalTypeInfos) {
+      doAddSubTests(
+          random, typeInfo, typeInfo);
+    }
+  }
+
   private TypeInfo getOutputTypeInfo(GenericUDF genericUdfClone,
       List<ObjectInspector> objectInspectorList)
     throws HiveException {
@@ -233,6 +287,28 @@ public class TestVectorArithmetic {
     int precision = dec.precision();
     int scale = dec.scale();
     return new DecimalTypeInfo(precision, scale);
+  }
+
+  private void doAddTests(Random random, TypeInfo typeInfo1, TypeInfo typeInfo2)
+      throws Exception {
+    for (ColumnScalarMode columnScalarMode : ColumnScalarMode.values()) {
+      doTestsWithDiffColumnScalar(
+          random, typeInfo1, typeInfo2, columnScalarMode, Arithmetic.ADD);
+    }
+  }
+
+  private void doSubTests(Random random, TypeInfo typeInfo1, TypeInfo typeInfo2)
+      throws Exception {
+    for (ColumnScalarMode columnScalarMode : ColumnScalarMode.values()) {
+      doTestsWithDiffColumnScalar(
+          random, typeInfo1, typeInfo2, columnScalarMode, Arithmetic.SUBTRACT);
+    }
+  }
+
+  private void doAddSubTests(Random random, TypeInfo typeInfo1, TypeInfo typeInfo2)
+          throws Exception {
+    doAddTests(random, typeInfo1, typeInfo2);
+    doSubTests(random, typeInfo1, typeInfo2);
   }
 
   private void doTestsWithDiffColumnScalar(Random random, TypeInfo typeInfo1, TypeInfo typeInfo2,
@@ -422,7 +498,8 @@ public class TestVectorArithmetic {
           if (expectedResult != null || vectorResult != null) {
             Assert.fail(
                 "Row " + i +
-                " typeName " + typeName1 +
+                " typeName1 " + typeName1 +
+                " typeName2 " + typeName2 +
                 " outputTypeName " + outputTypeInfo.getTypeName() +
                 " " + arithmetic +
                 " " + ArithmeticTestMode.values()[v] +
@@ -440,7 +517,8 @@ public class TestVectorArithmetic {
           if (!expectedResult.equals(vectorResult)) {
             Assert.fail(
                 "Row " + i +
-                " typeName " + typeName1 +
+                " typeName1 " + typeName1 +
+                " typeName2 " + typeName2 +
                 " outputTypeName " + outputTypeInfo.getTypeName() +
                 " " + arithmetic +
                 " " + ArithmeticTestMode.values()[v] +
@@ -563,12 +641,16 @@ public class TestVectorArithmetic {
         new TypeInfo[] { outputTypeInfo }, new int[] { vectorExpression.getOutputColumn() });
     Object[] scrqtchRow = new Object[1];
 
+    System.out.println("*VECTOR EXPRESSION* " + vectorExpression.getClass().getSimpleName());
+
+    /*
     System.out.println(
         "*DEBUG* typeInfo1 " + typeInfo1.toString() +
         " typeInfo2 " + typeInfo2.toString() +
         " arithmeticTestMode " + arithmeticTestMode +
         " columnScalarMode " + columnScalarMode +
         " vectorExpression " + vectorExpression.toString());
+    */
 
     batchSource.resetBatchIteration();
     int rowIndex = 0;
