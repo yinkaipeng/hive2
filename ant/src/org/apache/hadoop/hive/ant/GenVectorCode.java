@@ -258,16 +258,22 @@ public class GenVectorCode extends Task {
       {"ColumnDivideColumnDecimal", "Divide"},
       {"ColumnDivideColumnDecimal", "Modulo"},
 
+      {"ColumnCompareScalar", "Equal", "long", "long", "=="},
       {"ColumnCompareScalar", "Equal", "long", "double", "=="},
       {"ColumnCompareScalar", "Equal", "double", "double", "=="},
+      {"ColumnCompareScalar", "NotEqual", "long", "long", "!="},
       {"ColumnCompareScalar", "NotEqual", "long", "double", "!="},
       {"ColumnCompareScalar", "NotEqual", "double", "double", "!="},
+      {"ColumnCompareScalar", "Less", "long", "long", "<"},
       {"ColumnCompareScalar", "Less", "long", "double", "<"},
       {"ColumnCompareScalar", "Less", "double", "double", "<"},
+      {"ColumnCompareScalar", "LessEqual", "long", "long", "<="},
       {"ColumnCompareScalar", "LessEqual", "long", "double", "<="},
       {"ColumnCompareScalar", "LessEqual", "double", "double", "<="},
+      {"ColumnCompareScalar", "Greater", "long", "long", ">"},
       {"ColumnCompareScalar", "Greater", "long", "double", ">"},
       {"ColumnCompareScalar", "Greater", "double", "double", ">"},
+      {"ColumnCompareScalar", "GreaterEqual", "long", "long", ">="},
       {"ColumnCompareScalar", "GreaterEqual", "long", "double", ">="},
       {"ColumnCompareScalar", "GreaterEqual", "double", "double", ">="},
 
@@ -278,16 +284,22 @@ public class GenVectorCode extends Task {
       {"ColumnCompareScalar", "Greater", "double", "long", ">"},
       {"ColumnCompareScalar", "GreaterEqual", "double", "long", ">="},
 
+      {"ScalarCompareColumn", "Equal", "long", "long", "=="},
       {"ScalarCompareColumn", "Equal", "long", "double", "=="},
       {"ScalarCompareColumn", "Equal", "double", "double", "=="},
+      {"ScalarCompareColumn", "NotEqual", "long", "long", "!="},
       {"ScalarCompareColumn", "NotEqual", "long", "double", "!="},
       {"ScalarCompareColumn", "NotEqual", "double", "double", "!="},
+      {"ScalarCompareColumn", "Less", "long", "long", "<"},
       {"ScalarCompareColumn", "Less", "long", "double", "<"},
       {"ScalarCompareColumn", "Less", "double", "double", "<"},
+      {"ScalarCompareColumn", "LessEqual", "long", "long", "<="},
       {"ScalarCompareColumn", "LessEqual", "long", "double", "<="},
       {"ScalarCompareColumn", "LessEqual", "double", "double", "<="},
+      {"ScalarCompareColumn", "Greater", "long", "long", ">"},
       {"ScalarCompareColumn", "Greater", "long", "double", ">"},
       {"ScalarCompareColumn", "Greater", "double", "double", ">"},
+      {"ScalarCompareColumn", "GreaterEqual", "long", "long", ">="},
       {"ScalarCompareColumn", "GreaterEqual", "long", "double", ">="},
       {"ScalarCompareColumn", "GreaterEqual", "double", "double", ">="},
 
@@ -804,16 +816,22 @@ public class GenVectorCode extends Task {
       {"FilterColumnBetweenDynamicValue", "date", ""},
       {"FilterColumnBetweenDynamicValue", "timestamp", ""},
 
+      {"ColumnCompareColumn", "Equal", "long", "long", "=="},
       {"ColumnCompareColumn", "Equal", "long", "double", "=="},
       {"ColumnCompareColumn", "Equal", "double", "double", "=="},
+      {"ColumnCompareColumn", "NotEqual", "long", "long", "!="},
       {"ColumnCompareColumn", "NotEqual", "long", "double", "!="},
       {"ColumnCompareColumn", "NotEqual", "double", "double", "!="},
+      {"ColumnCompareColumn", "Less", "long", "long", "<"},
       {"ColumnCompareColumn", "Less", "long", "double", "<"},
       {"ColumnCompareColumn", "Less", "double", "double", "<"},
+      {"ColumnCompareColumn", "LessEqual", "long", "long", "<="},
       {"ColumnCompareColumn", "LessEqual", "long", "double", "<="},
       {"ColumnCompareColumn", "LessEqual", "double", "double", "<="},
+      {"ColumnCompareColumn", "Greater", "long", "long", ">"},
       {"ColumnCompareColumn", "Greater", "long", "double", ">"},
       {"ColumnCompareColumn", "Greater", "double", "double", ">"},
+      {"ColumnCompareColumn", "GreaterEqual", "long", "long", ">="},
       {"ColumnCompareColumn", "GreaterEqual", "long", "double", ">="},
       {"ColumnCompareColumn", "GreaterEqual", "double", "double", ">="},
 
@@ -1319,17 +1337,6 @@ public class GenVectorCode extends Task {
 
   private void generateFilterTruncStringColumnBetween(String[] tdesc) throws IOException {
     String truncStringTypeName = tdesc[1];
-    String truncStringHiveType;
-    String truncStringHiveGetBytes;
-    if (truncStringTypeName == "Char") {
-      truncStringHiveType = "HiveChar";
-      truncStringHiveGetBytes = "getStrippedValue().getBytes()";
-    } else if (truncStringTypeName == "VarChar") {
-      truncStringHiveType = "HiveVarchar";
-      truncStringHiveGetBytes = "getValue().getBytes()";
-    } else {
-      throw new Error("Unsupported string type: " + truncStringTypeName);
-    }
     String optionalNot = tdesc[2];
     String className = "Filter" + truncStringTypeName + "Column" + (optionalNot.equals("!") ? "Not" : "")
         + "Between";
@@ -1337,8 +1344,6 @@ public class GenVectorCode extends Task {
     File templateFile = new File(joinPath(this.expressionTemplateDirectory, tdesc[0] + ".txt"));
     String templateString = readFile(templateFile);
     templateString = templateString.replaceAll("<TruncStringTypeName>", truncStringTypeName);
-    templateString = templateString.replaceAll("<TruncStringHiveType>", truncStringHiveType);
-    templateString = templateString.replaceAll("<TruncStringHiveGetBytes>", truncStringHiveGetBytes);
     templateString = templateString.replaceAll("<ClassName>", className);
     templateString = templateString.replaceAll("<OptionalNot>", optionalNot);
 
@@ -1433,13 +1438,13 @@ public class GenVectorCode extends Task {
       getValueMethod = ".getBytes()";
       conversionMethod = "";
     } else if (operandType.equals("char")) {
-      defaultValue = "new HiveChar(\"\", 1)";
+      defaultValue = "new byte[0]";
       vectorType = "byte[]";
       getPrimitiveMethod = "getHiveChar";
       getValueMethod = ".getStrippedValue().getBytes()";  // Does vectorization use stripped char values?
       conversionMethod = "";
     } else if (operandType.equals("varchar")) {
-      defaultValue = "new HiveVarchar(\"\", 1)";
+      defaultValue = "new byte[0]";
       vectorType = "byte[]";
       getPrimitiveMethod = "getHiveVarchar";
       getValueMethod = ".getValue().getBytes()";
@@ -1880,17 +1885,6 @@ public class GenVectorCode extends Task {
   private void generateStringCompareTruncStringScalar(String[] tdesc, String className, String baseClassName)
       throws IOException {
     String truncStringTypeName = tdesc[1];
-    String truncStringHiveType;
-    String truncStringHiveGetBytes;
-    if (truncStringTypeName == "Char") {
-      truncStringHiveType = "HiveChar";
-      truncStringHiveGetBytes = "getStrippedValue().getBytes()";
-    } else if (truncStringTypeName == "VarChar") {
-      truncStringHiveType = "HiveVarchar";
-      truncStringHiveGetBytes = "getValue().getBytes()";
-    } else {
-      throw new Error("Unsupported string type: " + truncStringTypeName);
-    }
     String operatorSymbol = tdesc[3];
     // Read the template into a string;
     File templateFile = new File(joinPath(this.expressionTemplateDirectory, tdesc[0] + ".txt"));
@@ -1900,8 +1894,6 @@ public class GenVectorCode extends Task {
     templateString = templateString.replaceAll("<BaseClassName>", baseClassName);
     templateString = templateString.replaceAll("<OperatorSymbol>", operatorSymbol);
     templateString = templateString.replaceAll("<TruncStringTypeName>", truncStringTypeName);
-    templateString = templateString.replaceAll("<TruncStringHiveType>", truncStringHiveType);
-    templateString = templateString.replaceAll("<TruncStringHiveGetBytes>", truncStringHiveGetBytes);
     writeFile(templateFile.lastModified(), expressionOutputDirectory, expressionClassesDirectory,
         className, templateString);
   }
@@ -2776,7 +2768,9 @@ public class GenVectorCode extends Task {
     String operandType = tdesc[2];
     String className = getCamelCaseType(operandType) + "Scalar" + operatorName
         + getCamelCaseType(operandType) + "Column";
-    String baseClassName = "org.apache.hadoop.hive.ql.exec.vector.expressions.LongScalar" + operatorName + "LongColumn";
+    String baseClassName =
+        "org.apache.hadoop.hive.ql.exec.vector.expressions.gen.LongScalar" +
+        operatorName + "LongColumn";
     //Read the template into a string;
     File templateFile = new File(joinPath(this.expressionTemplateDirectory, tdesc[0] + ".txt"));
     String templateString = readFile(templateFile);
@@ -2808,7 +2802,9 @@ public class GenVectorCode extends Task {
     String operandType = tdesc[2];
     String className = getCamelCaseType(operandType) + "Col" + operatorName
         + getCamelCaseType(operandType) + "Scalar";
-    String baseClassName = "org.apache.hadoop.hive.ql.exec.vector.expressions.LongCol" + operatorName + "LongScalar";
+    String baseClassName =
+        "org.apache.hadoop.hive.ql.exec.vector.expressions.gen.LongCol" +
+        operatorName + "LongScalar";
     //Read the template into a string;
     File templateFile = new File(joinPath(this.expressionTemplateDirectory, tdesc[0] + ".txt"));
     String templateString = readFile(templateFile);

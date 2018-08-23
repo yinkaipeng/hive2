@@ -33,6 +33,7 @@ import org.apache.hadoop.hive.ql.exec.vector.VectorizationContext;
 import org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch;
 import org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatchCtx;
 import org.apache.hadoop.hive.ql.exec.vector.expressions.VectorExpression;
+import org.apache.hadoop.hive.ql.exec.vector.udf.VectorUDFAdaptor;
 import org.apache.hadoop.hive.ql.plan.ExprNodeColumnDesc;
 import org.apache.hadoop.hive.ql.plan.ExprNodeConstantDesc;
 import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
@@ -238,16 +239,6 @@ public class TestVectorIfStatement {
 
     String[] columnNames = columns.toArray(new String[0]);
 
-    String[] outputScratchTypeNames = new String[] { typeName };
-
-    VectorizedRowBatchCtx batchContext =
-        new VectorizedRowBatchCtx(
-            columnNames,
-            rowSource.typeInfos(),
-            /* dataColumnNums */ null,
-            /* partitionColumnCount */ 0,
-            outputScratchTypeNames);
-
     Object[][] randomRows = rowSource.randomRows(100000);
 
     VectorRandomBatchSource batchSource =
@@ -276,12 +267,12 @@ public class TestVectorIfStatement {
         doVectorIfTest(
             typeInfo,
             columns,
+            columnNames,
             rowSource.typeInfos(),
             children,
             ifStmtTestMode,
             columnScalarMode,
             batchSource,
-            batchContext,
             resultObjects);
         break;
       default:
@@ -366,10 +357,11 @@ public class TestVectorIfStatement {
 
   private void doVectorIfTest(TypeInfo typeInfo,
       List<String> columns,
+      String[] columnNames,
       TypeInfo[] typeInfos,
       List<ExprNodeDesc> children,
       IfStmtTestMode ifStmtTestMode, ColumnScalarMode columnScalarMode,
-      VectorRandomBatchSource batchSource, VectorizedRowBatchCtx batchContext,
+      VectorRandomBatchSource batchSource,
       Object[] resultObjects)
           throws Exception {
 
@@ -402,10 +394,30 @@ public class TestVectorIfStatement {
             hiveConf);
     VectorExpression vectorExpression = vectorizationContext.getVectorExpression(exprDesc);
 
+    if (ifStmtTestMode == IfStmtTestMode.VECTOR_EXPRESSION &&
+        vectorExpression instanceof VectorUDFAdaptor) {
+      System.out.println(
+          "*NO NATIVE VECTOR EXPRESSION* typeInfo " + typeInfo.toString() +
+          " ifStmtTestMode " + ifStmtTestMode +
+          " columnScalarMode " + columnScalarMode +
+          " vectorExpression " + vectorExpression.toString());
+    }
+
+    String[] outputScratchTypeNames= vectorizationContext.getScratchColumnTypeNames();
+
+    VectorizedRowBatchCtx batchContext =
+        new VectorizedRowBatchCtx(
+            columnNames,
+            typeInfos,
+            /* dataColumnNums */ null,
+            /* partitionColumnCount */ 0,
+            outputScratchTypeNames);
+
     VectorizedRowBatch batch = batchContext.createVectorizedRowBatch();
 
     VectorExtractRow resultVectorExtractRow = new VectorExtractRow();
-    resultVectorExtractRow.init(new TypeInfo[] { typeInfo }, new int[] { columns.size() });
+    resultVectorExtractRow.init(
+        new TypeInfo[] { typeInfo }, new int[] { vectorExpression.getOutputColumn() });
     Object[] scrqtchRow = new Object[1];
 
     // System.out.println("*VECTOR EXPRESSION* " + vectorExpression.getClass().getSimpleName());
@@ -415,7 +427,7 @@ public class TestVectorIfStatement {
         "*DEBUG* typeInfo " + typeInfo.toString() +
         " ifStmtTestMode " + ifStmtTestMode +
         " columnScalarMode " + columnScalarMode +
-        " vectorExpression " + vectorExpression.getClass().getSimpleName());
+        " vectorExpression " + vectorExpression.toString());
     */
 
     batchSource.resetBatchIteration();

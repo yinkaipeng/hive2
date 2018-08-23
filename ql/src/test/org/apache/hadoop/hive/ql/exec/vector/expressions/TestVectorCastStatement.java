@@ -37,6 +37,7 @@ import org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatchCtx;
 import org.apache.hadoop.hive.ql.exec.vector.VectorRandomRowSource.GenerationSpec;
 import org.apache.hadoop.hive.ql.exec.vector.expressions.IdentityExpression;
 import org.apache.hadoop.hive.ql.exec.vector.expressions.VectorExpression;
+import org.apache.hadoop.hive.ql.exec.vector.udf.VectorUDFAdaptor;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.metadata.VirtualColumn;
 import org.apache.hadoop.hive.ql.plan.ExprNodeColumnDesc;
@@ -347,9 +348,10 @@ public class TestVectorCastStatement {
                 " sourceTypeName " + typeName +
                 " targetTypeName " + targetTypeName +
                 " " + CastStmtTestMode.values()[v] +
-                " result is NULL " + (vectorResult == null ? "YES" : "NO") +
+                " result is NULL " + (vectorResult == null ? "YES" : "NO result " + vectorResult.toString()) +
                 " does not match row-mode expected result is NULL " +
-                (expectedResult == null ? "YES" : "NO"));
+                (expectedResult == null ? "YES" : "NO result " + expectedResult.toString()) +
+                " row values " + Arrays.toString(randomRows[i]));
           }
         } else {
 
@@ -362,7 +364,8 @@ public class TestVectorCastStatement {
                 " result " + vectorResult.toString() +
                 " (" + vectorResult.getClass().getSimpleName() + ")" +
                 " does not match row-mode expected result " + expectedResult.toString() +
-                " (" + expectedResult.getClass().getSimpleName() + ")");
+                " (" + expectedResult.getClass().getSimpleName() + ")" +
+                " row values " + Arrays.toString(randomRows[i]));
           }
         }
       }
@@ -468,6 +471,14 @@ public class TestVectorCastStatement {
             // Arrays.asList(typeInfos),
             hiveConf);
     VectorExpression vectorExpression = vectorizationContext.getVectorExpression(exprDesc);
+
+    if (castStmtTestMode == CastStmtTestMode.VECTOR_EXPRESSION &&
+        vectorExpression instanceof VectorUDFAdaptor) {
+      System.out.println(
+          "*NO NATIVE VECTOR EXPRESSION* typeInfo " + typeInfo.toString() +
+          " castStmtTestMode " + castStmtTestMode +
+          " vectorExpression " + vectorExpression.toString());
+    }
 
     // System.out.println("*VECTOR EXPRESSION* " + vectorExpression.getClass().getSimpleName());
 

@@ -18,6 +18,8 @@
  
 package org.apache.hadoop.hive.ql.exec.vector.expressions.gen;
 
+import java.nio.charset.StandardCharsets;
+
 import org.apache.hadoop.hive.ql.exec.vector.expressions.VectorExpression;
 import org.apache.hadoop.hive.ql.exec.vector.expressions.StringExpr;
 import org.apache.hadoop.hive.ql.exec.vector.BytesColumnVector;
@@ -26,7 +28,7 @@ import org.apache.hadoop.hive.ql.exec.vector.VectorExpressionDescriptor;
 
 /**
  * This is a generated class to evaluate a <OperatorSymbol> comparison on a vector of strings.
- * Do not edit the generated code directly. 
+ * Do not edit the generated code directly.
  */
 public abstract class <ClassName> extends VectorExpression {
 
@@ -35,7 +37,14 @@ public abstract class <ClassName> extends VectorExpression {
   protected int colNum;
   protected byte[] value;
 
+  public <ClassName>(byte[] value, int colNum) {
+    super();
+    this.value = value;
+    this.colNum = colNum;
+  }
+
   public <ClassName>() {
+    super();
   }
 
   @Override

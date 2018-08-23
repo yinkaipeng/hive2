@@ -19,6 +19,8 @@
 package org.apache.hadoop.hive.ql.exec.vector;
 
 
+import java.util.Arrays;
+
 import org.apache.hadoop.hive.serde2.io.HiveDecimalWritable;
 import org.apache.hadoop.hive.common.type.HiveDecimal;
 
@@ -51,8 +53,8 @@ public class DecimalColumnVector extends ColumnVector {
 
   // Fill the all the vector entries with provided value
   public void fill(HiveDecimal value) {
-    noNulls = true;
     isRepeating = true;
+    isNull[0] = false;
     if (vector[0] == null) {
       vector[0] = new HiveDecimalWritable(value);
     } else {
@@ -61,8 +63,27 @@ public class DecimalColumnVector extends ColumnVector {
   }
 
   @Override
+  // Simplify vector by brute-force flattening noNulls and isRepeating
+  // This can be used to reduce combinatorial explosion of code paths in VectorExpressions
+  // with many arguments.
   public void flatten(boolean selectedInUse, int[] sel, int size) {
-    // TODO Auto-generated method stub
+    flattenPush();
+    if (isRepeating) {
+      isRepeating = false;
+      HiveDecimalWritable repeat = vector[0];
+      if (selectedInUse) {
+        for (int j = 0; j < size; j++) {
+          int i = sel[j];
+          vector[i].set(repeat);
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          vector[i].set(repeat);
+        }
+      }
+      flattenRepeatingNulls(selectedInUse, sel, size);
+    }
+    flattenNoNulls(selectedInUse, sel, size);
   }
 
   @Override
@@ -148,5 +169,91 @@ public class DecimalColumnVector extends ColumnVector {
     other.scale = scale;
     other.precision = precision;
     other.vector = vector;
+  }
+
+  // Copy the current object contents into the output. Only copy selected entries,
+  // as indicated by selectedInUse and the sel array.
+  public void copySelected(
+      boolean selectedInUse, int[] sel, int size, ColumnVector outputColVector) {
+
+    DecimalColumnVector output = (DecimalColumnVector) outputColVector;
+    boolean[] outputIsNull = output.isNull;
+
+    // We do not need to do a column reset since we are carefully changing the output.
+    output.isRepeating = false;
+
+    // Handle repeating case
+    if (isRepeating) {
+      if (noNulls || !isNull[0]) {
+        outputIsNull[0] = false;
+        output.set(0, vector[0]);
+      } else {
+        outputIsNull[0] = true;
+        output.noNulls = false;
+        output.vector[0].setFromLong(0);
+      }
+      output.isRepeating = true;
+      return;
+    }
+
+    // Handle normal case
+
+    if (noNulls) {
+      if (selectedInUse) {
+
+        // CONSIDER: For large n, fill n or all of isNull array and use the tighter ELSE loop.
+
+        if (!outputColVector.noNulls) {
+          for(int j = 0; j != size; j++) {
+           final int i = sel[j];
+           // Set isNull before call in case it changes it mind.
+           outputIsNull[i] = false;
+           output.set(i, vector[i]);
+         }
+        } else {
+          for(int j = 0; j != size; j++) {
+            final int i = sel[j];
+            output.set(i, vector[i]);
+          }
+        }
+      } else {
+        if (!outputColVector.noNulls) {
+
+          // Assume it is almost always a performance win to fill all of isNull so we can
+          // safely reset noNulls.
+          Arrays.fill(outputIsNull, false);
+          outputColVector.noNulls = true;
+        }
+        for(int i = 0; i != size; i++) {
+          output.set(i, vector[i]);
+        }
+      }
+    } else /* there are nulls in our column */ {
+
+      // Carefully handle NULLs...
+
+      if (selectedInUse) {
+        for (int j = 0; j < size; j++) {
+          int i = sel[j];
+          if (!isNull[i]) {
+            output.isNull[i] = false;
+            output.set(i, vector[i]);
+          } else {
+            output.isNull[i] = true;
+            output.noNulls = false;
+          }
+        }
+      } else {
+        for (int i = 0; i < size; i++) {
+          if (!isNull[i]) {
+            output.isNull[i] = false;
+            output.set(i, vector[i]);
+          } else {
+            output.isNull[i] = true;
+            output.noNulls = false;
+          }
+        }
+      }
+    }
   }
 }
