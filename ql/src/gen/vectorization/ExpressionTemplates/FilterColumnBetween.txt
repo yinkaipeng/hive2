@@ -39,17 +39,25 @@ public class <ClassName> extends VectorExpression {
   private <OperandType> leftValue;
   private <OperandType> rightValue;
 
-  public <ClassName>(int colNum, <OperandType> leftValue, <OperandType> rightValue) { 
+  public <ClassName>(int colNum, <OperandType> leftValue, <OperandType> rightValue) {
+    super();
     this.colNum = colNum;
     this.leftValue = leftValue;
     this.rightValue = rightValue;
   }
 
   public <ClassName>() {
+    super();
   }
 
   @Override
   public void evaluate(VectorizedRowBatch batch) {
+
+    // return immediately if batch is empty
+    final int n = batch.size;
+    if (n == 0) {
+      return;
+    }
 
     if (childExpressions != null) {
       super.evaluateChildren(batch);
@@ -57,22 +65,15 @@ public class <ClassName> extends VectorExpression {
 
     <InputColumnVectorType> inputColVector = (<InputColumnVectorType>) batch.cols[colNum];
     int[] sel = batch.selected;
-    boolean[] nullPos = inputColVector.isNull;
-    int n = batch.size;
+    boolean[] inputIsNull = inputColVector.isNull;
+
     <OperandType>[] vector = inputColVector.vector;
 
-    // return immediately if batch is empty
-    if (n == 0) {
-      return;
-    }
-    
     if (inputColVector.noNulls) {
       if (inputColVector.isRepeating) {
-      
-        // All must be selected otherwise size would be zero.
-        // Repeating property will not change.
+
         if (<OptionalNot>(vector[0] < leftValue || vector[0] > rightValue)) {
-        
+
           // Entire batch is filtered out.
           batch.size = 0;
         }
@@ -99,12 +100,9 @@ public class <ClassName> extends VectorExpression {
       }
     } else {
       if (inputColVector.isRepeating) {
-      
-        // All must be selected otherwise size would be zero.
-        // Repeating property will not change.
-        if (!nullPos[0]) {
+        if (!inputIsNull[0]) {
           if (<OptionalNot>(vector[0] < leftValue || vector[0] > rightValue)) {
-           
+
             // Entire batch is filtered out.
             batch.size = 0;
           }
@@ -115,7 +113,7 @@ public class <ClassName> extends VectorExpression {
         int newSize = 0;
         for(int j = 0; j != n; j++) {
           int i = sel[j];
-          if (!nullPos[i]) {
+          if (!inputIsNull[i]) {
            if (<OptionalNot>(leftValue <= vector[i] && vector[i] <= rightValue)) {
              sel[newSize++] = i;
            }
@@ -126,7 +124,7 @@ public class <ClassName> extends VectorExpression {
       } else {
         int newSize = 0;
         for(int i = 0; i != n; i++) {
-          if (!nullPos[i]) {
+          if (!inputIsNull[i]) {
             if (<OptionalNot>(leftValue <= vector[i] && vector[i] <= rightValue)) {
               sel[newSize++] = i;
             }
@@ -165,7 +163,7 @@ public class <ClassName> extends VectorExpression {
   public void setLeftValue(<OperandType> value) {
     this.leftValue = value;
   }
-  
+
   public <OperandType> getRightValue() {
     return rightValue;
   }

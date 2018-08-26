@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Random;
 
 public class TestVectorGenericDateExpressions {
+
   private Charset utf8 = StandardCharsets.UTF_8;
   private int size = 200;
   private Random random = new Random();
@@ -605,7 +606,7 @@ public class TestVectorGenericDateExpressions {
     } else if (colType == VectorExpression.Type.TIMESTAMP) {
       udf = new VectorUDFDateTimestamp(0, 1);
     } else {
-      udf = new VectorUDFDateLong(0, 1);
+      throw new RuntimeException("Unexpected column type " + colType);
     }
 
     udf.setInputTypes(colType);
@@ -631,6 +632,9 @@ public class TestVectorGenericDateExpressions {
   @Test
   public void testDate() {
     for (VectorExpression.Type colType : dateTimestampStringTypes) {
+      if (colType == VectorExpression.Type.DATE) {
+        continue;
+      }
       LongColumnVector date = newRandomLongColumnVector(10000, size);
       LongColumnVector output = new LongColumnVector(size);
 
@@ -667,7 +671,7 @@ public class TestVectorGenericDateExpressions {
     } else if (colType == VectorExpression.Type.TIMESTAMP) {
       udf = new CastTimestampToDate(0, 1);
     } else {
-      udf = new CastLongToDate(0, 1);
+      throw new RuntimeException("Unexpected column type " + colType);
     }
     udf.setInputTypes(colType);
     udf.evaluate(batch);

@@ -88,7 +88,7 @@ public class TestVectorArithmetic {
   public TestVectorArithmetic() {
     // Arithmetic operations rely on getting conf from SessionState, need to initialize here.
     SessionState ss = new SessionState(new HiveConf());
-    ss.getConf().setVar(HiveConf.ConfVars.HIVE_COMPAT, "latest");
+    ss.getConf().setVar(HiveConf.ConfVars.HIVE_COMPAT, "default");
     SessionState.setCurrentSessionState(ss);
   }
 
@@ -335,7 +335,7 @@ public class TestVectorArithmetic {
     List<GenerationSpec> generationSpecList = new ArrayList<GenerationSpec>();
 
     List<String> columns = new ArrayList<String>();
-    int columnNum = 0;
+    int columnNum = 1;
 
     ExprNodeDesc col1Expr;
     Object scalar1Object = null;

@@ -36,12 +36,14 @@ public class <ClassName> extends <BaseClassName> {
   private static final long serialVersionUID = 1L;
 
   public <ClassName>(byte[] value, int colNum, int outputColumn) {
+    super();
     this.colNum = colNum;
     this.value = value;
     this.outputColumn = outputColumn;
   }
 
   public <ClassName>() {
+    super();
   }
 
   @Override

@@ -40,12 +40,14 @@ public class <ClassName> extends VectorExpression {
   private int outputColumn;
 
   public <ClassName>(int colNum, <OperandType2> value, int outputColumn) {
+    super();
     this.colNum = colNum;
     this.value = value;
     this.outputColumn = outputColumn;
   }
 
   public <ClassName>() {
+    super();
   }
 
   @Override

@@ -201,10 +201,10 @@ public class TestVectorIfStatement {
         random, explicitTypeNameList, /* maxComplexDepth */ 0, /* allowNull */ true);
 
     List<String> columns = new ArrayList<String>();
-    columns.add("col0");    // The boolean predicate.
+    columns.add("col1");    // The boolean predicate.
 
-    ExprNodeColumnDesc col1Expr = new  ExprNodeColumnDesc(Boolean.class, "col0", "table", false);
-    int columnNum = 1;
+    ExprNodeColumnDesc col1Expr = new  ExprNodeColumnDesc(Boolean.class, "col1", "table", false);
+    int columnNum = 2;
     ExprNodeDesc col2Expr;
     if (columnScalarMode == ColumnScalarMode.COLUMN_COLUMN ||
         columnScalarMode == ColumnScalarMode.COLUMN_SCALAR) {

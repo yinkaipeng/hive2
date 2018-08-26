@@ -192,7 +192,7 @@ public class TestVectorNegative {
     List<GenerationSpec> generationSpecList = new ArrayList<GenerationSpec>();
 
     List<String> columns = new ArrayList<String>();
-    int columnNum = 0;
+    int columnNum = 1;
 
     generationSpecList.add(
         GenerationSpec.createSameType(typeInfo));

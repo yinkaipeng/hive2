@@ -1418,8 +1418,28 @@ public class VectorizationContext {
     return ve;
   }
 
+  // Handle strange case of TO_DATE(date) or CAST(date to DATE)
+  private VectorExpression getIdentityForDateToDate(List<ExprNodeDesc> childExprs,
+      TypeInfo returnTypeInfo)
+          throws HiveException {
+    if (childExprs.size() != 1) {
+      return null;
+    }
+    TypeInfo childTypeInfo = childExprs.get(0).getTypeInfo();
+    if (childTypeInfo.getCategory() != Category.PRIMITIVE ||
+        ((PrimitiveTypeInfo) childTypeInfo).getPrimitiveCategory() != PrimitiveCategory.DATE) {
+      return null;
+    }
+    if (returnTypeInfo.getCategory() != Category.PRIMITIVE ||
+        ((PrimitiveTypeInfo) returnTypeInfo).getPrimitiveCategory() != PrimitiveCategory.DATE) {
+      return null;
+    }
+    return getIdentityExpression(childExprs);
+  }
+
   private VectorExpression getGenericUdfVectorExpression(GenericUDF udf,
-      List<ExprNodeDesc> childExpr, VectorExpressionDescriptor.Mode mode, TypeInfo returnType) throws HiveException {
+      List<ExprNodeDesc> childExpr, VectorExpressionDescriptor.Mode mode, TypeInfo returnType)
+          throws HiveException {
 
     List<ExprNodeDesc> castedChildren = evaluateCastOnConstants(childExpr);
     childExpr = castedChildren;
@@ -1453,8 +1473,12 @@ public class VectorizationContext {
       ve = getCastToChar(childExpr, returnType);
     } else if (udf instanceof GenericUDFToVarchar) {
       ve = getCastToVarChar(childExpr, returnType);
+    } else if (udf instanceof GenericUDFToBinary) {
+      ve = getCastToBinary(childExpr, returnType);
     } else if (udf instanceof GenericUDFTimestamp) {
       ve = getCastToTimestamp((GenericUDFTimestamp)udf, childExpr, mode, returnType);
+    } else if (udf instanceof GenericUDFDate || udf instanceof GenericUDFToDate) {
+      ve = getIdentityForDateToDate(childExpr, returnType);
     }
     if (ve != null) {
       return ve;
@@ -1818,10 +1842,26 @@ public class VectorizationContext {
   private byte[] getStringScalarAsByteArray(ExprNodeConstantDesc exprNodeConstantDesc)
       throws HiveException {
     Object o = getScalarValue(exprNodeConstantDesc);
-    if (!(o instanceof byte[])) {
-      throw new HiveException("Expected constant argument of type string");
+    if (o instanceof byte[]) {
+      return (byte[]) o;
+    } else if (o instanceof HiveChar) {
+      HiveChar hiveChar = (HiveChar) o;
+      try {
+        return hiveChar.getStrippedValue().getBytes("UTF-8");
+      } catch (Exception ex) {
+        throw new HiveException(ex);
+      }
+    } else if (o instanceof HiveVarchar) {
+      HiveVarchar hiveVarchar = (HiveVarchar) o;
+      try {
+        return hiveVarchar.getValue().getBytes("UTF-8");
+      } catch (Exception ex) {
+        throw new HiveException(ex);
+      }
+    } else {
+      throw new HiveException("Expected constant argument of string family but found " +
+          o.getClass().getSimpleName());
     }
-    return (byte[]) o;
   }
 
   private PrimitiveCategory getAnyIntegerPrimitiveCategoryFromUdfClass(Class<? extends UDF> udfClass) {
@@ -1869,7 +1909,8 @@ public class VectorizationContext {
     PrimitiveTypeInfo ptinfo = (PrimitiveTypeInfo) type;
     String typename = type.getTypeName();
     HiveDecimal rawDecimal;
-    switch (ptinfo.getPrimitiveCategory()) {
+    PrimitiveCategory primitiveCategory = ptinfo.getPrimitiveCategory();
+    switch (primitiveCategory) {
     case FLOAT:
       rawDecimal = HiveDecimal.create(String.valueOf(scalar));
       break;
@@ -1888,11 +1929,20 @@ public class VectorizationContext {
     case LONG:
       rawDecimal = HiveDecimal.create((Long) scalar);
       break;
+    case STRING:
+      rawDecimal = HiveDecimal.create((String) scalar);
+      break;
+    case CHAR:
+      rawDecimal = HiveDecimal.create(((HiveChar) scalar).getStrippedValue());
+      break;
+    case VARCHAR:
+      rawDecimal = HiveDecimal.create(((HiveVarchar) scalar).getValue());
+      break;
     case DECIMAL:
       rawDecimal = (HiveDecimal) scalar;
       break;
     default:
-      throw new HiveException("Unsupported type " + typename + " for cast to HiveDecimal");
+      throw new HiveException("Unsupported primitive category " + primitiveCategory + " for cast to HiveDecimal");
     }
     if (rawDecimal == null) {
       if (LOG.isDebugEnabled()) {
@@ -1932,7 +1982,8 @@ public class VectorizationContext {
     }
     PrimitiveTypeInfo ptinfo = (PrimitiveTypeInfo) type;
     String typename = type.getTypeName();
-    switch (ptinfo.getPrimitiveCategory()) {
+    PrimitiveCategory primitiveCategory = ptinfo.getPrimitiveCategory();
+    switch (primitiveCategory) {
     case FLOAT:
     case DOUBLE:
     case BYTE:
@@ -1940,11 +1991,17 @@ public class VectorizationContext {
     case INT:
     case LONG:
       return ((Number) scalar).doubleValue();
+    case STRING:
+      return Double.valueOf((String) scalar);
+    case CHAR:
+      return Double.valueOf(((HiveChar) scalar).getStrippedValue());
+    case VARCHAR:
+      return Double.valueOf(((HiveVarchar) scalar).getValue());
     case DECIMAL:
       HiveDecimal decimalVal = (HiveDecimal) scalar;
       return decimalVal.doubleValue();
     default:
-      throw new HiveException("Unsupported type "+typename+" for cast to Double");
+      throw new HiveException("Unsupported primitive category " + primitiveCategory + " for cast to DOUBLE");
     }
   }
 
@@ -1955,7 +2012,8 @@ public class VectorizationContext {
     }
     PrimitiveTypeInfo ptinfo = (PrimitiveTypeInfo) type;
     String typename = type.getTypeName();
-    switch (ptinfo.getPrimitiveCategory()) {
+    PrimitiveCategory primitiveCategory = ptinfo.getPrimitiveCategory();
+    switch (primitiveCategory) {
     case FLOAT:
     case DOUBLE:
     case BYTE:
@@ -1963,6 +2021,45 @@ public class VectorizationContext {
     case INT:
     case LONG:
       return ((Number) scalar).longValue();
+    case STRING:
+    case CHAR:
+    case VARCHAR:
+      {
+        final long longValue;
+        if (primitiveCategory == PrimitiveCategory.STRING) {
+          longValue = Long.valueOf((String) scalar);
+        } else if (primitiveCategory == PrimitiveCategory.CHAR) {
+          longValue = Long.valueOf(((HiveChar) scalar).getStrippedValue());
+        } else {
+          longValue = Long.valueOf(((HiveVarchar) scalar).getValue());
+        }
+        switch (integerPrimitiveCategory) {
+        case BYTE:
+          if (longValue != ((byte) longValue)) {
+            // Accurate byte value cannot be obtained.
+            return null;
+          }
+          break;
+        case SHORT:
+          if (longValue != ((short) longValue)) {
+            // Accurate short value cannot be obtained.
+            return null;
+          }
+          break;
+        case INT:
+          if (longValue != ((int) longValue)) {
+            // Accurate int value cannot be obtained.
+            return null;
+          }
+          break;
+        case LONG:
+          // No range check needed.
+          break;
+        default:
+          throw new RuntimeException("Unexpected integer primitive type " + integerPrimitiveCategory);
+        }
+        return longValue;
+      }
     case DECIMAL:
       HiveDecimal decimalVal = (HiveDecimal) scalar;
       switch (integerPrimitiveCategory) {
@@ -1996,7 +2093,7 @@ public class VectorizationContext {
       // We only store longs in our LongColumnVector.
       return decimalVal.longValue();
     default:
-      throw new HiveException("Unsupported type "+typename+" for cast to Long");
+      throw new HiveException("Unsupported primitive category " + primitiveCategory + " for cast to LONG");
     }
   }
 
@@ -2039,9 +2136,13 @@ public class VectorizationContext {
     }
     if (inputType.equals("boolean")) {
       // Boolean must come before the integer family. It's a special case.
-      return createVectorExpression(CastBooleanToStringViaLongToString.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, null);
+      return createVectorExpression(CastBooleanToStringViaLongToString.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
     } else if (isIntFamily(inputType)) {
       return createVectorExpression(CastLongToString.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
+    } else if (inputType.equals("float")) {
+      return createVectorExpression(CastFloatToString.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
+    } else if (inputType.equals("double")) {
+      return createVectorExpression(CastDoubleToString.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
     } else if (isDecimalFamily(inputType)) {
       return createVectorExpression(CastDecimalToString.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
     } else if (isDateFamily(inputType)) {
@@ -2066,6 +2167,10 @@ public class VectorizationContext {
       return createVectorExpression(CastBooleanToCharViaLongToChar.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
     } else if (isIntFamily(inputType)) {
       return createVectorExpression(CastLongToChar.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
+    } else if (inputType.equals("float")) {
+      return createVectorExpression(CastFloatToChar.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
+    } else if (inputType.equals("double")) {
+      return createVectorExpression(CastDoubleToChar.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
     } else if (isDecimalFamily(inputType)) {
       return createVectorExpression(CastDecimalToChar.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
     } else if (isDateFamily(inputType)) {
@@ -2090,12 +2195,35 @@ public class VectorizationContext {
       return createVectorExpression(CastBooleanToVarCharViaLongToVarChar.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
     } else if (isIntFamily(inputType)) {
       return createVectorExpression(CastLongToVarChar.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
+    } else if (inputType.equals("float")) {
+      return createVectorExpression(CastFloatToVarChar.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
+    } else if (inputType.equals("double")) {
+      return createVectorExpression(CastDoubleToVarChar.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
     } else if (isDecimalFamily(inputType)) {
       return createVectorExpression(CastDecimalToVarChar.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
     } else if (isDateFamily(inputType)) {
       return createVectorExpression(CastDateToVarChar.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
     } else if (isStringFamily(inputType)) {
       return createVectorExpression(CastStringGroupToVarChar.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
+    }
+    return null;
+  }
+
+  private VectorExpression getCastToBinary(List<ExprNodeDesc> childExpr, TypeInfo returnType)
+      throws HiveException {
+    ExprNodeDesc child = childExpr.get(0);
+    String inputType = childExpr.get(0).getTypeString();
+    if (child instanceof ExprNodeConstantDesc) {
+      // Don't do constant folding here.  Wait until the optimizer is changed to do it.
+      // Family of related JIRAs: HIVE-7421, HIVE-7422, and HIVE-7424.
+      return null;
+    }
+    if (inputType.equalsIgnoreCase("string") || varcharTypePattern.matcher(inputType).matches()) {
+
+      // STRING and VARCHAR types require no conversion, so use a no-op.
+      return getIdentityExpression(childExpr);
+    } else if (charTypePattern.matcher(inputType).matches()) {
+      return createVectorExpression(CastCharToBinary.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
     }
     return null;
   }
@@ -2223,7 +2351,7 @@ public class VectorizationContext {
     }
 
     List<ExprNodeDesc> castChildren = new ArrayList<ExprNodeDesc>();
-
+    boolean wereCastUdfs = false;
     for (ExprNodeDesc desc: childExpr.subList(1, 4)) {
       if (commonType.equals(desc.getTypeInfo())) {
         castChildren.add(desc);
@@ -2232,6 +2360,7 @@ public class VectorizationContext {
         ExprNodeGenericFuncDesc engfd = new ExprNodeGenericFuncDesc(commonType, castUdf,
             Arrays.asList(new ExprNodeDesc[] { desc }));
         castChildren.add(engfd);
+        wereCastUdfs = true;
       }
     }
     String colType = commonType.getTypeName();
@@ -2459,7 +2588,11 @@ public class VectorizationContext {
   private long getIntFamilyScalarAsLong(ExprNodeConstantDesc constDesc)
       throws HiveException {
     Object o = getScalarValue(constDesc);
-    if (o instanceof Integer) {
+    if (o instanceof Byte) {
+      return (Byte) o;
+    } if (o instanceof Short) {
+      return (Short) o;
+    } else if (o instanceof Integer) {
       return (Integer) o;
     } else if (o instanceof Long) {
       return (Long) o;
@@ -2483,10 +2616,10 @@ public class VectorizationContext {
   }
 
   private Object getVectorTypeScalarValue(ExprNodeConstantDesc constDesc) throws HiveException {
-    String t = constDesc.getTypeInfo().getTypeName();
-    VectorExpression.Type type = VectorExpression.Type.getValue(t);
+    TypeInfo typeInfo = constDesc.getTypeInfo();
+    PrimitiveCategory primitiveCategory = ((PrimitiveTypeInfo) typeInfo).getPrimitiveCategory();
     Object scalarValue = getScalarValue(constDesc);
-    switch (type) {
+    switch (primitiveCategory) {
       case DATE:
         return new Long(DateWritable.dateToDays((Date) scalarValue));
       case INTERVAL_YEAR_MONTH:

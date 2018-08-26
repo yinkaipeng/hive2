@@ -49,6 +49,7 @@ public class <ClassName> extends Filter<TypeName>ColumnBetween {
   }
 
   public <ClassName>() {
+    super();
   }
 
   public DynamicValue getLeftDynamicValue() {
