@@ -2285,7 +2285,7 @@ public class CachedStore implements RawStore, Configurable {
   }
 
   @Override
-  public void addNotificationEvent(NotificationEvent event) {
+  public void addNotificationEvent(NotificationEvent event) throws MetaException {
     rawStore.addNotificationEvent(event);
   }
 
