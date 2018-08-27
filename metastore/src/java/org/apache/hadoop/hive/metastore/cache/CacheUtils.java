@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,102 +17,72 @@
  */
 package org.apache.hadoop.hive.metastore.cache;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.hadoop.hive.metastore.api.Order;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.SkewedInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.hadoop.hive.metastore.cache.CachedStore.PartitionWrapper;
-import org.apache.hadoop.hive.metastore.cache.CachedStore.TableWrapper;
+import org.apache.hadoop.hive.metastore.cache.SharedCache.PartitionWrapper;
+import org.apache.hadoop.hive.metastore.cache.SharedCache.TableWrapper;
 import org.apache.hive.common.util.HiveStringUtils;
 
 public class CacheUtils {
   private static final String delimit = "\u0001";
-  
-  public static String buildKey(String dbName) {
-    return dbName;
-  }
-  
-  public static String buildKeyWithDelimit(String dbName) {
-    return buildKey(dbName) + delimit;
-  }
-  
-  public static String buildKey(String dbName, String tableName) {
+
+  /**
+   * Builds a key for the table cache which is concatenation of database name and table name
+   * separated by a delimiter
+   *
+   * @param dbName
+   * @param tableName
+   * @return
+   */
+  public static String buildTableCacheKey(String dbName, String tableName) {
     return dbName + delimit + tableName;
   }
 
-  public static String buildKeyWithDelimit(String dbName, String tableName) {
-    return buildKey(dbName, tableName) + delimit;
-  }
-
-  public static String buildKey(String dbName, String tableName, List<String> partVals) {
-    String key = buildKey(dbName, tableName);
-    if (partVals == null || partVals.size() == 0) {
-      return key;
+  /**
+   * Builds a key for the partition cache which is concatenation of partition values, each value
+   * separated by a delimiter
+   *
+   * @param list of partition values
+   * @return cache key for partitions cache
+   */
+  public static String buildPartitionCacheKey(List<String> partVals) {
+    if (partVals == null || partVals.isEmpty()) {
+      return "";
     }
-    for (int i = 0; i < partVals.size(); i++) {
-      key += partVals.get(i);
-      if (i != partVals.size() - 1) {
-        key += delimit;
-      }
-    }
-    return key;
+    return String.join(delimit, partVals);
   }
 
-  public static String buildKeyWithDelimit(String dbName, String tableName, List<String> partVals) {
-    return buildKey(dbName, tableName, partVals) + delimit;
+  /**
+   * Builds a key for the partitions column cache which is concatenation of partition values, each
+   * value separated by a delimiter and the column name
+   *
+   * @param list of partition values
+   * @param column name
+   * @return cache key for partitions column stats cache
+   */
+  public static String buildPartitonColStatsCacheKey(List<String> partVals, String colName) {
+    return buildPartitionCacheKey(partVals) + delimit + colName;
   }
 
-  public static String buildKey(String dbName, String tableName, List<String> partVals, String colName) {
-    String key = buildKey(dbName, tableName, partVals);
-    return key + delimit + colName;
-  }
-
-  public static String buildKey(String dbName, String tableName, String colName) {
-    String key = buildKey(dbName, tableName);
-    return key + delimit + colName;
-  }
-
-  public static String[] splitTableColStats(String key) {
-    return key.split(delimit);
-  }
-
-  public static Object[] splitPartitionColStats(String key) {
-    Object[] result = new Object[4];
-    String[] comps = key.split(delimit);
-    result[0] = comps[0];
-    result[1] = comps[1];
-    List<String> vals = new ArrayList<String>();
-    for (int i=2;i<comps.length-2;i++) {
-      vals.add(comps[i]);
-    }
-    result[2] = vals;
-    result[3] = comps[comps.length-1];
-    return result;
-  }
-  
-  public static Object[] splitAggrColStats(String key) {
-    return key.split(delimit);
-  }
-
-  public static Table assemble(TableWrapper wrapper) {
+  static Table assemble(TableWrapper wrapper, SharedCache sharedCache) {
     Table t = wrapper.getTable().deepCopy();
-    if (wrapper.getSdHash()!=null) {
-      StorageDescriptor sdCopy = SharedCache.getSdFromCache(wrapper.getSdHash()).deepCopy();
-      if (sdCopy.getBucketCols()==null) {
-        sdCopy.setBucketCols(new ArrayList<String>());
+    if (wrapper.getSdHash() != null) {
+      StorageDescriptor sdCopy = sharedCache.getSdFromCache(wrapper.getSdHash()).deepCopy();
+      if (sdCopy.getBucketCols() == null) {
+        sdCopy.setBucketCols(Collections.emptyList());
       }
-      if (sdCopy.getSortCols()==null) {
-        sdCopy.setSortCols(new ArrayList<Order>());
+      if (sdCopy.getSortCols() == null) {
+        sdCopy.setSortCols(Collections.emptyList());
       }
-      if (sdCopy.getSkewedInfo()==null) {
-        sdCopy.setSkewedInfo(new SkewedInfo(new ArrayList<String>(),
-            new ArrayList<List<String>>(), new HashMap<List<String>,String>()));
+      if (sdCopy.getSkewedInfo() == null) {
+        sdCopy.setSkewedInfo(new SkewedInfo(Collections.emptyList(),
+          Collections.emptyList(), Collections.emptyMap()));
       }
       sdCopy.setLocation(wrapper.getLocation());
       sdCopy.setParameters(wrapper.getParameters());
@@ -121,19 +91,19 @@ public class CacheUtils {
     return t;
   }
 
-  public static Partition assemble(PartitionWrapper wrapper) {
+  static Partition assemble(PartitionWrapper wrapper, SharedCache sharedCache) {
     Partition p = wrapper.getPartition().deepCopy();
-    if (wrapper.getSdHash()!=null) {
-      StorageDescriptor sdCopy = SharedCache.getSdFromCache(wrapper.getSdHash()).deepCopy();
-      if (sdCopy.getBucketCols()==null) {
-        sdCopy.setBucketCols(new ArrayList<String>());
+    if (wrapper.getSdHash() != null) {
+      StorageDescriptor sdCopy = sharedCache.getSdFromCache(wrapper.getSdHash()).deepCopy();
+      if (sdCopy.getBucketCols() == null) {
+        sdCopy.setBucketCols(Collections.emptyList());
       }
-      if (sdCopy.getSortCols()==null) {
-        sdCopy.setSortCols(new ArrayList<Order>());
+      if (sdCopy.getSortCols() == null) {
+        sdCopy.setSortCols(Collections.emptyList());
       }
-      if (sdCopy.getSkewedInfo()==null) {
-        sdCopy.setSkewedInfo(new SkewedInfo(new ArrayList<String>(),
-            new ArrayList<List<String>>(), new HashMap<List<String>,String>()));
+      if (sdCopy.getSkewedInfo() == null) {
+        sdCopy.setSkewedInfo(new SkewedInfo(Collections.emptyList(),
+          Collections.emptyList(), Collections.emptyMap()));
       }
       sdCopy.setLocation(wrapper.getLocation());
       sdCopy.setParameters(wrapper.getParameters());

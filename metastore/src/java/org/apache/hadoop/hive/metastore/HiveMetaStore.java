@@ -7223,9 +7223,6 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         }
       });
 
-      // This will only initialize the cache if configured.
-      CachedStore.initSharedCacheAsync(conf);
-
       //Start Metrics for Standalone (Remote) Mode
       if (conf.getBoolVar(ConfVars.METASTORE_METRICS)) {
         try {

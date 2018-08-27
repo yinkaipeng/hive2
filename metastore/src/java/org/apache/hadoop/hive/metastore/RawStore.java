@@ -573,18 +573,6 @@ public interface RawStore extends Configurable {
 
   public AggrStats get_aggr_stats_for(String dbName, String tblName,
     List<String> partNames, List<String> colNames) throws MetaException, NoSuchObjectException;
-  
-  /**
-   * Get column stats for all partitions of all tables in the database
-   * 
-   * @param dbName
-   * @return List of column stats objects for all partitions of all tables in
-   *         the database
-   * @throws NoSuchObjectException
-   * @throws MetaException
-   */
-  public abstract List<ColStatsObjWithSourceInfo> getPartitionColStatsForDatabase(String dbName)
-      throws MetaException, NoSuchObjectException;
 
   /**
    * Get the next notification event.
