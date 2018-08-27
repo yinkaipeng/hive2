@@ -17,19 +17,29 @@
  */
 package org.apache.hadoop.hive.ql.exec.vector.expressions;
 
+import java.util.Arrays;
+
 import org.apache.hadoop.hive.ql.exec.vector.BytesColumnVector;
 import org.apache.hadoop.hive.ql.exec.vector.LongColumnVector;
 import org.apache.hadoop.hive.ql.exec.vector.VectorExpressionDescriptor;
 import org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch;
 
+/*
+ * ELT(index, string, ....) returns the string column/expression value at the specified
+ * index expression.
+ *
+ * The first argument expression indicates the index of the string to be retrieved from
+ * remaining arguments.  We return NULL when the index number is less than 1 or
+ * index number is greater than the number of the string arguments.
+ */
 public class VectorElt extends VectorExpression {
-
   private static final long serialVersionUID = 1L;
-  private int [] inputColumns;
+
+  private int[] inputColumns;
   private int outputColumn;
 
   public VectorElt(int [] inputColumns, int outputColumn) {
-    this();
+    super();
     this.inputColumns = inputColumns;
     this.outputColumn = outputColumn;
   }
