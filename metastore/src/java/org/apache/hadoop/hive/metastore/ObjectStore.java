@@ -7298,35 +7298,6 @@ public class ObjectStore implements RawStore, Configurable {
       }
     }.run(true);
   }
-  
-  @Override
-  public List<ColStatsObjWithSourceInfo> getPartitionColStatsForDatabase(String dbName)
-      throws MetaException, NoSuchObjectException {
-    final boolean enableBitVector = HiveConf.getBoolVar(getConf(),
-        HiveConf.ConfVars.HIVE_STATS_FETCH_BITVECTOR);
-    return new GetHelper<List<ColStatsObjWithSourceInfo>>(dbName, null, true, false) {
-      @Override
-      protected List<ColStatsObjWithSourceInfo> getSqlResult(
-          GetHelper<List<ColStatsObjWithSourceInfo>> ctx) throws MetaException {
-        return directSql.getColStatsForAllTablePartitions(dbName, enableBitVector);
-      }
-
-      @Override
-      protected List<ColStatsObjWithSourceInfo> getJdoResult(
-          GetHelper<List<ColStatsObjWithSourceInfo>> ctx) throws MetaException,
-          NoSuchObjectException {
-        // This is fast path for query optimizations, if we can find this info
-        // quickly using directSql, do it. No point in failing back to slow path
-        // here.
-        throw new MetaException("Jdo path is not implemented for getPartitionColStatsForDatabase.");
-      }
-
-      @Override
-      protected String describeResult() {
-        return null;
-      }
-    }.run(true);
-  }
 
   @Override
   public void flushCache() {

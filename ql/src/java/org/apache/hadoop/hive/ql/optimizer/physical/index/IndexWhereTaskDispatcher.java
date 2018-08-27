@@ -115,7 +115,7 @@ public class IndexWhereTaskDispatcher implements Dispatcher {
   }
 
   private List<Index> getIndex(Table table) throws SemanticException {
-    String indexCacheKey = CacheUtils.buildKey(
+    String indexCacheKey = CacheUtils.buildTableCacheKey(
         HiveStringUtils.normalizeIdentifier(table.getDbName()),
         HiveStringUtils.normalizeIdentifier(table.getTableName()));
     List<Index>indexList = indexMap.get(indexCacheKey);

@@ -29,6 +29,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,6 +42,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -51,6 +58,8 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import it.unimi.dsi.fastutil.chars.CharArraySet;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.metastore.api.Decimal;
@@ -73,8 +82,10 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.InvalidObjectException;
 import org.apache.hadoop.hive.metastore.api.InvalidOperationException;
 import org.apache.hadoop.hive.metastore.api.MetaException;
+import org.apache.hadoop.hive.metastore.api.Order;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
+import org.apache.hadoop.hive.metastore.api.SkewedInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.metastore.api.hive_metastoreConstants;
@@ -121,6 +132,8 @@ public class MetaStoreUtils {
   // HIVE_SUPPORT_SPECICAL_CHARACTERS_IN_TABLE_NAMES in HiveConf as well.
   public static final char[] specialCharactersInTableNames = new char[] { '/' };
 
+  private static final Charset ENCODING = StandardCharsets.UTF_8;
+  
   public static Table createColumnsetSchema(String name, List<String> columns,
       List<String> partCols, Configuration conf) throws MetaException {
 
@@ -1904,87 +1917,92 @@ public class MetaStoreUtils {
     return colNames;
   }
 
-  // Given a list of partStats, this function will give you an aggr stats
-  public static List<ColumnStatisticsObj> aggrPartitionStats(List<ColumnStatistics> partStats,
-      String dbName, String tableName, List<String> partNames, List<String> colNames,
-      boolean areAllPartsFound, boolean useDensityFunctionForNDVEstimation, double ndvTuner)
-      throws MetaException {
-    Map<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>> colStatsMap =
-        new HashMap<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>>();
-    // Group stats by colName for each partition
-    Map<String, ColumnStatsAggregator> aliasToAggregator = new HashMap<String, ColumnStatsAggregator>();
-    for (ColumnStatistics css : partStats) {
-      List<ColumnStatisticsObj> objs = css.getStatsObj();
-      String partName = css.getStatsDesc().getPartName();
-      for (ColumnStatisticsObj obj : objs) {
-        if (aliasToAggregator.get(obj.getColName()) == null) {
-          aliasToAggregator.put(obj.getColName(), ColumnStatsAggregatorFactory
-              .getColumnStatsAggregator(obj.getStatsData().getSetField(),
-                  useDensityFunctionForNDVEstimation, ndvTuner));
-          colStatsMap.put(aliasToAggregator.get(obj.getColName()), new ArrayList<ColStatsObjWithSourceInfo>());
-        }
-        colStatsMap.get(aliasToAggregator.get(obj.getColName())).add(
-            new ColStatsObjWithSourceInfo(obj, dbName, tableName, partName));
-      }
-    }
-    if (colStatsMap.size() < 1) {
-      LOG.debug("No stats data found for: dbName= {},  tblName= {}, partNames= {}, colNames= {}",
-          dbName, tableName, partNames, colNames);
-      return new ArrayList<ColumnStatisticsObj>();
-    }
-    return aggrPartitionStats(colStatsMap, partNames, areAllPartsFound,
-        useDensityFunctionForNDVEstimation, ndvTuner);
-  }
+//Given a list of partStats, this function will give you an aggr stats
+ public static List<ColumnStatisticsObj> aggrPartitionStats(List<ColumnStatistics> partStats,
+     String dbName, String tableName, List<String> partNames, List<String> colNames,
+     boolean areAllPartsFound, boolean useDensityFunctionForNDVEstimation, double ndvTuner)
+     throws MetaException {
+   Map<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>> colStatsMap =
+       new HashMap<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>>();
+   // Group stats by colName for each partition
+   Map<String, ColumnStatsAggregator> aliasToAggregator =
+       new HashMap<String, ColumnStatsAggregator>();
+   for (ColumnStatistics css : partStats) {
+     List<ColumnStatisticsObj> objs = css.getStatsObj();
+     for (ColumnStatisticsObj obj : objs) {
+       String partName = css.getStatsDesc().getPartName();
+       if (aliasToAggregator.get(obj.getColName()) == null) {
+         aliasToAggregator.put(obj.getColName(),
+             ColumnStatsAggregatorFactory.getColumnStatsAggregator(
+                 obj.getStatsData().getSetField(), useDensityFunctionForNDVEstimation, ndvTuner));
+         colStatsMap.put(aliasToAggregator.get(obj.getColName()),
+             new ArrayList<ColStatsObjWithSourceInfo>());
+       }
+       colStatsMap.get(aliasToAggregator.get(obj.getColName()))
+           .add(new ColStatsObjWithSourceInfo(obj, dbName, tableName, partName));
+     }
+   }
+   if (colStatsMap.size() < 1) {
+     LOG.debug("No stats data found for: dbName= {},  tblName= {}, partNames= {}, colNames= {}",
+         dbName, tableName, partNames, colNames);
+     return new ArrayList<ColumnStatisticsObj>();
+   }
+   return aggrPartitionStats(colStatsMap, partNames, areAllPartsFound,
+       useDensityFunctionForNDVEstimation, ndvTuner);
+ }
 
-  public static List<ColumnStatisticsObj> aggrPartitionStats(
-      Map<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>> colStatsMap,
-      final List<String> partNames, final boolean areAllPartsFound,
-      final boolean useDensityFunctionForNDVEstimation, final double ndvTuner) throws MetaException {
-    List<ColumnStatisticsObj> aggrColStatObjs = new ArrayList<ColumnStatisticsObj>();
-    int numProcessors = Runtime.getRuntime().availableProcessors();
-    final ExecutorService pool = Executors.newFixedThreadPool(Math.min(colStatsMap.size(),
-        numProcessors), new ThreadFactoryBuilder().setDaemon(true).setNameFormat(
-        "aggr-col-stats-%d").build());
-    final List<Future<ColumnStatisticsObj>> futures = Lists.newLinkedList();
-    LOG.debug("Aggregating column stats. Threads used: "
-        + Math.min(colStatsMap.size(), numProcessors));
-    long start = System.currentTimeMillis();
-    for (final Entry<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>> entry : colStatsMap
-        .entrySet()) {
-      futures.add(pool.submit(new Callable<ColumnStatisticsObj>() {
-        @Override
-        public ColumnStatisticsObj call() throws MetaException {
-          List<ColStatsObjWithSourceInfo> colStatWithSourceInfo = entry.getValue();
-          ColumnStatsAggregator aggregator = entry.getKey();
-          try {
-            ColumnStatisticsObj statsObj = aggregator.aggregate(colStatWithSourceInfo, partNames,
-                areAllPartsFound);
-            return statsObj;
-          } catch (MetaException e) {
-            LOG.debug(e.getMessage());
-            throw e;
-          }
-        }
-      }));
-    }
-    pool.shutdown();
-    if (!futures.isEmpty()) {
-      for (Future<ColumnStatisticsObj> future : futures) {
-        try {
-          if (future.get() != null) {
-            aggrColStatObjs.add(future.get());
-          }
-        } catch (InterruptedException | ExecutionException e) {
-          LOG.debug(e.getMessage());
-          pool.shutdownNow();
-          throw new MetaException(e.toString());
-        }
-      }
-    }
-    LOG.debug("Time for aggr col stats in seconds: {} Threads used: {}", ((System
-        .currentTimeMillis() - (double) start)) / 1000, Math.min(colStatsMap.size(), numProcessors));
-    return aggrColStatObjs;
-  }
+ public static List<ColumnStatisticsObj> aggrPartitionStats(
+     Map<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>> colStatsMap,
+     final List<String> partNames, final boolean areAllPartsFound,
+     final boolean useDensityFunctionForNDVEstimation, final double ndvTuner)
+     throws MetaException {
+   List<ColumnStatisticsObj> aggrColStatObjs = new ArrayList<ColumnStatisticsObj>();
+   int numProcessors = Runtime.getRuntime().availableProcessors();
+   final ExecutorService pool =
+       Executors.newFixedThreadPool(Math.min(colStatsMap.size(), numProcessors),
+           new ThreadFactoryBuilder().setDaemon(true).setNameFormat("aggr-col-stats-%d").build());
+   final List<Future<ColumnStatisticsObj>> futures = Lists.newLinkedList();
+   LOG.debug("Aggregating column stats. Threads used: {}",
+       Math.min(colStatsMap.size(), numProcessors));
+   long start = System.currentTimeMillis();
+   for (final Entry<ColumnStatsAggregator, List<ColStatsObjWithSourceInfo>> entry : colStatsMap
+       .entrySet()) {
+     futures.add(pool.submit(new Callable<ColumnStatisticsObj>() {
+       @Override
+       public ColumnStatisticsObj call() throws MetaException {
+         List<ColStatsObjWithSourceInfo> colStatWithSourceInfo = entry.getValue();
+         ColumnStatsAggregator aggregator = entry.getKey();
+         try {
+           ColumnStatisticsObj statsObj =
+               aggregator.aggregate(colStatWithSourceInfo, partNames, areAllPartsFound);
+           return statsObj;
+         } catch (MetaException e) {
+           LOG.debug(e.getMessage());
+           throw e;
+         }
+       }
+     }));
+   }
+   pool.shutdown();
+   if (!futures.isEmpty()) {
+     for (Future<ColumnStatisticsObj> future : futures) {
+       try {
+         if (future.get() != null) {
+           aggrColStatObjs.add(future.get());
+         }
+       } catch (InterruptedException | ExecutionException e) {
+         LOG.debug(e.getMessage());
+         pool.shutdownNow();
+         throw new MetaException(e.toString());
+       }
+
+     }
+   }
+   LOG.debug("Time for aggr col stats in seconds: {} Threads used: {}",
+       ((System.currentTimeMillis() - (double) start)) / 1000,
+       Math.min(colStatsMap.size(), numProcessors));
+   return aggrColStatObjs;
+ }
 
   public static double decimalToDouble(Decimal decimal) {
     return new BigDecimal(new BigInteger(decimal.getUnscaled()), decimal.getScale()).doubleValue();
@@ -2012,6 +2030,108 @@ public class MetaStoreUtils {
     }
     return metaException;
   }
+  
+  @SuppressWarnings(value = "unchecked")
+  public static <T> Class<? extends T> getClass(String className, Class<T> clazz)
+      throws MetaException {
+    try {
+      return (Class<? extends T>) Class.forName(className, true, JavaUtils.getClassLoader());
+    } catch (ClassNotFoundException e) {
+      throw new MetaException(className + " class not found");
+    }
+  }
+  
+  /**
+   * Produce a hash for the storage descriptor
+   * @param sd storage descriptor to hash
+   * @param md message descriptor to use to generate the hash
+   * @return the hash as a byte array
+   */
+  public static synchronized byte[] hashStorageDescriptor(StorageDescriptor sd, MessageDigest md) {
+    // Note all maps and lists have to be absolutely sorted.  Otherwise we'll produce different
+    // results for hashes based on the OS or JVM being used.
+    md.reset();
+    // In case cols are null
+    if (sd.getCols() != null) {
+      for (FieldSchema fs : sd.getCols()) {
+        md.update(fs.getName().getBytes(ENCODING));
+        md.update(fs.getType().getBytes(ENCODING));
+        if (fs.getComment() != null) {
+          md.update(fs.getComment().getBytes(ENCODING));
+        }
+      }
+    }
+    if (sd.getInputFormat() != null) {
+      md.update(sd.getInputFormat().getBytes(ENCODING));
+    }
+    if (sd.getOutputFormat() != null) {
+      md.update(sd.getOutputFormat().getBytes(ENCODING));
+    }
+    md.update(sd.isCompressed() ? "true".getBytes(ENCODING) : "false".getBytes(ENCODING));
+    md.update(Integer.toString(sd.getNumBuckets()).getBytes(ENCODING));
+    if (sd.getSerdeInfo() != null) {
+      SerDeInfo serde = sd.getSerdeInfo();
+      if (serde.getName() != null) {
+        md.update(serde.getName().getBytes(ENCODING));
+      }
+      if (serde.getSerializationLib() != null) {
+        md.update(serde.getSerializationLib().getBytes(ENCODING));
+      }
+      if (serde.getParameters() != null) {
+        SortedMap<String, String> params = new TreeMap<>(serde.getParameters());
+        for (Map.Entry<String, String> param : params.entrySet()) {
+          md.update(param.getKey().getBytes(ENCODING));
+          md.update(param.getValue().getBytes(ENCODING));
+        }
+      }
+    }
+    if (sd.getBucketCols() != null) {
+      List<String> bucketCols = new ArrayList<>(sd.getBucketCols());
+      for (String bucket : bucketCols) {
+        md.update(bucket.getBytes(ENCODING));
+      }
+    }
+    if (sd.getSortCols() != null) {
+      SortedSet<Order> orders = new TreeSet<>(sd.getSortCols());
+      for (Order order : orders) {
+        md.update(order.getCol().getBytes(ENCODING));
+        md.update(Integer.toString(order.getOrder()).getBytes(ENCODING));
+      }
+    }
+    if (sd.getSkewedInfo() != null) {
+      SkewedInfo skewed = sd.getSkewedInfo();
+      if (skewed.getSkewedColNames() != null) {
+        SortedSet<String> colnames = new TreeSet<>(skewed.getSkewedColNames());
+        for (String colname : colnames) {
+          md.update(colname.getBytes(ENCODING));
+        }
+      }
+      if (skewed.getSkewedColValues() != null) {
+        SortedSet<String> sortedOuterList = new TreeSet<>();
+        for (List<String> innerList : skewed.getSkewedColValues()) {
+          SortedSet<String> sortedInnerList = new TreeSet<>(innerList);
+          sortedOuterList.add(org.apache.commons.lang.StringUtils.join(sortedInnerList, "."));
+        }
+        for (String colval : sortedOuterList) {
+          md.update(colval.getBytes(ENCODING));
+        }
+      }
+      if (skewed.getSkewedColValueLocationMaps() != null) {
+        SortedMap<String, String> sortedMap = new TreeMap<>();
+        for (Map.Entry<List<String>, String> smap : skewed.getSkewedColValueLocationMaps().entrySet()) {
+          SortedSet<String> sortedKey = new TreeSet<>(smap.getKey());
+          sortedMap.put(org.apache.commons.lang.StringUtils.join(sortedKey, "."), smap.getValue());
+        }
+        for (Map.Entry<String, String> e : sortedMap.entrySet()) {
+          md.update(e.getKey().getBytes(ENCODING));
+          md.update(e.getValue().getBytes(ENCODING));
+        }
+      }
+      md.update(sd.isStoredAsSubDirectories() ? "true".getBytes(ENCODING) : "false".getBytes(ENCODING));
+    }
+
+    return md.digest();
+  }
 
   // ColumnStatisticsObj with info about its db, table, partition (if table is partitioned)
   public static class ColStatsObjWithSourceInfo {
@@ -2020,8 +2140,7 @@ public class MetaStoreUtils {
     private final String tblName;
     private final String partName;
 
-    public ColStatsObjWithSourceInfo(ColumnStatisticsObj colStatsObj, String dbName,
-        String tblName, String partName) {
+    public ColStatsObjWithSourceInfo(ColumnStatisticsObj colStatsObj, String dbName, String tblName, String partName) {
       this.colStatsObj = colStatsObj;
       this.dbName = dbName;
       this.tblName = tblName;
@@ -2044,5 +2163,4 @@ public class MetaStoreUtils {
       return partName;
     }
   }
-
 }

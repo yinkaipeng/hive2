@@ -2718,11 +2718,4 @@ public class HBaseStore implements RawStore {
     // TODO: WTF?
     return null;
   }
-
-  @Override
-  public List<ColStatsObjWithSourceInfo> getPartitionColStatsForDatabase(String dbName)
-      throws MetaException, NoSuchObjectException {
-    // TODO Auto-generated method stub
-    return null;
-  }
 }

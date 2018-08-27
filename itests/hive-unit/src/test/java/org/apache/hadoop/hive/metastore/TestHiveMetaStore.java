@@ -62,6 +62,7 @@ import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Order;
 import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
 import org.apache.hadoop.hive.metastore.api.PrincipalType;
 import org.apache.hadoop.hive.metastore.api.ResourceType;
 import org.apache.hadoop.hive.metastore.api.ResourceUri;
@@ -519,6 +520,8 @@ public abstract class TestHiveMetaStore extends TestCase {
     part4.setSd(tbl.getSd().deepCopy());
     part4.getSd().setSerdeInfo(tbl.getSd().getSerdeInfo().deepCopy());
     part4.getSd().setLocation(tbl.getSd().getLocation() + ptnLocationSuffix);
+    PrincipalPrivilegeSet privs = new PrincipalPrivilegeSet();
+    part4.setPrivileges(privs);
     MetaStoreUtils.updatePartitionStatsFast(part4, warehouse, null);
     return part4;
   }
@@ -1358,7 +1361,6 @@ public abstract class TestHiveMetaStore extends TestCase {
       tableNames.add(tblName);
       tableNames.add(tblName2);
       List<Table> foundTables = client.getTableObjectsByName(dbName, tableNames);
-
       assertEquals(2, foundTables.size());
       for (Table t: foundTables) {
         if (t.getTableName().equals(tblName2)) {
