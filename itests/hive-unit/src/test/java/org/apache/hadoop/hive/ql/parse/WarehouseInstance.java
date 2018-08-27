@@ -210,6 +210,11 @@ class WarehouseInstance implements Closeable {
     return this;
   }
 
+  WarehouseInstance status(String replicatedDbName) throws Throwable {
+    String replStatusCmd = "REPL STATUS " + replicatedDbName;
+    return run(replStatusCmd);
+  }
+
   WarehouseInstance verifyResult(String data) throws IOException {
     verifyResults(data == null ? new String[] {} : new String[] { data });
     return this;
