@@ -66,7 +66,6 @@ public class CLIService extends CompositeService implements ICLIService {
 
   private final Logger LOG = LoggerFactory.getLogger(CLIService.class.getName());
 
-  private HiveConf hiveConf;
   private SessionManager sessionManager;
   private UserGroupInformation serviceUGI;
   private UserGroupInformation httpUGI;
@@ -80,7 +79,7 @@ public class CLIService extends CompositeService implements ICLIService {
 
   @Override
   public synchronized void init(HiveConf hiveConf) {
-    this.hiveConf = hiveConf;
+    setHiveConf(hiveConf);
     sessionManager = new SessionManager(hiveServer2);
     addService(sessionManager);
     //  If the hadoop cluster is secure, do a kerberos login for the service from the keytab
@@ -131,6 +130,7 @@ public class CLIService extends CompositeService implements ICLIService {
   }
 
   private void setupBlockedUdfs() {
+    HiveConf hiveConf = getHiveConf();
     FunctionRegistry.setupPermissionsForBuiltinUDFs(
         hiveConf.getVar(ConfVars.HIVE_SERVER2_BUILTIN_UDF_WHITELIST),
         hiveConf.getVar(ConfVars.HIVE_SERVER2_BUILTIN_UDF_BLACKLIST));
@@ -559,6 +559,7 @@ public class CLIService extends CompositeService implements ICLIService {
   // obtain delegation token for the give user from metastore
   public synchronized String getDelegationTokenFromMetaStore(String owner)
       throws HiveSQLException, UnsupportedOperationException, LoginException, IOException {
+    HiveConf hiveConf = getHiveConf();
     if (!hiveConf.getBoolVar(HiveConf.ConfVars.METASTORE_USE_THRIFT_SASL) ||
         !hiveConf.getBoolVar(HiveConf.ConfVars.HIVE_SERVER2_ENABLE_DOAS)) {
       throw new UnsupportedOperationException(

@@ -84,9 +84,13 @@ public abstract class AbstractService implements Service {
   @Override
   public synchronized void init(HiveConf hiveConf) {
     ensureCurrentState(STATE.NOTINITED);
-    this.hiveConf = hiveConf;
+    setHiveConf(hiveConf);
     changeState(STATE.INITED);
     LOG.info("Service:" + getName() + " is inited.");
+  }
+
+  protected final void setHiveConf(HiveConf hiveConf) {
+    this.hiveConf = hiveConf;
   }
 
   /**
@@ -126,13 +130,17 @@ public abstract class AbstractService implements Service {
   }
 
   @Override
-  public synchronized void register(ServiceStateChangeListener l) {
-    listeners.add(l);
+  public void register(ServiceStateChangeListener l) {
+    synchronized (listeners) {
+      listeners.add(l);
+    }
   }
 
   @Override
-  public synchronized void unregister(ServiceStateChangeListener l) {
-    listeners.remove(l);
+  public void unregister(ServiceStateChangeListener l) {
+    synchronized (listeners) {
+      listeners.remove(l);
+    }
   }
 
   @Override
@@ -141,7 +149,7 @@ public abstract class AbstractService implements Service {
   }
 
   @Override
-  public synchronized HiveConf getHiveConf() {
+  public HiveConf getHiveConf() {
     return hiveConf;
   }
 
