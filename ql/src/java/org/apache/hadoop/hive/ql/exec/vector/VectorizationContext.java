@@ -1582,7 +1582,7 @@ public class VectorizationContext {
       return InConstantType.TIMESTAMP;
 
     case TIMESTAMP:
-      return InConstantType.DATE;
+      return InConstantType.TIMESTAMP;
 
     case FLOAT:
     case DOUBLE:
@@ -2148,7 +2148,11 @@ public class VectorizationContext {
     } else if (isDateFamily(inputType)) {
       return createVectorExpression(CastDateToString.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
     } else if (isStringFamily(inputType)) {
-      return createVectorExpression(CastStringGroupToString.class, childExpr, VectorExpressionDescriptor.Mode.PROJECTION, returnType);
+
+      // STRING and VARCHAR types require no conversion, so use a no-op.
+      // Also, CHAR is stored in BytesColumnVector with trimmed blank padding, so it also
+      // requires no conversion;
+      return getIdentityExpression(childExpr);
     }
     return null;
   }

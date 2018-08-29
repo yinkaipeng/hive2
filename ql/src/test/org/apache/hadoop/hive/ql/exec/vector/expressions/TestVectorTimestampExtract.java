@@ -147,7 +147,8 @@ public class TestVectorTimestampExtract {
     VectorRandomRowSource rowSource = new VectorRandomRowSource();
 
     rowSource.initGenerationSpecSchema(
-        random, generationSpecList, /* maxComplexDepth */ 0, /* allowNull */ true);
+        random, generationSpecList, /* maxComplexDepth */ 0,
+        /* allowNull */ true, /* isUnicodeOk */ true);
 
     List<ExprNodeDesc> children = new ArrayList<ExprNodeDesc>();
     children.add(col1Expr);

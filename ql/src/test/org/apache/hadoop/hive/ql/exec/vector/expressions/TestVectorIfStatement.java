@@ -172,6 +172,18 @@ public class TestVectorIfStatement {
     static final int count = values().length;
   }
 
+  public enum IfVariation {
+    // FILTER_IF,
+    PROJECTION_IF;
+
+    static final int count = values().length;
+
+    final boolean isFilter;
+    IfVariation() {
+      isFilter = name().startsWith("FILTER");
+    }
+  }
+
   private void doIfTests(Random random, String typeName)
           throws Exception {
     for (ColumnScalarMode columnScalarMode : ColumnScalarMode.values()) {
@@ -198,7 +210,8 @@ public class TestVectorIfStatement {
     VectorRandomRowSource rowSource = new VectorRandomRowSource();
 
     rowSource.initExplicitSchema(
-        random, explicitTypeNameList, /* maxComplexDepth */ 0, /* allowNull */ true);
+        random, explicitTypeNameList, /* maxComplexDepth */ 0,
+        /* allowNull */ true, /* isUnicodeOk */ true);
 
     List<String> columns = new ArrayList<String>();
     columns.add("col1");    // The boolean predicate.
@@ -248,6 +261,7 @@ public class TestVectorIfStatement {
             randomRows,
             null);
 
+    final IfVariation ifVariation = IfVariation.PROJECTION_IF;
     final int rowCount = randomRows.length;
     Object[][] resultObjectsArray = new Object[IfStmtTestMode.count][];
     for (int i = 0; i < IfStmtTestMode.count; i++) {
@@ -266,6 +280,7 @@ public class TestVectorIfStatement {
       case VECTOR_EXPRESSION:
         doVectorIfTest(
             typeInfo,
+            ifVariation,
             columns,
             columnNames,
             rowSource.typeInfos(),
@@ -301,14 +316,12 @@ public class TestVectorIfStatement {
 
             if (!expectedResult.equals(vectorResult)) {
               Assert.fail(
-                  "Row " + i +
-                  " typeName " + typeName +
-                  " " + IfStmtTestMode.values()[v] +
+                  "Row " + i + " " + IfStmtTestMode.values()[v] +
+                  " " + columnScalarMode +
                   " result " + vectorResult.toString() +
                   " (" + vectorResult.getClass().getSimpleName() + ")" +
                   " does not match row-mode expected result " + expectedResult.toString() +
-                  " (" + expectedResult.getClass().getSimpleName() + ")" +
-                  " row values " + Arrays.toString(randomRows[i]));
+                  " (" + expectedResult.getClass().getSimpleName() + ")");
             }
           }
       }
@@ -356,6 +369,7 @@ public class TestVectorIfStatement {
   }
 
   private void doVectorIfTest(TypeInfo typeInfo,
+      IfVariation ifVariation,
       List<String> columns,
       String[] columnNames,
       TypeInfo[] typeInfos,
@@ -364,6 +378,8 @@ public class TestVectorIfStatement {
       VectorRandomBatchSource batchSource,
       Object[] resultObjects)
           throws Exception {
+
+    final boolean isFilter = ifVariation.isFilter;
 
     GenericUDF udf;
     switch (ifStmtTestMode) {
@@ -399,6 +415,7 @@ public class TestVectorIfStatement {
       System.out.println(
           "*NO NATIVE VECTOR EXPRESSION* typeInfo " + typeInfo.toString() +
           " ifStmtTestMode " + ifStmtTestMode +
+          " ifVariation " + ifVariation +
           " columnScalarMode " + columnScalarMode +
           " vectorExpression " + vectorExpression.toString());
     }
@@ -426,6 +443,7 @@ public class TestVectorIfStatement {
     System.out.println(
         "*DEBUG* typeInfo " + typeInfo.toString() +
         " ifStmtTestMode " + ifStmtTestMode +
+        " ifVariation " + ifVariation +
         " columnScalarMode " + columnScalarMode +
         " vectorExpression " + vectorExpression.toString());
     */

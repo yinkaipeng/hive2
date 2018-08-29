@@ -39,13 +39,13 @@ public class TestVectorRowObject extends TestCase {
       vectorExtractRow.extractRow(batch, i, row);
       Object[] expectedRow = randomRows[firstRandomRowIndex + i];
       for (int c = 0; c < rowSize; c++) {
-        Object expectedObject = expectedRow[c];
-        Object actualObject = row[c];
-        if (expectedObject == null || actualObject == null) {
-          if (expectedObject != null || actualObject != null) {
-            fail("Row " + (firstRandomRowIndex + i) + " and column " + c + " NULL mismatch");
+        Object actualValue = row[c];
+        Object expectedValue = expectedRow[c];
+        if (actualValue == null || expectedValue == null) {
+          if (actualValue != expectedValue) {
+            fail("Row " + (firstRandomRowIndex + i) + " and column " + c + " mismatch");
           }
-        } else if (!actualObject.equals(expectedObject)) {
+        } else if (!actualValue.equals(expectedValue)) {
           fail("Row " + (firstRandomRowIndex + i) + " and column " + c + " mismatch");
         }
       }
@@ -58,7 +58,8 @@ public class TestVectorRowObject extends TestCase {
 
     VectorRandomRowSource source = new VectorRandomRowSource();
 
-    source.init(r, VectorRandomRowSource.SupportedTypes.PRIMITIVES, 4);
+    source.init(r, VectorRandomRowSource.SupportedTypes.PRIMITIVES, 4,
+        /* allowNulls */ true, /* isUnicodeOk */ true);
 
     VectorizedRowBatchCtx batchContext = new VectorizedRowBatchCtx();
     batchContext.init(source.rowStructObjectInspector(), emptyScratchTypeNames);

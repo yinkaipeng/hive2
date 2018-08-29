@@ -155,7 +155,8 @@ public class TestVectorNull {
     VectorRandomRowSource rowSource = new VectorRandomRowSource();
 
     rowSource.initGenerationSpecSchema(
-        random, generationSpecList, /* maxComplexDepth */ 0, /* allowNull */ true);
+        random, generationSpecList, /* maxComplexDepth */ 0,
+        /* allowNull */ true, /* isUnicodeOk */ true);
 
     List<String> columns = new ArrayList<String>();
     columns.add("col1");

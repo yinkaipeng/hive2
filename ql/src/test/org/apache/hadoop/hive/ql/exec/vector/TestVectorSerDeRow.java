@@ -317,7 +317,10 @@ public class TestVectorSerDeRow extends TestCase {
 
     VectorRandomRowSource source = new VectorRandomRowSource();
 
-    source.init(r, VectorRandomRowSource.SupportedTypes.PRIMITIVES, 4, false);
+    // FUTURE: try NULLs and UNICODE.
+    source.init(
+        r, VectorRandomRowSource.SupportedTypes.PRIMITIVES, 4,
+        /* allowNulls */ false, /* isUnicodeOk */ false);
 
     VectorizedRowBatchCtx batchContext = new VectorizedRowBatchCtx();
     batchContext.init(source.rowStructObjectInspector(), emptyScratchTypeNames);
@@ -553,7 +556,11 @@ public class TestVectorSerDeRow extends TestCase {
     String[] emptyScratchTypeNames = new String[0];
 
     VectorRandomRowSource source = new VectorRandomRowSource();
-    source.init(r, VectorRandomRowSource.SupportedTypes.PRIMITIVES, 4, false);
+
+    // FUTURE: try NULLs and UNICODE.
+    source.init(
+        r, VectorRandomRowSource.SupportedTypes.PRIMITIVES, 4,
+        /* allowNulls */ false, /* isUnicodeOk */ false);
 
     VectorizedRowBatchCtx batchContext = new VectorizedRowBatchCtx();
     batchContext.init(source.rowStructObjectInspector(), emptyScratchTypeNames);

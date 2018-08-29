@@ -252,7 +252,7 @@ public class TestVectorAggregation extends AggregationBase {
       throws Exception {
     for (TypeInfo typeInfo : decimalTypeInfos) {
       doTests(
-          random, aggregationName, typeInfo);
+          random, aggregationName, typeInfo, /* isCountStar */ false);
     }
   }
 
@@ -325,7 +325,8 @@ public class TestVectorAggregation extends AggregationBase {
     VectorRandomRowSource mergeRowSource = new VectorRandomRowSource();
 
     mergeRowSource.initGenerationSpecSchema(
-        random, mergeAggrGenerationSpecList, /* maxComplexDepth */ 0, /* allowNull */ false);
+        random, mergeAggrGenerationSpecList, /* maxComplexDepth */ 0,
+        /* allowNull */ false, /* isUnicodeOk */ true);
 
     Object[][] mergeRandomRows = mergeRowSource.randomRows(TEST_ROW_COUNT);
 
@@ -452,8 +453,10 @@ public class TestVectorAggregation extends AggregationBase {
 
     VectorRandomRowSource partial1RowSource = new VectorRandomRowSource();
 
+    boolean allowNull = true;
     partial1RowSource.initGenerationSpecSchema(
-        random, dataAggrGenerationSpecList, /* maxComplexDepth */ 0, /* allowNull */ true);
+        random, dataAggrGenerationSpecList, /* maxComplexDepth */ 0,
+        allowNull,  /* isUnicodeOk */ true);
 
     Object[][] partial1RandomRows = partial1RowSource.randomRows(TEST_ROW_COUNT);
 

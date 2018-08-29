@@ -185,7 +185,8 @@ public class TestVectorStringConcat {
     VectorRandomRowSource rowSource = new VectorRandomRowSource();
 
     rowSource.initGenerationSpecSchema(
-        random, generationSpecList, /* maxComplexDepth */ 0, /* allowNull */ true);
+        random, generationSpecList, /* maxComplexDepth */ 0,
+        /* allowNull */ true, /* isUnicodeOk */ true);
 
     Object[][] randomRows = rowSource.randomRows(100000);
 

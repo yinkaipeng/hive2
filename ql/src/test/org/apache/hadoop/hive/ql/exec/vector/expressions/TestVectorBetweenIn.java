@@ -435,7 +435,8 @@ public class TestVectorBetweenIn {
     VectorRandomRowSource rowSource = new VectorRandomRowSource();
 
     rowSource.initGenerationSpecSchema(
-        random, generationSpecList, /* maxComplexDepth */ 0, /* allowNull */ true);
+        random, generationSpecList, /* maxComplexDepth */ 0,
+        /* allowNull */ true, /* isUnicodeOk */ true);
 
     List<String> columns = new ArrayList<String>();
     String col1Name = rowSource.columnNames().get(0);
@@ -553,7 +554,8 @@ public class TestVectorBetweenIn {
     VectorRandomRowSource structRowSource = new VectorRandomRowSource();
 
     structRowSource.initGenerationSpecSchema(
-        random, structGenerationSpecList, /* maxComplexDepth */ 0, /* allowNull */ true);
+        random, structGenerationSpecList, /* maxComplexDepth */ 0,
+        /* allowNull */ true, /* isUnicodeOk */ true);
 
     Object[][] structRandomRows = structRowSource.randomRows(100000);
 
@@ -571,7 +573,8 @@ public class TestVectorBetweenIn {
     VectorRandomRowSource rowSource = new VectorRandomRowSource();
 
     rowSource.initGenerationSpecSchema(
-        random, generationSpecList, /* maxComplexDepth */ 0, /* allowNull */ true);
+        random, generationSpecList, /* maxComplexDepth */ 0,
+        /* allowNull */ true, /* isUnicodeOk */ true);
 
     Object[][] randomRows = rowSource.randomRows(100000);
 
@@ -702,7 +705,7 @@ public class TestVectorBetweenIn {
            continue;
          }
       case VECTOR_EXPRESSION:
-        if (!doVectorCastTest(
+        if (!doVectorBetweenInTest(
               typeInfo,
               betweenInVariation,
               compareList,
@@ -838,7 +841,7 @@ public class TestVectorBetweenIn {
     }
   }
 
-  private boolean doVectorCastTest(TypeInfo typeInfo,
+  private boolean doVectorBetweenInTest(TypeInfo typeInfo,
       BetweenInVariation betweenInVariation, List<Object> compareList,
       List<String> columns, String[] columnNames,
       TypeInfo[] typeInfos,

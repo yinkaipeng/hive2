@@ -66,10 +66,10 @@ public class LongColDivideLongColumn extends VectorExpression {
       return;
     }
 
-    outputColVector.isRepeating = inputColVector1.isRepeating && inputColVector2.isRepeating;
-
-    // Handle nulls first
-    NullUtil.propagateNullsColCol(
+    /*
+     * Propagate null values for a two-input operator and set isRepeating and noNulls appropriately.
+     */
+    NullUtil.newPropagateNullsColCol(
       inputColVector1, inputColVector2, outputColVector, sel, n, batch.selectedInUse);
 
     /* Disregard nulls for processing. In other words,

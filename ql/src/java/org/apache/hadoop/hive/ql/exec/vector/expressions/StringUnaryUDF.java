@@ -67,8 +67,10 @@ public class StringUnaryUDF extends VectorExpression {
     byte[][] vector = inputColVector.vector;
     int [] start = inputColVector.start;
     int [] length = inputColVector.length;
-    BytesColumnVector outV = (BytesColumnVector) batch.cols[outputColumn];
-    outV.initBuffer();
+    BytesColumnVector outputColVector = (BytesColumnVector) batch.cols[outputColumn];
+    boolean[] inputIsNull = inputColVector.isNull;
+    boolean[] outputIsNull = outputColVector.isNull;
+    outputColVector.initBuffer();
     Text t;
 
     if (n == 0) {
@@ -82,72 +84,72 @@ public class StringUnaryUDF extends VectorExpression {
     // It's implemented in the simplest way now, just calling the
     // existing built-in function.
 
-    if (inputColVector.noNulls) {
-      outV.noNulls = true;
-      if (inputColVector.isRepeating) {
-        outV.isRepeating = true;
+    // We do not need to do a column reset since we are carefully changing the output.
+    outputColVector.isRepeating = false;
+
+    if (inputColVector.isRepeating) {
+      if (inputColVector.noNulls || !inputIsNull[0]) {
+        // Set isNull before call in case it changes it mind.
+        outputIsNull[0] = false;
         s.set(vector[0], start[0], length[0]);
         t = func.evaluate(s);
-        setString(outV, 0, t);
-      } else if (batch.selectedInUse) {
-        for(int j = 0; j != n; j++) {
-          int i = sel[j];
+        setString(outputColVector, 0, t);
+      } else {
+        outputIsNull[0] = true;
+        outputColVector.noNulls = false;
+      }
+      outputColVector.isRepeating = true;
+      return;
+    }
 
-          /* Fill output isNull with false for selected elements since there is a chance we'll
-           * convert to noNulls == false in setString();
-           */
-          outV.isNull[i] = false;
+    if (inputColVector.noNulls) {
+      if (batch.selectedInUse) {
+
+        for(int j = 0; j != n; j++) {
+          final int i = sel[j];
+          // Set isNull before call in case it changes it mind.
+          outputIsNull[i] = false;
           s.set(vector[i], start[i], length[i]);
           t = func.evaluate(s);
-          setString(outV, i, t);
+          setString(outputColVector, i, t);
         }
-        outV.isRepeating = false;
       } else {
-
-        // Set all elements to not null. The setString call can override this.
-        Arrays.fill(outV.isNull, 0, n, false);
+        // Assume it is almost always a performance win to fill all of isNull so we can
+        // safely reset noNulls.
+        Arrays.fill(outputIsNull, false);
+        outputColVector.noNulls = true;
         for(int i = 0; i != n; i++) {
           s.set(vector[i], start[i], length[i]);
           t = func.evaluate(s);
-          setString(outV, i, t);
+          setString(outputColVector, i, t);
         }
-        outV.isRepeating = false;
       }
-    } else {
-      // Handle case with nulls. Don't do function if the value is null, to save time,
-      // because calling the function can be expensive.
-      outV.noNulls = false;
-      if (inputColVector.isRepeating) {
-        outV.isRepeating = true;
-        outV.isNull[0] = inputColVector.isNull[0]; // setString can override this
-        if (!inputColVector.isNull[0]) {
-          s.set(vector[0], start[0], length[0]);
-          t = func.evaluate(s);
-          setString(outV, 0, t);
-        }
-      } else if (batch.selectedInUse) {
+    } else /* there are nulls in the inputColVector */ {
+
+      // Carefully handle NULLs...
+      outputColVector.noNulls = false;
+
+      if (batch.selectedInUse) {
         for(int j = 0; j != n; j++) {
           int i = sel[j];
-          outV.isNull[i] = inputColVector.isNull[i]; // setString can override this
+          outputColVector.isNull[i] = inputColVector.isNull[i]; // setString can override this
           if (!inputColVector.isNull[i]) {
             s.set(vector[i], start[i], length[i]);
             t = func.evaluate(s);
-            setString(outV, i, t);
+            setString(outputColVector, i, t);
           }
         }
-        outV.isRepeating = false;
       } else {
 
         // setString can override this null propagation
-        System.arraycopy(inputColVector.isNull, 0, outV.isNull, 0, n);
+        System.arraycopy(inputColVector.isNull, 0, outputColVector.isNull, 0, n);
         for(int i = 0; i != n; i++) {
           if (!inputColVector.isNull[i]) {
             s.set(vector[i], start[i], length[i]);
             t = func.evaluate(s);
-            setString(outV, i, t);
+            setString(outputColVector, i, t);
           }
         }
-        outV.isRepeating = false;
       }
     }
   }
