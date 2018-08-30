@@ -1272,6 +1272,19 @@ public class Driver implements CommandProcessor {
     return createProcessorResponse(compileInternal(command));
   }
 
+  public CommandProcessorResponse compileAndRespond(String command, boolean cleanupTxnList) {
+    try {
+      compileInternal(command);
+      return createProcessorResponse(0);
+    } finally {
+      if (cleanupTxnList) {
+        // Valid txn list might be generated for a query compiled using this
+        // command, thus we need to reset it
+        conf.unset(ValidTxnList.VALID_TXNS_KEY);
+      }
+    }
+  }
+
   public CommandProcessorResponse lockAndRespond() {
     // Assumes the query has already been compiled
     if (plan == null) {

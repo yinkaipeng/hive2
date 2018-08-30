@@ -20,6 +20,7 @@ package org.apache.hadoop.hive.ql.io;
 
 import org.apache.hadoop.hive.metastore.api.DataOperationType;
 import org.apache.hadoop.hive.ql.ErrorMsg;
+import org.apache.hadoop.hive.ql.plan.CreateTableDesc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -824,5 +825,28 @@ public class AcidUtils {
     }
 
     return tableIsTransactional != null && tableIsTransactional.equalsIgnoreCase("true");
+  }
+
+  public static boolean isTransactionalTable(Table table) {
+    return isTransactionalTable(table == null ? null : table.getTTable());
+  }
+
+  public static boolean isTransactionalTable(CreateTableDesc table) {
+    if (table == null || table.getTblProps() == null) {
+      return false;
+    }
+    return isTransactionalTable(table.getTblProps());
+  }
+  public static boolean isTransactionalTable(Map<String, String> props) {
+    String tableIsTransactional = props.get(hive_metastoreConstants.TABLE_IS_TRANSACTIONAL);
+    if (tableIsTransactional == null) {
+      tableIsTransactional = props.get(hive_metastoreConstants.TABLE_IS_TRANSACTIONAL.toUpperCase());
+    }
+    return tableIsTransactional != null && tableIsTransactional.equalsIgnoreCase("true");
+  }
+
+  public static boolean isTransactionalTable(org.apache.hadoop.hive.metastore.api.Table table) {
+    return table != null && table.getParameters() != null &&
+        isTablePropertyTransactional(table.getParameters());
   }
 }

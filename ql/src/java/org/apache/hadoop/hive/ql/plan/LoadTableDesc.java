@@ -41,6 +41,7 @@ public class LoadTableDesc extends org.apache.hadoop.hive.ql.plan.LoadDesc
   // Need to remember whether this is an acid compliant operation, and if so whether it is an
   // insert, update, or delete.
   private AcidUtils.Operation writeType;
+  private boolean isInsertOverwrite;
 
   // TODO: the below seems like they should just be combined into partitionDesc
   private org.apache.hadoop.hive.ql.plan.TableDesc table;
@@ -165,6 +166,12 @@ public class LoadTableDesc extends org.apache.hadoop.hive.ql.plan.LoadDesc
     this.inheritTableSpecs = inheritTableSpecs;
   }
 
+  public boolean isInsertOverwrite() {
+    return this.isInsertOverwrite;
+  }
+  public void setInsertOverwrite(boolean v) {
+    this.isInsertOverwrite = v;
+  }
   /**
    * @return the lbCtx
    */
