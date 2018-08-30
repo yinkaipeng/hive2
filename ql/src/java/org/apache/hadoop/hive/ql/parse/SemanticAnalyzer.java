@@ -43,6 +43,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import com.google.common.collect.ImmutableMap;
 import org.antlr.runtime.ClassicToken;
 import org.antlr.runtime.CommonToken;
 import org.antlr.runtime.Token;
@@ -6861,6 +6862,9 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         boolean overwrite = !qb.getParseInfo().isInsertIntoTable(
                 String.format("%s.%s", dest_tab.getDbName(), dest_tab.getTableName()));
         createInsertDesc(dest_tab, overwrite);
+        ltd = new LoadTableDesc(queryTmpdir, table_desc, partSpec == null ? ImmutableMap.of() : partSpec);
+        ltd.setInsertOverwrite(overwrite);
+        ltd.setLoadFileType(overwrite ? LoadFileType.REPLACE_ALL : LoadFileType.KEEP_EXISTING);
       }
 
       WriteEntity output = null;
@@ -13592,12 +13596,12 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
   }
 
   private WriteEntity.WriteType determineWriteType(LoadTableDesc ltd, boolean isNonNativeTable, String dest) {
-    // Don't know the characteristics of non-native tables,
-    // and don't have a rational way to guess, so assume the most
-    // conservative case.
-    if (isNonNativeTable) return WriteEntity.WriteType.INSERT_OVERWRITE;
-    else return ((ltd.getLoadFileType() == LoadFileType.REPLACE_ALL)
-                         ? WriteEntity.WriteType.INSERT_OVERWRITE : getWriteType(dest));
+    if (ltd == null) {
+      return WriteEntity.WriteType.INSERT_OVERWRITE;
+    }
+    return ((ltd.getLoadFileType() == LoadFileType.REPLACE_ALL || ltd
+        .isInsertOverwrite()) ? WriteEntity.WriteType.INSERT_OVERWRITE : getWriteType(dest));
+
   }
 
   private WriteEntity.WriteType getWriteType(String dest) {

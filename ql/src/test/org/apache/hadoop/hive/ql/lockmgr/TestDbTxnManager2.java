@@ -737,6 +737,35 @@ public class TestDbTxnManager2 {
   }
 
   @Test
+  public void testLockingOnInsertIntoNonNativeTables() throws Exception {
+    dropTable(new String[] {"tab_not_acid"});
+    checkCmdOnDriver(driver.run("create table if not exists tab_not_acid (a int, b int)  " +
+        " STORED BY 'org.apache.hadoop.hive.ql.metadata.StorageHandlerMock'"));
+    txnMgr.openTxn(ctx, "T1");
+    checkCmdOnDriver(driver.compileAndRespond("insert into tab_not_acid values(1,2)", true));
+
+    txnMgr.acquireLocks(driver.getPlan(), ctx, "T1");
+    List<ShowLocksResponseElement> locks = getLocks(txnMgr);
+    Assert.assertEquals("Unexpected lock count", 1, locks.size());
+    checkLock(LockType.SHARED_READ, LockState.ACQUIRED, "default", "tab_not_acid", null, locks);
+  }
+
+  @Test
+  public void testLockingOnInsertOverwriteNonNativeTables() throws Exception {
+    dropTable(new String[] {"tab_not_acid"});
+    checkCmdOnDriver(driver.run("create table if not exists tab_not_acid (a int, b int)  " +
+        " STORED BY 'org.apache.hadoop.hive.ql.metadata.StorageHandlerMock'"));
+    txnMgr.openTxn(ctx, "T1");
+    checkCmdOnDriver(driver.compileAndRespond("insert overwrite table tab_not_acid values(1,2)", true));
+    txnMgr.acquireLocks(driver.getPlan(), ctx, "T1");
+    List<ShowLocksResponseElement> locks = getLocks(txnMgr);
+    Assert.assertEquals("Unexpected lock count", 1, locks.size());
+    checkLock(LockType.EXCLUSIVE, LockState.ACQUIRED, "default", "tab_not_acid", null, locks);
+  }
+
+
+
+  @Test
   public void testShowLocksFilterOptions() throws Exception {
     CommandProcessorResponse cpr = driver.run("drop table if exists db1.t14");
     checkCmdOnDriver(cpr);

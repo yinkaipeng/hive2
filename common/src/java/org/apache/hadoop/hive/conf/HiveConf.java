@@ -1932,6 +1932,10 @@ public class HiveConf extends Configuration {
         "DROP TABLE etc. when the table is being written to"),
     HIVE_TXN_TIMEOUT("hive.txn.timeout", "300s", new TimeValidator(TimeUnit.SECONDS),
         "time after which transactions are declared aborted if the client has not sent a heartbeat."),
+    TXN_OVERWRITE_X_LOCK("hive.txn.xlock.iow", true,
+        "Ensures commands with OVERWRITE (such as INSERT OVERWRITE) acquire Exclusive locks for\b" +
+            "transactional tables.  This ensures that inserts (w/o overwrite) running concurrently\n" +
+            "are not hidden by the INSERT OVERWRITE."),
     HIVE_TXN_HEARTBEAT_THREADPOOL_SIZE("hive.txn.heartbeat.threadpool.size", 5, "The number of " +
         "threads to use for heartbeating. For Hive CLI, 1 is enough. For HiveServer2, we need a few"),
     TXN_MGR_DUMP_LOCK_STATE_ON_ACQUIRE_TIMEOUT("hive.txn.manager.dump.lock.state.on.acquire.timeout", false,

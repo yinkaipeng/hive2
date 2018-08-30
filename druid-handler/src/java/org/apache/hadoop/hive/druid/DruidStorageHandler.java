@@ -53,8 +53,10 @@ import org.apache.hadoop.hive.metastore.HiveMetaHook;
 import org.apache.hadoop.hive.metastore.MetaStoreUtils;
 import org.apache.hadoop.hive.metastore.Warehouse;
 import org.apache.hadoop.hive.metastore.api.EnvironmentContext;
+import org.apache.hadoop.hive.metastore.api.LockType;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.ql.hooks.WriteEntity;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.metadata.HiveStorageHandler;
@@ -588,6 +590,13 @@ public class DruidStorageHandler extends DefaultHiveMetaHook implements HiveStor
   @Override
   public Configuration getConf() {
     return conf;
+  }
+
+  @Override public LockType getLockType(WriteEntity writeEntity) {
+    if (writeEntity.getWriteType().equals(WriteEntity.WriteType.INSERT)) {
+      return LockType.SHARED_READ;
+    }
+    return LockType.SHARED_WRITE;
   }
 
   @Override

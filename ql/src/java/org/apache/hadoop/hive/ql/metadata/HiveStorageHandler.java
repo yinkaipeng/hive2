@@ -22,6 +22,8 @@ import java.util.Map;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.hive.metastore.HiveMetaHook;
+import org.apache.hadoop.hive.metastore.api.LockType;
+import org.apache.hadoop.hive.ql.hooks.WriteEntity;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.hive.ql.security.authorization.HiveAuthorizationProvider;
@@ -142,4 +144,8 @@ public interface HiveStorageHandler extends Configurable {
    * @param JobConf jobConf for MapReduce job
    */
   public void configureJobConf(TableDesc tableDesc, JobConf jobConf);
+
+  default LockType getLockType(WriteEntity writeEntity){
+    return LockType.EXCLUSIVE;
+  }
 }
