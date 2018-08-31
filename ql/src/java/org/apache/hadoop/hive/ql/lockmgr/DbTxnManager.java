@@ -240,12 +240,6 @@ public final class DbTxnManager extends HiveTxnManagerImpl {
 
     boolean atLeastOneLock = false;
     queryId = plan.getQueryId();
-    switch (plan.getOperation()) {
-    case SET_AUTOCOMMIT:
-      /**This is here for documentation purposes.  This TM doesn't support this - only has one
-       * mode of operation documented at {@link DbTxnManager#isExplicitTransaction}*/
-      return  null;
-    }
 
     LockRequestBuilder rqstBuilder = new LockRequestBuilder(queryId);
     //link queryId to txnId
