@@ -427,6 +427,7 @@ public class CliConfigs {
       // super(CoreAccumuloCliDriver.class);
       try {
         setQueryDir("accumulo-handler/src/test/queries/positive");
+        excludeQuery("accumulo_joins.q");
 
         excludesFrom(testConfigProps, "beeline.positive.exclude");
 
