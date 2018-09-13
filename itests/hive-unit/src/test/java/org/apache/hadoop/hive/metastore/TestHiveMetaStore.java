@@ -520,8 +520,6 @@ public abstract class TestHiveMetaStore extends TestCase {
     part4.setSd(tbl.getSd().deepCopy());
     part4.getSd().setSerdeInfo(tbl.getSd().getSerdeInfo().deepCopy());
     part4.getSd().setLocation(tbl.getSd().getLocation() + ptnLocationSuffix);
-    PrincipalPrivilegeSet privs = new PrincipalPrivilegeSet();
-    part4.setPrivileges(privs);
     MetaStoreUtils.updatePartitionStatsFast(part4, warehouse, null);
     return part4;
   }
