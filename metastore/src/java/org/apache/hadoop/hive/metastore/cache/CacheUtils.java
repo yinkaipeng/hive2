@@ -32,6 +32,11 @@ import org.apache.hive.common.util.HiveStringUtils;
 public class CacheUtils {
   private static final String delimit = "\u0001";
 
+
+  public static String buildDbKeyWithDelimiterSuffix(String dbName) {
+    return dbName + delimit;
+  }
+  
   /**
    * Builds a key for the table cache which is concatenation of database name and table name
    * separated by a delimiter

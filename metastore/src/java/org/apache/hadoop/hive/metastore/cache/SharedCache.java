@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -990,12 +991,11 @@ public class SharedCache {
 
   public void refreshTablesInCache(String dbName, List<Table> tables) {
     try {
-      cacheLock.writeLock().lock();
       if (isTableCacheDirty.compareAndSet(true, false)) {
         LOG.debug("Skipping table cache update; the table list we have is dirty.");
         return;
       }
-      Map<String, TableWrapper> newTableCache = new HashMap<String, TableWrapper>();
+      Map<String, TableWrapper> newCacheForDB = new TreeMap<>();
       for (Table tbl : tables) {
         String tblName = HiveStringUtils.normalizeIdentifier(tbl.getTableName());
         TableWrapper tblWrapper = tableCache.get(CacheUtils.buildTableCacheKey(dbName, tblName));
@@ -1004,10 +1004,17 @@ public class SharedCache {
         } else {
           tblWrapper = createTableWrapper(dbName, tblName, tbl);
         }
-        newTableCache.put(CacheUtils.buildTableCacheKey(dbName, tblName), tblWrapper);
+        newCacheForDB.put(CacheUtils.buildTableCacheKey(dbName, tblName), tblWrapper);
       }
-      tableCache.clear();
-      tableCache = newTableCache;
+      cacheLock.writeLock().lock();
+      Iterator<Entry<String, TableWrapper>> entryIterator = tableCache.entrySet().iterator();
+      while (entryIterator.hasNext()) {
+        String key = entryIterator.next().getKey();
+        if (key.startsWith(CacheUtils.buildDbKeyWithDelimiterSuffix(dbName))) {
+          entryIterator.remove();
+        }
+      }
+      tableCache.putAll(newCacheForDB);
     } finally {
       cacheLock.writeLock().unlock();
     }
