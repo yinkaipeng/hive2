@@ -393,6 +393,7 @@ public class CachedStore implements RawStore, Configurable {
       } else {
         try {
           prewarm(rawStore);
+          shouldRunPrewarm = false;
         } catch (Exception e) {
           LOG.error("Prewarm failure", e);
           return;

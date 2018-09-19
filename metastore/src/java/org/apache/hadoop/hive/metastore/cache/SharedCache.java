@@ -910,11 +910,13 @@ public class SharedCache {
         tablesDeletedDuringPrewarm.add(CacheUtils.buildTableCacheKey(dbName, tblName));
       }
       TableWrapper tblWrapper = tableCache.remove(CacheUtils.buildTableCacheKey(dbName, tblName));
-      byte[] sdHash = tblWrapper.getSdHash();
-      if (sdHash != null) {
-        decrSd(sdHash);
+      if (tblWrapper != null) {
+        byte[] sdHash = tblWrapper.getSdHash();
+        if (sdHash != null) {
+          decrSd(sdHash);
+        }
+        isTableCacheDirty.set(true);
       }
-      isTableCacheDirty.set(true);
     } finally {
       cacheLock.writeLock().unlock();
     }
