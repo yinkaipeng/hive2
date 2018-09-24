@@ -281,7 +281,7 @@ public class ColumnStatsAutoGatherContext {
         case VARCHAR:
         case BINARY:
         case DECIMAL:
-          // TODO: Support case DATE:
+        case DATE:
           break;
         default:
           return false;
