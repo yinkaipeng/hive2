@@ -479,6 +479,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
       Connection dbConn = null;
       Statement stmt = null;
       ResultSet rs = null;
+      List<PreparedStatement> insertPreparedStmts = null;
       try {
         lockInternal();
         /**
@@ -521,15 +522,20 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
         List<Long> txnIds = new ArrayList<Long>(numTxns);
 
         List<String> rows = new ArrayList<>();
+        List<String> params = new ArrayList<>();
+        params.add(rqst.getUser());
+        params.add(rqst.getHostname());
+        List<List<String>> paramsList = new ArrayList<>(numTxns);
         for (long i = first; i < first + numTxns; i++) {
           txnIds.add(i);
-          rows.add(i + "," + quoteChar(TXN_OPEN) + "," + now + "," + now + "," + quoteString(rqst.getUser()) + "," + quoteString(rqst.getHostname()));
+          rows.add(i + "," + quoteChar(TXN_OPEN) + "," + now + "," + now + ",?,?");
+          paramsList.add(params);
         }
-        List<String> queries = sqlGenerator.createInsertValuesStmt(
-          "TXNS (txn_id, txn_state, txn_started, txn_last_heartbeat, txn_user, txn_host)", rows);
-        for (String q : queries) {
-          LOG.debug("Going to execute update <" + q + ">");
-          stmt.execute(q);
+        insertPreparedStmts = sqlGenerator.createInsertValuesPreparedStmt(dbConn,
+          "TXNS (txn_id, txn_state, txn_started, txn_last_heartbeat, txn_user, txn_host)",
+                rows, paramsList);
+        for (PreparedStatement pst : insertPreparedStmts) {
+          pst.execute();
         }
         LOG.debug("Going to commit");
         dbConn.commit();
@@ -541,6 +547,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
         throw new MetaException("Unable to select from transaction database "
           + StringUtils.stringifyException(e));
       } finally {
+        close(insertPreparedStmts);
         close(rs, stmt, dbConn);
         unlockInternal();
       }
@@ -548,6 +555,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
       return openTxns(rqst);
     }
   }
+
   @Override
   @RetrySemantics.Idempotent
   public void abortTxn(AbortTxnRequest rqst) throws NoSuchTxnException, MetaException, TxnAbortedException {
@@ -585,6 +593,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
       abortTxn(rqst);
     }
   }
+
   @Override
   @RetrySemantics.Idempotent
   public void abortTxns(AbortTxnsRequest rqst) throws NoSuchTxnException, MetaException {
@@ -925,6 +934,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
     Connection dbConn = null;
     try {
       Statement stmt = null;
+      List<PreparedStatement> insertPreparedStmts = null;
       ResultSet rs = null;
       ResultSet lockHandle = null;
       try {
@@ -962,6 +972,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
 
         if (txnid > 0) {
           List<String> rows = new ArrayList<>();
+          List<List<String>> paramsList = new ArrayList<>();
           // For each component in this lock request,
           // add an entry to the txn_components table
           for (LockComponent lc : rqst.getComponent()) {
@@ -1007,20 +1018,31 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
             String dbName = lc.getDbname();
             String tblName = lc.getTablename();
             String partName = lc.getPartitionname();
-            rows.add(txnid + ", '" + dbName + "', " +
-              (tblName == null ? "null" : "'" + tblName + "'") + ", " +
-              (partName == null ? "null" : "'" + partName + "'")+ "," +
-              quoteString(OpertaionType.fromDataOperationType(lc.getOperationType()).toString()));
+            rows.add(txnid + ", ?, " +
+                    (tblName == null ? "null" : "?") + ", " +
+                    (partName == null ? "null" : "?")+ "," +
+                    quoteString(OpertaionType.fromDataOperationType(lc.getOperationType()).toString()));
+            List<String> params = new ArrayList<>();
+            params.add(dbName);
+            if (tblName != null) {
+              params.add(tblName);
+            }
+            if (partName != null) {
+              params.add(partName);
+            }
+            paramsList.add(params);
           }
-          List<String> queries = sqlGenerator.createInsertValuesStmt(
-            "TXN_COMPONENTS (tc_txnid, tc_database, tc_table, tc_partition, tc_operation_type)", rows);
-          for(String query : queries) {
-            LOG.debug("Going to execute update <" + query + ">");
-            int modCount = stmt.executeUpdate(query);
+          insertPreparedStmts = sqlGenerator.createInsertValuesPreparedStmt(dbConn,
+            "TXN_COMPONENTS (tc_txnid, tc_database, tc_table, tc_partition, tc_operation_type)",
+                  rows, paramsList);
+          for(PreparedStatement pst : insertPreparedStmts) {
+            int modCount = pst.executeUpdate();
+            closeStmt(pst);
           }
+          insertPreparedStmts = null;
         }
-
         List<String> rows = new ArrayList<>();
+        List<List<String>> paramsList = new ArrayList<>();
         long intLockId = 0;
         for (LockComponent lc : rqst.getComponent()) {
           if(lc.isSetOperationType() && lc.getOperationType() == DataOperationType.UNSET &&
@@ -1051,24 +1073,40 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
               break;
           }
           long now = getDbTime(dbConn);
-            rows.add(extLockId + ", " + intLockId + "," + txnid + ", " +
-            quoteString(dbName) + ", " +
-            valueOrNullLiteral(tblName) + ", " +
-            valueOrNullLiteral(partName) + ", " +
+          rows.add(extLockId + ", " + intLockId + "," + txnid + ", ?, " +
+                  ((tblName == null) ? "null" : "?") + ", " +
+                  ((partName == null) ? "null" : "?") + ", " +
             quoteChar(LOCK_WAITING) + ", " + quoteChar(lockChar) + ", " +
             //for locks associated with a txn, we always heartbeat txn and timeout based on that
             (isValidTxn(txnid) ? 0 : now) + ", " +
-            valueOrNullLiteral(rqst.getUser()) + ", " +
-            valueOrNullLiteral(rqst.getHostname()) + ", " +
-            valueOrNullLiteral(rqst.getAgentInfo()));// + ")";
+                  ((rqst.getUser() == null) ? "null" : "?")  + ", " +
+                  ((rqst.getHostname() == null) ? "null" : "?") + ", " +
+                  ((rqst.getAgentInfo() == null) ? "null" : "?"));// + ")";
+          List<String> params = new ArrayList<>();
+          params.add(dbName);
+          if (tblName != null) {
+            params.add(tblName);
+          }
+          if (partName != null) {
+            params.add(partName);
+          }
+          if (rqst.getUser() != null) {
+            params.add(rqst.getUser());
+          }
+          if (rqst.getHostname() != null) {
+            params.add(rqst.getHostname());
+          }
+          if (rqst.getAgentInfo() != null) {
+            params.add(rqst.getAgentInfo());
+          }
+          paramsList.add(params);
         }
-        List<String> queries = sqlGenerator.createInsertValuesStmt(
+        insertPreparedStmts = sqlGenerator.createInsertValuesPreparedStmt(dbConn,
           "HIVE_LOCKS (hl_lock_ext_id, hl_lock_int_id, hl_txnid, hl_db, " +
             "hl_table, hl_partition,hl_lock_state, hl_lock_type, " +
-            "hl_last_heartbeat, hl_user, hl_host, hl_agent_info)", rows);
-        for(String query : queries) {
-          LOG.debug("Going to execute update <" + query + ">");
-          int modCount = stmt.executeUpdate(query);
+            "hl_last_heartbeat, hl_user, hl_host, hl_agent_info)", rows, paramsList);
+        for(PreparedStatement pst : insertPreparedStmts) {
+          int modCount = pst.executeUpdate();
         }
         dbConn.commit();
         success = true;
@@ -1080,6 +1118,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
         throw new MetaException("Unable to update transaction database " +
           StringUtils.stringifyException(e));
       } finally {
+        close(insertPreparedStmts);
         close(lockHandle);
         close(rs, stmt, null);
         if (!success) {
@@ -1276,10 +1315,9 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
       ShowLocksResponse rsp = new ShowLocksResponse();
       List<ShowLocksResponseElement> elems = new ArrayList<ShowLocksResponseElement>();
       List<LockInfoExt> sortedList = new ArrayList<LockInfoExt>();
-      Statement stmt = null;
+      PreparedStatement pst = null;
       try {
         dbConn = getDbConn(Connection.TRANSACTION_READ_COMMITTED);
-        stmt = dbConn.createStatement();
 
         String s = "select hl_lock_ext_id, hl_txnid, hl_db, hl_table, hl_partition, hl_lock_state, " +
           "hl_lock_type, hl_last_heartbeat, hl_acquired_at, hl_user, hl_host, hl_lock_int_id," +
@@ -1289,22 +1327,26 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
         String dbName = rqst.getDbname();
         String tableName = rqst.getTablename();
         String partName = rqst.getPartname();
+        List<String> params = new ArrayList<>();
 
         StringBuilder filter = new StringBuilder();
         if (dbName != null && !dbName.isEmpty()) {
-          filter.append("hl_db=").append(quoteString(dbName));
+          filter.append("hl_db=?");
+          params.add(dbName);
         }
         if (tableName != null && !tableName.isEmpty()) {
           if (filter.length() > 0) {
             filter.append(" and ");
           }
-          filter.append("hl_table=").append(quoteString(tableName));
+          filter.append("hl_table=?");
+          params.add(tableName);
         }
         if (partName != null && !partName.isEmpty()) {
           if (filter.length() > 0) {
             filter.append(" and ");
           }
-          filter.append("hl_partition=").append(quoteString(partName));
+          filter.append("hl_partition=?");
+          params.add(partName);
         }
         String whereClause = filter.toString();
 
@@ -1312,8 +1354,9 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
           s = s + " where " + whereClause;
         }
 
-        LOG.debug("Doing to execute query <" + s + ">");
-        ResultSet rs = stmt.executeQuery(s);
+        pst = sqlGenerator.prepareStmtWithParameters(dbConn, s, params);
+        LOG.debug("Going to execute query <" + s + ">");
+        ResultSet rs = pst.executeQuery();
         while (rs.next()) {
           ShowLocksResponseElement e = new ShowLocksResponseElement();
           e.setLockid(rs.getLong(1));
@@ -1358,7 +1401,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
         throw new MetaException("Unable to select from transaction database " +
           StringUtils.stringifyException(e));
       } finally {
-        closeStmt(stmt);
+        closeStmt(pst);
         closeDbConn(dbConn);
       }
       //this ensures that "SHOW LOCKS" prints the locks in the same order as they are examined
@@ -1469,6 +1512,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
     try {
       Connection dbConn = null;
       Statement stmt = null;
+      PreparedStatement pst = null;
       TxnStore.MutexAPI.LockHandle handle = null;
       try {
         lockInternal();
@@ -1483,20 +1527,24 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
 
         long id = generateCompactionQueueId(stmt);
 
+        List<String> params = new ArrayList<>();
         StringBuilder sb = new StringBuilder("select cq_id, cq_state from COMPACTION_QUEUE where").
           append(" cq_state IN(").append(quoteChar(INITIATED_STATE)).
             append(",").append(quoteChar(WORKING_STATE)).
-          append(") AND cq_database=").append(quoteString(rqst.getDbname())).
-          append(" AND cq_table=").append(quoteString(rqst.getTablename())).append(" AND ");
+          append(") AND cq_database=?").
+          append(" AND cq_table=?").append(" AND ");
+        params.add(rqst.getDbname());
+        params.add(rqst.getTablename());
         if(rqst.getPartitionname() == null) {
           sb.append("cq_partition is null");
-        }
-        else {
-          sb.append("cq_partition=").append(quoteString(rqst.getPartitionname()));
+        } else {
+          sb.append("cq_partition=?");
+          params.add(rqst.getPartitionname());
         }
 
+        pst = sqlGenerator.prepareStmtWithParameters(dbConn, sb.toString(), params);
         LOG.debug("Going to execute query <" + sb.toString() + ">");
-        ResultSet rs = stmt.executeQuery(sb.toString());
+        ResultSet rs = pst.executeQuery();
         if(rs.next()) {
           long enqueuedId = rs.getLong(1);
           String state = compactorStateToResponse(rs.getString(2).charAt(0));
@@ -1506,6 +1554,8 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
           return new CompactionResponse(enqueuedId, state, false);
         }
         close(rs);
+        closeStmt(pst);
+        params.clear();
         StringBuilder buf = new StringBuilder("insert into COMPACTION_QUEUE (cq_id, cq_database, " +
           "cq_table, ");
         String partName = rqst.getPartitionname();
@@ -1517,14 +1567,16 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
         if (rqst.getRunas() != null) buf.append(", cq_run_as");
         buf.append(") values (");
         buf.append(id);
-        buf.append(", '");
-        buf.append(rqst.getDbname());
-        buf.append("', '");
-        buf.append(rqst.getTablename());
-        buf.append("', '");
+        buf.append(", ?");
+        buf.append(", ?");
+        buf.append(", ");
+        params.add(rqst.getDbname());
+        params.add(rqst.getTablename());
         if (partName != null) {
-          buf.append(partName);
-          buf.append("', '");
+          buf.append("?, '");
+          params.add(partName);
+        } else {
+          buf.append("'");
         }
         buf.append(INITIATED_STATE);
         buf.append("', '");
@@ -1542,18 +1594,20 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
             dbConn.rollback();
             throw new MetaException("Unexpected compaction type " + rqst.getType().toString());
         }
+        buf.append("'");
         if (rqst.getProperties() != null) {
-          buf.append("', '");
-          buf.append(new StringableMap(rqst.getProperties()).toString());
+          buf.append(", ?");
+          params.add(new StringableMap(rqst.getProperties()).toString());
         }
         if (rqst.getRunas() != null) {
-          buf.append("', '");
-          buf.append(rqst.getRunas());
+          buf.append(", ?");
+          params.add(rqst.getRunas());
         }
-        buf.append("')");
+        buf.append(")");
         String s = buf.toString();
+        pst = sqlGenerator.prepareStmtWithParameters(dbConn, s, params);
         LOG.debug("Going to execute update <" + s + ">");
-        stmt.executeUpdate(s);
+        pst.executeUpdate();
         LOG.debug("Going to commit");
         dbConn.commit();
         return new CompactionResponse(id, INITIATED_RESPONSE, true);
@@ -1564,6 +1618,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
         throw new MetaException("Unable to select from transaction database " +
           StringUtils.stringifyException(e));
       } finally {
+        closeStmt(pst);
         closeStmt(stmt);
         closeDbConn(dbConn);
         if(handle != null) {
@@ -1672,7 +1727,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
     Connection dbConn = null;
     Statement stmt = null;
     ResultSet lockHandle = null;
-    ResultSet rs = null;
+    List<PreparedStatement> insertPreparedStmts = null;
     try {
       try {
         lockInternal();
@@ -1690,17 +1745,22 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
           ot = OpertaionType.fromDataOperationType(rqst.getOperationType());
         }
         List<String> rows = new ArrayList<>();
+        List<List<String>> paramsList = new ArrayList<>();
         for (String partName : rqst.getPartitionnames()) {
-          rows.add(rqst.getTxnid() + "," + quoteString(rqst.getDbname()) + "," + quoteString(rqst.getTablename()) +
-            "," + quoteString(partName) + "," + quoteChar(ot.sqlConst));
+          rows.add(rqst.getTxnid() + ",?,?,?," + quoteChar(ot.sqlConst));
+          List<String> params = new ArrayList<>();
+          params.add(rqst.getDbname());
+          params.add(rqst.getTablename());
+          params.add(partName);
+          paramsList.add(params);
         }
         int modCount = 0;
         //record partitions that were written to
-        List<String> queries = sqlGenerator.createInsertValuesStmt(
-          "TXN_COMPONENTS (tc_txnid, tc_database, tc_table, tc_partition, tc_operation_type)", rows);
-        for(String query : queries) {
-          LOG.debug("Going to execute update <" + query + ">");
-          modCount = stmt.executeUpdate(query);
+        insertPreparedStmts = sqlGenerator.createInsertValuesPreparedStmt(dbConn,
+            "TXN_COMPONENTS (tc_txnid, tc_database, tc_table, tc_partition, tc_operation_type)",
+                rows, paramsList);
+        for(PreparedStatement pst : insertPreparedStmts) {
+          modCount = pst.executeUpdate();
         }
         LOG.debug("Going to commit");
         dbConn.commit();
@@ -1711,6 +1771,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
         throw new MetaException("Unable to insert into from transaction database " +
           StringUtils.stringifyException(e));
       } finally {
+        close(insertPreparedStmts);
         close(lockHandle, stmt, dbConn);
         unlockInternal();
       }
@@ -1952,6 +2013,7 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
       LOG.warn("Failed to rollback db connection " + getMessage(e));
     }
   }
+
   protected static void closeDbConn(Connection dbConn) {
     try {
       if (dbConn != null && !dbConn.isClosed()) {
@@ -1983,9 +2045,26 @@ abstract class TxnHandler implements TxnStore, TxnStore.MutexAPI {
       if (rs != null && !rs.isClosed()) {
         rs.close();
       }
-    }
-    catch(SQLException ex) {
+    } catch (SQLException ex) {
       LOG.warn("Failed to close statement " + getMessage(ex));
+    }
+  }
+
+  /**
+   * Close the PreparedStatements.
+   * @param preparedStmts may be {@code null}
+   */
+  static void close(List<PreparedStatement> preparedStmts) {
+    try {
+      if (preparedStmts != null) {
+        for (PreparedStatement pst : preparedStmts) {
+          if (pst != null) {
+            pst.close();
+          }
+        }
+      }
+    } catch (SQLException ex) {
+      LOG.warn("Failed to close prepared statement " + getMessage(ex));
     }
   }
 
