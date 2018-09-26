@@ -68,7 +68,6 @@ public class TestReplicationOnHDFSEncryptedZones {
 
     DFSTestUtil.createKey("test_key", miniDFSCluster, conf);
     primary = new WarehouseInstance(LOG, miniDFSCluster, new HashMap<String, String>() {{
-      put(HiveConf.ConfVars.HIVE_IN_TEST.varname, "false");
       put(HiveConf.ConfVars.HIVE_SERVER2_ENABLE_DOAS.varname, "false");
     }}, "test_key");
   }

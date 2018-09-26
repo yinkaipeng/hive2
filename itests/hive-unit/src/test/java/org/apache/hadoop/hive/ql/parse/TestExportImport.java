@@ -50,9 +50,7 @@ public class TestExportImport {
     conf.set("dfs.client.use.datanode.hostname", "true");
     MiniDFSCluster miniDFSCluster =
         new MiniDFSCluster.Builder(conf).numDataNodes(1).format(true).build();
-    HashMap<String, String> overridesForHiveConf = new HashMap<String, String>() {{
-      put(HiveConf.ConfVars.HIVE_IN_TEST.varname, "false");
-    }};
+    HashMap<String, String> overridesForHiveConf = new HashMap<String, String>();
     srcHiveWarehouse =
         new WarehouseInstance(LOG, miniDFSCluster, overridesForHiveConf);
     destHiveWarehouse = new WarehouseInstance(LOG, miniDFSCluster, overridesForHiveConf);
