@@ -82,7 +82,7 @@ public final class BuddyAllocator
         HiveConf.getIntVar(conf, ConfVars.LLAP_ALLOCATOR_ARENA_COUNT),
         getMaxTotalMemorySize(conf), 
         HiveConf.getVar(conf, ConfVars.LLAP_ALLOCATOR_MAPPED_PATH),
-        mm, metrics);
+        mm, metrics, HiveConf.getBoolVar(conf, ConfVars.LLAP_ALLOCATOR_PREALLOCATE));
   }
 
   private static long getMaxTotalMemorySize(Configuration conf) {
@@ -99,15 +99,17 @@ public final class BuddyAllocator
 
   @VisibleForTesting
   public BuddyAllocator(boolean isDirectVal, int minAllocVal, int maxAllocVal, int arenaCount,
-      long maxSizeVal, MemoryManager memoryManager, LlapDaemonCacheMetrics metrics) {
+      long maxSizeVal, MemoryManager memoryManager, LlapDaemonCacheMetrics metrics,
+      boolean doPreallocate) {
     this(isDirectVal, false /*isMapped*/,  minAllocVal, maxAllocVal, arenaCount, maxSizeVal, 
-        null /* mapping path */, memoryManager, metrics);
+        null /* mapping path */, memoryManager, metrics, doPreallocate);
   }
 
   @VisibleForTesting
   public BuddyAllocator(boolean isDirectVal, boolean isMappedVal, int minAllocVal, int maxAllocVal,
       int arenaCount, long maxSizeVal, String mapPath, MemoryManager memoryManager,
-      LlapDaemonCacheMetrics metrics) {
+      LlapDaemonCacheMetrics metrics,
+      boolean doPreallocate) {
     isDirect = isDirectVal;
     isMapped = isMappedVal;
     minAllocation = minAllocVal;
@@ -174,8 +176,11 @@ public final class BuddyAllocator
     for (int i = 0; i < maxArenas; ++i) {
       arenas[i] = new Arena();
     }
-    arenas[0].init();
-    allocatedArenas.set(1);
+    int initCount = doPreallocate && !isMappedVal ? maxArenas : 1;
+    for (int i = 0; i < initCount; ++i) {
+      arenas[i].init();
+    }
+    allocatedArenas.set(initCount);
     this.memoryManager = memoryManager;
 
     this.metrics = metrics;
