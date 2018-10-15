@@ -8217,7 +8217,7 @@ public class ObjectStore implements RawStore, Configurable {
       }
       Iterator<MNotificationLog> i = events.iterator();
       NotificationEventResponse result = new NotificationEventResponse();
-      result.setEvents(new ArrayList<>());
+      result.setEvents(new ArrayList<NotificationEvent>());
       int maxEvents = rqst.getMaxEvents() > 0 ? rqst.getMaxEvents() : Integer.MAX_VALUE;
       int numEvents = 0;
       while (i.hasNext() && numEvents++ < maxEvents) {
@@ -8237,12 +8237,14 @@ public class ObjectStore implements RawStore, Configurable {
 
   private void lockForUpdate() throws MetaException {
     String selectQuery = "select NEXT_EVENT_ID from NOTIFICATION_SEQUENCE";
-    String selectForUpdateQuery = sqlGenerator.addForUpdateClause(selectQuery);
-    new RetryingExecutor(hiveConf, () -> {
+    final String selectForUpdateQuery = sqlGenerator.addForUpdateClause(selectQuery);
+    new RetryingExecutor(hiveConf, new RetryingExecutor.Command() {
+      public void process() {
       Query query = pm.newQuery("javax.jdo.query.SQL", selectForUpdateQuery);
       query.setUnique(true);
       // only need to execute it to get db Lock
       query.execute();
+      }
     }).run();
   }
 

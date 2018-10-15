@@ -405,11 +405,16 @@ public class TestObjectStore {
   public void testConcurrentAddNotifications() throws ExecutionException, InterruptedException {
 
     final int NUM_THREADS = 10;
-    CyclicBarrier cyclicBarrier = new CyclicBarrier(NUM_THREADS,
-        () -> LoggerFactory.getLogger("test")
-            .debug(NUM_THREADS + " threads going to add notification"));
+    final CyclicBarrier cyclicBarrier = new CyclicBarrier(NUM_THREADS,
+              new Runnable() {
+                @Override
+                public void run() {
+                  LoggerFactory.getLogger("test")
+                        .debug(NUM_THREADS + " threads going to add notification");
+                }
+        });
 
-    HiveConf conf = new HiveConf();
+    final HiveConf conf = new HiveConf();
     conf.setVar(HiveConf.ConfVars.METASTORE_EXPRESSION_PROXY_CLASS,
         MockPartitionExpressionProxy.class.getName());
     /*
@@ -440,23 +445,26 @@ public class TestObjectStore {
       final int n = i;
 
       executorService.execute(
-          () -> {
-            ObjectStore store = new ObjectStore();
-            store.setConf(conf);
+          new Runnable() {
+            @Override
+            public void run() {
+              ObjectStore store = new ObjectStore();
+              store.setConf(conf);
 
-            String eventType = EventMessage.EventType.CREATE_DATABASE.toString();
-            NotificationEvent dbEvent =
-                new NotificationEvent(0, 0, eventType,
-                    "CREATE DATABASE DB" + n);
-            System.out.println("ADDING NOTIFICATION");
+              String eventType = EventMessage.EventType.CREATE_DATABASE.toString();
+              NotificationEvent dbEvent =
+                  new NotificationEvent(0, 0, eventType,
+                      "CREATE DATABASE DB" + n);
+              System.out.println("ADDING NOTIFICATION");
 
-            try {
-              cyclicBarrier.await();
-            } catch (InterruptedException | BrokenBarrierException e) {
-              throw new RuntimeException(e);
+              try {
+                cyclicBarrier.await();
+              } catch (InterruptedException | BrokenBarrierException e) {
+                throw new RuntimeException(e);
+              }
+              store.addNotificationEvent(dbEvent);
+              System.out.println("FINISH NOTIFICATION");
             }
-            store.addNotificationEvent(dbEvent);
-            System.out.println("FINISH NOTIFICATION");
           });
     }
     executorService.shutdown();
