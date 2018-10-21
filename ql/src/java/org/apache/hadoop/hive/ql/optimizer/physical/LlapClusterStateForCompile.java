@@ -42,6 +42,7 @@ public class LlapClusterStateForCompile {
   private Long lastClusterUpdateNs;
   private Integer noConfigNodeCount, executorCount;
   private int numExecutorsPerNode = -1;
+  private volatile long memoryPerInstance = -1;
   private LlapRegistryService svc;
   private final Configuration conf;
 
@@ -87,6 +88,14 @@ public class LlapClusterStateForCompile {
     return numExecutorsPerNode;
   }
 
+  public long getMemoryPerInstance() {
+    return memoryPerInstance;
+  }
+
+  public long getMemoryPerExecutor() {
+    return getMemoryPerInstance() / getNumExecutorsPerNode();
+  }
+
   public synchronized void initClusterInfo() {
     if (lastClusterUpdateNs != null) {
       long elapsed = System.nanoTime() - lastClusterUpdateNs;
@@ -120,6 +129,9 @@ public class LlapClusterStateForCompile {
         executorsLocal += numExecutors;
         if (numExecutorsPerNode == -1) {
           numExecutorsPerNode = numExecutors;
+        }
+        if (memoryPerInstance == -1) {
+          memoryPerInstance = si.getResource().getMemorySize() * 1024L * 1024L;
         }
       } catch (NumberFormatException e) {
         ++noConfigNodesLocal;

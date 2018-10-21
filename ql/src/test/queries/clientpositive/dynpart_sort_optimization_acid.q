@@ -4,7 +4,7 @@ set hive.txn.manager=org.apache.hadoop.hive.ql.lockmgr.DbTxnManager;
 
 set hive.exec.dynamic.partition.mode=nonstrict;
 
-set hive.optimize.sort.dynamic.partition=false;
+set hive.optimize.sort.dynamic.partition.threshold=-1;
 
 -- single level partition, sorted dynamic partition disabled
 drop table acid;
@@ -26,7 +26,7 @@ select count(*) from acid where ds in ('2008-04-08');
 delete from acid where key = 'foo' and ds='2008-04-08';
 select count(*) from acid where ds='2008-04-08';
 
-set hive.optimize.sort.dynamic.partition=true;
+set hive.optimize.sort.dynamic.partition.threshold=1;
 
 -- single level partition, sorted dynamic partition enabled
 drop table acid;
@@ -48,7 +48,7 @@ select count(*) from acid where ds in ('2008-04-08');
 delete from acid where key = 'foo' and ds='2008-04-08';
 select count(*) from acid where ds='2008-04-08';
 
-set hive.optimize.sort.dynamic.partition=false;
+set hive.optimize.sort.dynamic.partition.threshold=-1;
 
 -- 2 level partition, sorted dynamic partition disabled
 drop table acid;
@@ -76,7 +76,7 @@ delete from acid where value = 'bar';
 delete from acid where value = 'bar';
 select count(*) from acid;
 
-set hive.optimize.sort.dynamic.partition=true;
+set hive.optimize.sort.dynamic.partition.threshold=1;
 
 -- 2 level partition, sorted dynamic partition enabled
 drop table acid;
@@ -105,7 +105,7 @@ delete from acid where value = 'bar';
 select count(*) from acid;
 
 
-set hive.optimize.sort.dynamic.partition=true;
+set hive.optimize.sort.dynamic.partition.threshold=1;
 set hive.optimize.constant.propagation=false;
 
 -- 2 level partition, sorted dynamic partition enabled, constant propagation disabled
@@ -128,4 +128,4 @@ select count(*) from acid where ds='2008-04-08' and hr>=11;
 delete from acid where key = 'foo' and ds='2008-04-08' and hr=11;
 select count(*) from acid where ds='2008-04-08' and hr=11;
 
-set hive.optimize.sort.dynamic.partition=true;
+set hive.optimize.sort.dynamic.partition.threshold=1;
