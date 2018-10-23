@@ -68,7 +68,6 @@ public class OrcEncodedDataConsumer
   private CompressionCodec codec;
   private List<ConsumerStripeMetadata> stripes;
   private final boolean skipCorrupt; // TODO: get rid of this
-  private final QueryFragmentCounters counters;
   private boolean[] includedColumns;
   private TypeDescription readerSchema;
   private IoTrace trace;
@@ -76,10 +75,9 @@ public class OrcEncodedDataConsumer
   public OrcEncodedDataConsumer(
       Consumer<ColumnVectorBatch> consumer, int colCount, boolean skipCorrupt,
       QueryFragmentCounters counters, LlapDaemonIOMetrics ioMetrics) {
-    super(consumer, colCount, ioMetrics);
+    super(consumer, colCount, ioMetrics, counters);
     // TODO: get rid of this
     this.skipCorrupt = skipCorrupt;
-    this.counters = counters;
   }
 
   public void setFileMetadata(ConsumerFileMetadata f) {
@@ -165,7 +163,7 @@ public class OrcEncodedDataConsumer
         counters.incrCounter(LlapIOCounters.ROWS_EMITTED, batchSize);
       }
       LlapIoImpl.ORC_LOGGER.debug("Done with decode");
-      counters.incrTimeCounter(LlapIOCounters.DECODE_TIME_NS, startTime);
+      counters.incrWallClockCounter(LlapIOCounters.DECODE_TIME_NS, startTime);
       counters.incrCounter(LlapIOCounters.NUM_VECTOR_BATCHES, maxBatchesRG);
       counters.incrCounter(LlapIOCounters.NUM_DECODED_BATCHES);
     } catch (IOException e) {

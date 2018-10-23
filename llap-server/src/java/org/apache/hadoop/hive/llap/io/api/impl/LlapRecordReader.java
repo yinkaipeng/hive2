@@ -318,7 +318,7 @@ class LlapRecordReader
       if (wasFirst) {
         firstReturnTime = counters.startTimeCounter();
       }
-      counters.incrTimeCounter(LlapIOCounters.CONSUMER_TIME_NS, firstReturnTime);
+      counters.incrWallClockCounter(LlapIOCounters.CONSUMER_TIME_NS, firstReturnTime);
       return false;
     }
     if (columnCount != cvb.cols.length) {

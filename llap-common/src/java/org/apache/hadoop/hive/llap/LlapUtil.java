@@ -14,6 +14,8 @@
 package org.apache.hadoop.hive.llap;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -230,5 +232,19 @@ public class LlapUtil {
     int exp = (int) (Math.log(bytes) / Math.log(unit));
     String suffix = "KMGTPE".charAt(exp-1) + "";
     return String.format("%.2f%sB", bytes / Math.pow(unit, exp), suffix);
+  }
+
+  public static ThreadMXBean initThreadMxBean() {
+    ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
+    if (mxBean != null) {
+      if (!mxBean.isCurrentThreadCpuTimeSupported()) {
+        LOG.warn("Thread CPU monitoring is not supported");
+        return null;
+      } else if (!mxBean.isThreadCpuTimeEnabled()) {
+        LOG.warn("Thread CPU monitoring is not enabled");
+        return null;
+      }
+    }
+    return mxBean;
   }
 }
