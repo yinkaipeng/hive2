@@ -380,7 +380,7 @@ public class OrcEncodedDataReader extends CallableWithNdc<Void>
             long startTimeHdfs = counters.startTimeCounter();
             stripeMetadata = new OrcStripeMetadata(new OrcBatchKey(fileKey, stripeIx, 0),
                 metadataReader, stripe, globalIncludes, sargColumns);
-            counters.incrTimeCounter(LlapIOCounters.HDFS_TIME_NS, startTimeHdfs);
+            counters.incrWallClockCounter(LlapIOCounters.HDFS_TIME_NS, startTimeHdfs);
             if (hasFileId && metadataCache != null) {
               OrcStripeMetadata newMetadata = metadataCache.putStripeMetadata(stripeMetadata);
               isFoundInCache = newMetadata != stripeMetadata; // May be cached concurrently.
@@ -452,7 +452,7 @@ public class OrcEncodedDataReader extends CallableWithNdc<Void>
   }
 
   private void recordReaderTime(long startTime) {
-    counters.incrTimeCounter(LlapIOCounters.TOTAL_IO_TIME_NS, startTime);
+    counters.incrWallClockCounter(LlapIOCounters.TOTAL_IO_TIME_NS, startTime);
   }
 
   private static String getDbAndTableName(Path path) {
@@ -554,7 +554,7 @@ public class OrcEncodedDataReader extends CallableWithNdc<Void>
       if (stripeMetadata.hasAllIndexes(stripeIncludes)) return;
       long startTime = counters.startTimeCounter();
       stripeMetadata.loadMissingIndexes(metadataReader, stripe, stripeIncludes, sargColumns);
-      counters.incrTimeCounter(LlapIOCounters.HDFS_TIME_NS, startTime);
+      counters.incrWallClockCounter(LlapIOCounters.HDFS_TIME_NS, startTime);
     }
   }
 
@@ -592,7 +592,7 @@ public class OrcEncodedDataReader extends CallableWithNdc<Void>
     long startTime = counters.startTimeCounter();
     ReaderOptions opts = OrcFile.readerOptions(jobConf).filesystem(fs).fileMetadata(fileMetadata);
     orcReader = EncodedOrcFile.createReader(path, opts);
-    counters.incrTimeCounter(LlapIOCounters.HDFS_TIME_NS, startTime);
+    counters.incrWallClockCounter(LlapIOCounters.HDFS_TIME_NS, startTime);
   }
 
   /**
@@ -639,7 +639,7 @@ public class OrcEncodedDataReader extends CallableWithNdc<Void>
           long startTime = counters.startTimeCounter();
           value = new OrcStripeMetadata(new OrcBatchKey(fileKey, stripeIx, 0),
               metadataReader, si, globalInc, sargColumns);
-          counters.incrTimeCounter(LlapIOCounters.HDFS_TIME_NS, startTime);
+          counters.incrWallClockCounter(LlapIOCounters.HDFS_TIME_NS, startTime);
           if (hasFileId && metadataCache != null) {
             value = metadataCache.putStripeMetadata(value);
             if (LlapIoImpl.ORC_LOGGER.isTraceEnabled()) {
@@ -679,7 +679,7 @@ public class OrcEncodedDataReader extends CallableWithNdc<Void>
         .withTypeCount(orcReader.getSchema().getMaximumId() + 1)
         .withZeroCopy(useZeroCopy)
         .build());
-    counters.incrTimeCounter(LlapIOCounters.HDFS_TIME_NS, startTime);
+    counters.incrWallClockCounter(LlapIOCounters.HDFS_TIME_NS, startTime);
   }
 
   @Override
