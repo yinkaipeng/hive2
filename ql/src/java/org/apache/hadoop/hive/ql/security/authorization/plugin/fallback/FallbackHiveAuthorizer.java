@@ -189,6 +189,8 @@ public class FallbackHiveAuthorizer extends AbstractHiveAuthorizer {
       case ADD:
       case DFS:
       case COMPILE:
+      case CREATEFUNCTION:
+      case DROPFUNCTION:
         needAdmin = true;
         break;
       default:
