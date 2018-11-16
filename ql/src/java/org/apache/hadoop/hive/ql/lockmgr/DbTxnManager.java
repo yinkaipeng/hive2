@@ -199,6 +199,7 @@ public final class DbTxnManager extends HiveTxnManagerImpl {
     getLockManager();
 
     boolean atLeastOneLock = false;
+	final boolean strictReadLocks = conf.getBoolVar(HiveConf.ConfVars.HIVE_TXN_STRICT_READ_LOCKS);
     queryId = plan.getQueryId();
 
     LockRequestBuilder rqstBuilder = new LockRequestBuilder(queryId);
@@ -245,6 +246,14 @@ public final class DbTxnManager extends HiveTxnManagerImpl {
       }
       if(t != null && AcidUtils.isAcidTable(t)) {
         compBuilder.setIsAcid(true);
+      } else if (strictReadLocks == false && t != null) {
+	    // skip read-locks for non-transactional tables
+	    // read-locks don't protect non-transactional tables data consistency
+	    LOG.debug("Skipping read lock request on " + t);
+	    continue;
+      } else if (strictReadLocks == false && input.getType() == Entity.Type.DATABASE) {
+        LOG.debug("Skipping read lock request on " + input.getDatabase().getName());
+        continue;
       }
       LockComponent comp = compBuilder.build();
       LOG.debug("Adding lock component to lock request " + comp.toString());

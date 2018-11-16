@@ -90,23 +90,19 @@ public class LowLevelCacheMemoryManager implements MemoryManager {
       if (evicted == 0) {
         if (!waitForEviction) {
           result = false;
+          break; // Test code path where we don't do more than one attempt.
+        }
+
+        if (isStopped != null && isStopped.get()) {
+          result = false;
           break;
         }
-        ++badCallCount;
-        if (badCallCount == nextLog) {
-          LlapIoImpl.LOG.warn("Cannot evict blocks for " + badCallCount + " calls; cache full?");
-          nextLog <<= 1;
-          try {
-            Thread.sleep(Math.min(1000, nextLog));
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            result = false;
-            break;
-          }
-          if (isStopped != null && isStopped.get()) {
-            result = false;
-            break;
-          }
+        try {
+          Thread.sleep(badCallCount > 9 ? 1000 : (1 << badCallCount));
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          result = false;
+          break;
         }
         continue;
       }
@@ -130,13 +126,6 @@ public class LowLevelCacheMemoryManager implements MemoryManager {
     }
     metrics.incrCacheCapacityUsed(reservedTotalMetric - evictedTotalMetric);
     return result;
-  }
-
-
-  @Override
-  public long forceReservedMemory(int allocationSize, int count) {
-    if (evictor == null) return 0;
-    return evictor.tryEvictContiguousData(allocationSize, count);
   }
 
   @Override

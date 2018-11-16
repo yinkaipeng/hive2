@@ -29,6 +29,10 @@ public interface Allocator {
     private static final long serialVersionUID = 268124648177151761L;
   }
 
+  public interface BufferObjectFactory {
+    MemoryBuffer create();
+  }
+
   /**
    * Allocates multiple buffers of a given size.
    * @param dest Array where buffers are placed. Objects are reused if already there
@@ -36,13 +40,26 @@ public interface Allocator {
    * @param size Allocation size.
    * @throws AllocatorOutOfMemoryException Cannot allocate.
    */
+  @Deprecated
   void allocateMultiple(MemoryBuffer[] dest, int size) throws AllocatorOutOfMemoryException;
+
+  /**
+   * Allocates multiple buffers of a given size.
+   * @param dest Array where buffers are placed. Objects are reused if already there
+   *             (see createUnallocated), created otherwise.
+   * @param size Allocation size.
+   * @param factory A factory to create the objects in the dest array, if needed.
+   * @throws AllocatorOutOfMemoryException Cannot allocate.
+   */
+  void allocateMultiple(MemoryBuffer[] dest, int size, BufferObjectFactory factory)
+      throws AllocatorOutOfMemoryException;
 
   /**
    * Creates an unallocated memory buffer object. This object can be passed to allocateMultiple
    * to allocate; this is useful if data structures are created for separate buffers that can
    * later be allocated together.
    */
+  @Deprecated
   MemoryBuffer createUnallocated();
   /** Deallocates a memory buffer. */
   void deallocate(MemoryBuffer buffer);

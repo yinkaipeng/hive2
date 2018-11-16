@@ -407,7 +407,7 @@ class EncodedReaderImpl implements EncodedReader {
         hasError = false;
       } finally {
         // At this point, everything in the list is going to have a refcount of one. Unless it
-        // failed between the allocation and the incref for a single item, we should be ok. 
+        // failed between the allocation and the incref for a single item, we should be ok.
         if (hasError) {
           releaseInitialRefcounts(toRead.next);
           if (toRelease != null) {
@@ -731,8 +731,8 @@ class EncodedReaderImpl implements EncodedReader {
       assert originalCbIndex >= 0;
       // Had the put succeeded for our new buffer, it would have refcount of 2 - 1 from put,
       // and 1 from notifyReused call above. "Old" buffer now has the 1 from put; new buffer
-      // is not in cache.
-      cacheWrapper.getAllocator().deallocate(getBuffer());
+      // is not in cache. releaseBuffer will decref the buffer, and also deallocate.
+      cacheWrapper.releaseBuffer(this.buffer);
       cacheWrapper.reuseBuffer(replacementBuffer);
       // Replace the buffer in our big range list, as well as in current results.
       this.buffer = replacementBuffer;
@@ -1201,9 +1201,9 @@ class EncodedReaderImpl implements EncodedReader {
 
   private void allocateMultiple(MemoryBuffer[] dest, int size) {
     if (allocator != null) {
-      allocator.allocateMultiple(dest, size, isStopped);
+      allocator.allocateMultiple(dest, size, cacheWrapper.getDataBufferFactory(), isStopped);
     } else {
-      cacheWrapper.getAllocator().allocateMultiple(dest, size);
+      cacheWrapper.getAllocator().allocateMultiple(dest, size, cacheWrapper.getDataBufferFactory());
     }
   }
 
