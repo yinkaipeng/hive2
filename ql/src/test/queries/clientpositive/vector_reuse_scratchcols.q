@@ -1,7 +1,7 @@
 set hive.vectorized.execution.enabled=true;
 
 
-EXPLAIN VECTORIZATION DETAIL
+EXPLAIN -- VECTORIZATION DETAIL (no support in SMG branch)
 SELECT AVG(cint),
        (AVG(cint) + -3728),
        (-((AVG(cint) + -3728))),
@@ -40,7 +40,7 @@ WHERE  ((762 = cbigint)
 
 set hive.vectorized.reuse.scratch.columns=false;
 
-EXPLAIN VECTORIZATION DETAIL
+EXPLAIN -- VECTORIZATION DETAIL (no support in SMG branch)
 SELECT AVG(cint),
        (AVG(cint) + -3728),
        (-((AVG(cint) + -3728))),
