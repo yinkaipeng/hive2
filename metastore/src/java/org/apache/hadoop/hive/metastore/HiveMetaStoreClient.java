@@ -72,6 +72,7 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.hadoop.hive.common.LogUtils;
 
 import static org.apache.hadoop.hive.metastore.MetaStoreUtils.DEFAULT_DATABASE_NAME;
 import static org.apache.hadoop.hive.metastore.MetaStoreUtils.isIndexTable;
@@ -377,6 +378,10 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
           try {
             transport.open();
             LOG.info("Opened a connection to metastore, current connections: " + connCount.incrementAndGet());
+            if (LOG.isTraceEnabled()) {
+              LOG.trace("", new LogUtils.StackTraceLogger("METASTORE CONNECTION TRACE - open - " +
+                      System.identityHashCode(this)));
+            }
             isConnected = true;
           } catch (TTransportException e) {
             tte = e;
@@ -458,6 +463,10 @@ public class HiveMetaStoreClient implements IMetaStoreClient {
     if ((transport != null) && transport.isOpen()) {
       transport.close();
       LOG.info("Closed a connection to metastore, current connections: " + connCount.decrementAndGet());
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("", new LogUtils.StackTraceLogger("METASTORE CONNECTION TRACE - close - " +
+                System.identityHashCode(this)));
+      }
     }
   }
 

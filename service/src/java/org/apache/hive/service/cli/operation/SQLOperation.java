@@ -341,6 +341,13 @@ public class SQLOperation extends ExecuteStatementOperation {
           } finally {
             unregisterLoggingContext();
             unregisterOperationLog();
+            Hive hiveDb = Hive.getThreadLocal();
+            if (hiveDb != null && hiveDb != parentHive) {
+              // If new hive object is created  by the child thread, then we need to close it as it might
+              // have created a hms connection. Call Hive.closeCurrent() that closes the HMS connection, causes
+              // HMS connection leaks otherwise.
+              Hive.closeCurrent();
+            }
           }
           return null;
         }
