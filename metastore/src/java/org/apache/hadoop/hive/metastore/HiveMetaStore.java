@@ -242,6 +242,9 @@ public class HiveMetaStore extends ThriftHiveMetastore {
     private FileMetadataManager fileMetadataManager;
     private PartitionExpressionProxy expressionProxy;
 
+    // Flag to control that threads are initialized only once
+    private final static AtomicBoolean alwaysThreadsInitialized = new AtomicBoolean(false);
+
     //For Metrics
     private int initDatabaseCount, initTableCount, initPartCount;
 
@@ -500,25 +503,28 @@ public class HiveMetaStore extends ThriftHiveMetastore {
         partitionValidationPattern = null;
       }
 
-      long cleanFreq = hiveConf.getTimeVar(ConfVars.METASTORE_EVENT_CLEAN_FREQ, TimeUnit.MILLISECONDS);
-      if (cleanFreq > 0) {
-        // In default config, there is no timer.
-        Timer cleaner = new Timer("Metastore Events Cleaner Thread", true);
-        cleaner.schedule(new EventCleanerTask(this), cleanFreq, cleanFreq);
-      }
+      // Timer tasks should be initialized only once
+      if (alwaysThreadsInitialized.compareAndSet(false, true)) {
+        long cleanFreq = hiveConf.getTimeVar(ConfVars.METASTORE_EVENT_CLEAN_FREQ, TimeUnit.MILLISECONDS);
+        if (cleanFreq > 0) {
+          // In default config, there is no timer.
+          Timer cleaner = new Timer("Metastore Events Cleaner Thread", true);
+          cleaner.schedule(new EventCleanerTask(this), cleanFreq, cleanFreq);
+        }
 
-      cleanFreq = hiveConf.getTimeVar(ConfVars.REPL_DUMPDIR_CLEAN_FREQ, TimeUnit.MILLISECONDS);
-      if (cleanFreq > 0) {
-        // In default config, there is no timer.
-        Timer cleaner = new Timer("Repl Dump Dir Cleaner Thread", true);
-        cleaner.schedule(new DumpDirCleanerTask(hiveConf), cleanFreq, cleanFreq);
-      }
+        cleanFreq = hiveConf.getTimeVar(ConfVars.REPL_DUMPDIR_CLEAN_FREQ, TimeUnit.MILLISECONDS);
+        if (cleanFreq > 0) {
+          // In default config, there is no timer.
+          Timer cleaner = new Timer("Repl Dump Dir Cleaner Thread", true);
+          cleaner.schedule(new DumpDirCleanerTask(hiveConf), cleanFreq, cleanFreq);
+        }
 
-      long cleanFreqHiveEvents = hiveConf.getTimeVar(ConfVars.HIVE_PROTO_EVENTS_CLEAN_FREQ, TimeUnit.MILLISECONDS);
-      if (cleanFreqHiveEvents > 0) {
-        // In default config, there is no timer.
-        Timer cleaner = new Timer("Hive Event Cleaner Thread", true);
-        cleaner.schedule(new HiveProtoEventsCleanerTask(hiveConf), cleanFreqHiveEvents, cleanFreqHiveEvents);
+        long cleanFreqHiveEvents = hiveConf.getTimeVar(ConfVars.HIVE_PROTO_EVENTS_CLEAN_FREQ, TimeUnit.MILLISECONDS);
+        if (cleanFreqHiveEvents > 0) {
+          // In default config, there is no timer.
+          Timer cleaner = new Timer("Hive Event Cleaner Thread", true);
+          cleaner.schedule(new HiveProtoEventsCleanerTask(hiveConf), cleanFreqHiveEvents, cleanFreqHiveEvents);
+        }
       }
       expressionProxy = PartFilterExprUtil.createExpressionProxy(hiveConf);
       fileMetadataManager = new FileMetadataManager((ThreadLocalRawStore)this, hiveConf);
