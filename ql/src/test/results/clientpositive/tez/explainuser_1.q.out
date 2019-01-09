@@ -1487,7 +1487,7 @@ Stage-0
                                   <-Reducer 10 [SIMPLE_EDGE]
                                     SHUFFLE [RS_29]
                                       PartitionCols:_col0
-                                      Filter Operator [FIL_26] (rows=2 width=105)
+                                      Filter Operator [FIL_58] (rows=3 width=105)
                                         predicate:_col0 is not null
                                         Limit [LIM_24] (rows=3 width=105)
                                           Number of rows:5
@@ -1511,7 +1511,7 @@ Stage-0
                                   <-Reducer 3 [SIMPLE_EDGE]
                                     SHUFFLE [RS_28]
                                       PartitionCols:_col0
-                                      Filter Operator [FIL_12] (rows=2 width=97)
+                                      Filter Operator [FIL_56] (rows=3 width=97)
                                         predicate:_col0 is not null
                                         Limit [LIM_10] (rows=3 width=97)
                                           Number of rows:5
