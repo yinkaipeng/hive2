@@ -170,7 +170,7 @@ STAGE PLANS:
         Create View
           or replace: false
           columns: valoo string
-          expanded text: SELECT `_c0` AS `valoo` FROM (SELECT upper(`src`.`value`) FROM `default`.`src` WHERE `src`.`key`=86) `default.view0`
+          expanded text: SELECT `_c0` AS `valoo` FROM (SELECT upper(`src`.`value`) FROM `default`.`src` WHERE `src`.`key`=86) `view0`
           name: default.view0
           original text: SELECT upper(value) FROM src WHERE key=86
 
@@ -364,7 +364,7 @@ Sort Columns:       	[]
 	 	 
 # View Information	 	 
 View Original Text: 	SELECT upper(value) FROM src WHERE key=86	 
-View Expanded Text: 	SELECT `_c0` AS `valoo` FROM (SELECT upper(`src`.`value`) FROM `default`.`src` WHERE `src`.`key`=86) `default.view3`	 
+View Expanded Text: 	SELECT `_c0` AS `valoo` FROM (SELECT upper(`src`.`value`) FROM `default`.`src` WHERE `src`.`key`=86) `view3`	 
 PREHOOK: query: ALTER VIEW view3 SET TBLPROPERTIES ("biggest" = "loser")
 PREHOOK: type: ALTERVIEW_PROPERTIES
 PREHOOK: Input: default@view3
@@ -413,7 +413,7 @@ Sort Columns:       	[]
 	 	 
 # View Information	 	 
 View Original Text: 	SELECT upper(value) FROM src WHERE key=86	 
-View Expanded Text: 	SELECT `_c0` AS `valoo` FROM (SELECT upper(`src`.`value`) FROM `default`.`src` WHERE `src`.`key`=86) `default.view3`	 
+View Expanded Text: 	SELECT `_c0` AS `valoo` FROM (SELECT upper(`src`.`value`) FROM `default`.`src` WHERE `src`.`key`=86) `view3`	 
 PREHOOK: query: CREATE TABLE table1 (key int)
 PREHOOK: type: CREATETABLE
 PREHOOK: Output: database:default
@@ -726,7 +726,7 @@ c                   	string
 	 	 
 #### A masked pattern was here ####
 FROM table1, viewExpandedText:SELECT `_c0` AS `c` FROM (SELECT `test_translate`('abc', 'a', 'b')	 	 
-FROM `default`.`table1`) `default.view8`, tableType:VIRTUAL_VIEW)		 
+FROM `default`.`table1`) `view8`, tableType:VIRTUAL_VIEW)		 
 PREHOOK: query: DESCRIBE FORMATTED view8
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@view8
@@ -758,7 +758,7 @@ Sort Columns:       	[]
 View Original Text: 	SELECT test_translate('abc', 'a', 'b')	 
 FROM table1	 	 
 View Expanded Text: 	SELECT `_c0` AS `c` FROM (SELECT `test_translate`('abc', 'a', 'b')	 
-FROM `default`.`table1`) `default.view8`	 	 
+FROM `default`.`table1`) `view8`	 	 
 PREHOOK: query: SELECT * FROM view8
 PREHOOK: type: QUERY
 PREHOOK: Input: default@table1
@@ -803,7 +803,7 @@ m                   	int
 	 	 
 #### A masked pattern was here ####
 FROM src, viewExpandedText:SELECT `_c0` AS `m` FROM (SELECT `test_max`(length(`src`.`value`))	 	 
-FROM `default`.`src`) `default.view9`, tableType:VIRTUAL_VIEW)		 
+FROM `default`.`src`) `view9`, tableType:VIRTUAL_VIEW)		 
 PREHOOK: query: DESCRIBE FORMATTED view9
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@view9
@@ -835,7 +835,7 @@ Sort Columns:       	[]
 View Original Text: 	SELECT test_max(length(value))	 
 FROM src	 	 
 View Expanded Text: 	SELECT `_c0` AS `m` FROM (SELECT `test_max`(length(`src`.`value`))	 
-FROM `default`.`src`) `default.view9`	 	 
+FROM `default`.`src`) `view9`	 	 
 PREHOOK: query: SELECT * FROM view9
 PREHOOK: type: QUERY
 PREHOOK: Input: default@src
@@ -880,7 +880,7 @@ m                   	int
 	 	 
 #### A masked pattern was here ####
 FROM src, viewExpandedText:SELECT `_c0` AS `m` FROM (SELECT `test_max`(length(`src`.`value`))	 	 
-FROM `default`.`src`) `default.view9`, tableType:VIRTUAL_VIEW)		 
+FROM `default`.`src`) `view9`, tableType:VIRTUAL_VIEW)		 
 PREHOOK: query: DESCRIBE FORMATTED view9
 PREHOOK: type: DESCTABLE
 PREHOOK: Input: default@view9
@@ -912,7 +912,7 @@ Sort Columns:       	[]
 View Original Text: 	SELECT test_max(length(value))	 
 FROM src	 	 
 View Expanded Text: 	SELECT `_c0` AS `m` FROM (SELECT `test_max`(length(`src`.`value`))	 
-FROM `default`.`src`) `default.view9`	 	 
+FROM `default`.`src`) `view9`	 	 
 PREHOOK: query: SELECT * FROM view9
 PREHOOK: type: QUERY
 PREHOOK: Input: default@src
