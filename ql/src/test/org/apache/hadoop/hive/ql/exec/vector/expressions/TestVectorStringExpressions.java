@@ -4103,7 +4103,7 @@ public class TestVectorStringExpressions {
 
     // has nulls, not repeating
     VectorizedRowBatch batch = makeStringBatchMixedCharSize();
-    StringLength expr = new StringLength(0, 1);
+    StringLength expr = new StringLength(0, 6, 1);
     expr.evaluate(batch);
     LongColumnVector outCol = (LongColumnVector) batch.cols[1];
     Assert.assertEquals(5, outCol.vector[1]); // length of green is 5
@@ -4125,7 +4125,7 @@ public class TestVectorStringExpressions {
     outCol = (LongColumnVector) batch.cols[1];
     Assert.assertTrue(outCol.isRepeating);
     Assert.assertFalse(outCol.noNulls);
-    Assert.assertEquals(7, outCol.vector[0]); // length of "mixedUp"
+    Assert.assertEquals(6, outCol.vector[0]); // length of "mixedUp"
 
     // no nulls, is repeating
     batch = makeStringBatchMixedCharSize();
@@ -4133,7 +4133,7 @@ public class TestVectorStringExpressions {
     batch.cols[0].noNulls = true;
     expr.evaluate(batch);
     outCol = (LongColumnVector) batch.cols[1];
-    Assert.assertEquals(7, outCol.vector[0]); // length of "mixedUp"
+    Assert.assertEquals(6, outCol.vector[0]); // length of "mixedUp"
     Assert.assertTrue(outCol.isRepeating);
     Assert.assertTrue(outCol.noNulls);
   }

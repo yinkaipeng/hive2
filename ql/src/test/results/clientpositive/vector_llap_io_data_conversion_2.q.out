@@ -1,0 +1,78 @@
+PREHOOK: query: drop table if exists varchar_single_partition_test
+PREHOOK: type: DROPTABLE
+POSTHOOK: query: drop table if exists varchar_single_partition_test
+POSTHOOK: type: DROPTABLE
+PREHOOK: query: drop table if exists varchar_ctas_1_test
+PREHOOK: type: DROPTABLE
+POSTHOOK: query: drop table if exists varchar_ctas_1_test
+POSTHOOK: type: DROPTABLE
+PREHOOK: query: create table varchar_single_partition_test (vs varchar(50)) partitioned by(s varchar(50))
+PREHOOK: type: CREATETABLE
+PREHOOK: Output: database:default
+PREHOOK: Output: default@varchar_single_partition_test
+POSTHOOK: query: create table varchar_single_partition_test (vs varchar(50)) partitioned by(s varchar(50))
+POSTHOOK: type: CREATETABLE
+POSTHOOK: Output: database:default
+POSTHOOK: Output: default@varchar_single_partition_test
+PREHOOK: query: insert into table varchar_single_partition_test partition(s='positive') VALUES ('xavier laertes')
+PREHOOK: type: QUERY
+PREHOOK: Input: default@values__tmp__table__1
+PREHOOK: Output: default@varchar_single_partition_test@s=positive
+POSTHOOK: query: insert into table varchar_single_partition_test partition(s='positive') VALUES ('xavier laertes')
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@values__tmp__table__1
+POSTHOOK: Output: default@varchar_single_partition_test@s=positive
+POSTHOOK: Lineage: varchar_single_partition_test PARTITION(s=positive).vs EXPRESSION [(values__tmp__table__1)values__tmp__table__1.FieldSchema(name:tmp_values_col1, type:string, comment:), ]
+PREHOOK: query: select * from varchar_single_partition_test
+PREHOOK: type: QUERY
+PREHOOK: Input: default@varchar_single_partition_test
+PREHOOK: Input: default@varchar_single_partition_test@s=positive
+#### A masked pattern was here ####
+POSTHOOK: query: select * from varchar_single_partition_test
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@varchar_single_partition_test
+POSTHOOK: Input: default@varchar_single_partition_test@s=positive
+#### A masked pattern was here ####
+xavier laertes	positive
+PREHOOK: query: alter table varchar_single_partition_test change column vs vs varchar(10)
+PREHOOK: type: ALTERTABLE_RENAMECOL
+PREHOOK: Input: default@varchar_single_partition_test
+PREHOOK: Output: default@varchar_single_partition_test
+POSTHOOK: query: alter table varchar_single_partition_test change column vs vs varchar(10)
+POSTHOOK: type: ALTERTABLE_RENAMECOL
+POSTHOOK: Input: default@varchar_single_partition_test
+POSTHOOK: Output: default@varchar_single_partition_test
+PREHOOK: query: select length(vs),reverse(vs) from varchar_single_partition_test where s='positive'
+PREHOOK: type: QUERY
+PREHOOK: Input: default@varchar_single_partition_test
+PREHOOK: Input: default@varchar_single_partition_test@s=positive
+#### A masked pattern was here ####
+POSTHOOK: query: select length(vs),reverse(vs) from varchar_single_partition_test where s='positive'
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@varchar_single_partition_test
+POSTHOOK: Input: default@varchar_single_partition_test@s=positive
+#### A masked pattern was here ####
+10	eal reivax
+PREHOOK: query: create table varchar_ctas_1_test as select length(vs),reverse(vs) from varchar_single_partition_test where s='positive'
+PREHOOK: type: CREATETABLE_AS_SELECT
+PREHOOK: Input: default@varchar_single_partition_test
+PREHOOK: Input: default@varchar_single_partition_test@s=positive
+PREHOOK: Output: database:default
+PREHOOK: Output: default@varchar_ctas_1_test
+POSTHOOK: query: create table varchar_ctas_1_test as select length(vs),reverse(vs) from varchar_single_partition_test where s='positive'
+POSTHOOK: type: CREATETABLE_AS_SELECT
+POSTHOOK: Input: default@varchar_single_partition_test
+POSTHOOK: Input: default@varchar_single_partition_test@s=positive
+POSTHOOK: Output: database:default
+POSTHOOK: Output: default@varchar_ctas_1_test
+POSTHOOK: Lineage: varchar_ctas_1_test._c0 EXPRESSION [(varchar_single_partition_test)varchar_single_partition_test.FieldSchema(name:vs, type:varchar(10), comment:null), ]
+POSTHOOK: Lineage: varchar_ctas_1_test._c1 EXPRESSION [(varchar_single_partition_test)varchar_single_partition_test.FieldSchema(name:vs, type:varchar(10), comment:null), ]
+PREHOOK: query: select * from varchar_ctas_1_test
+PREHOOK: type: QUERY
+PREHOOK: Input: default@varchar_ctas_1_test
+#### A masked pattern was here ####
+POSTHOOK: query: select * from varchar_ctas_1_test
+POSTHOOK: type: QUERY
+POSTHOOK: Input: default@varchar_ctas_1_test
+#### A masked pattern was here ####
+10	eal reivax

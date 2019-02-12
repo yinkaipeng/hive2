@@ -31,10 +31,19 @@ public class StringLength extends VectorExpression {
   private static final long serialVersionUID = 1L;
   private int colNum;
   private int outputColumn;
+  private int maxInputLength;
 
   public StringLength(int colNum, int outputColumn) {
     this();
     this.colNum = colNum;
+    this.outputColumn = outputColumn;
+    this.maxInputLength = Integer.MAX_VALUE;
+  }
+
+  public StringLength(int colNum, int maxInputLength, int outputColumn) {
+    this();
+    this.colNum = colNum;
+    this.maxInputLength = maxInputLength;
     this.outputColumn = outputColumn;
   }
 
@@ -68,16 +77,16 @@ public class StringLength extends VectorExpression {
       outV.noNulls = true;
       if (inputColVector.isRepeating) {
         outV.isRepeating = true;
-        resultLen[0] = utf8StringLength(vector[0], start[0], length[0]);
+        resultLen[0] = Math.min(maxInputLength, utf8StringLength(vector[0], start[0], length[0]));
       } else if (batch.selectedInUse) {
         for(int j = 0; j != n; j++) {
           int i = sel[j];
-          resultLen[i] = utf8StringLength(vector[i], start[i], length[i]);
+          resultLen[i] = Math.min(maxInputLength, utf8StringLength(vector[i], start[i], length[i]));
         }
         outV.isRepeating = false;
       } else {
         for(int i = 0; i != n; i++) {
-          resultLen[i] = utf8StringLength(vector[i], start[i], length[i]);
+          resultLen[i] = Math.min(maxInputLength, utf8StringLength(vector[i], start[i], length[i]));
         }
         outV.isRepeating = false;
       }
@@ -92,13 +101,13 @@ public class StringLength extends VectorExpression {
         outV.isRepeating = true;
         outV.isNull[0] = inputColVector.isNull[0];
         if (!inputColVector.isNull[0]) {
-          resultLen[0] = utf8StringLength(vector[0], start[0], length[0]);
+          resultLen[0] = Math.min(maxInputLength, utf8StringLength(vector[0], start[0], length[0]));
         }
       } else if (batch.selectedInUse) {
         for(int j = 0; j != n; j++) {
           int i = sel[j];
           if (!inputColVector.isNull[i]) {
-            resultLen[i] = utf8StringLength(vector[i], start[i], length[i]);
+            resultLen[i] = Math.min(maxInputLength, utf8StringLength(vector[i], start[i], length[i]));
           }
           outV.isNull[i] = inputColVector.isNull[i];
         }
@@ -106,7 +115,7 @@ public class StringLength extends VectorExpression {
       } else {
         for(int i = 0; i != n; i++) {
           if (!inputColVector.isNull[i]) {
-            resultLen[i] = utf8StringLength(vector[i], start[i], length[i]);
+            resultLen[i] = Math.min(maxInputLength, utf8StringLength(vector[i], start[i], length[i]));
           }
           outV.isNull[i] = inputColVector.isNull[i];
         }
@@ -148,12 +157,20 @@ public class StringLength extends VectorExpression {
     return colNum;
   }
 
+  public int getMaxInputLength() {
+    return maxInputLength;
+  }
+
   public void setColNum(int colNum) {
     this.colNum = colNum;
   }
 
   public void setOutputColumn(int outputColumn) {
     this.outputColumn = outputColumn;
+  }
+  
+  public void setMaxInputLength(int maxInputLength) {
+    this.maxInputLength = maxInputLength;
   }
 
   @Override
