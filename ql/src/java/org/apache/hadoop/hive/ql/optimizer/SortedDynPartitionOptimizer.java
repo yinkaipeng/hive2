@@ -171,7 +171,7 @@ public class SortedDynPartitionOptimizer extends Transform {
 
       // unlink connection between FS and its parent
       fsParent = fsOp.getParentOperators().get(0);
-      fsParent.getChildOperators().clear();
+      fsParent.getChildOperators().remove(fsOp);
 
       DynamicPartitionCtx dpCtx = fsOp.getConf().getDynPartCtx();
       int numBuckets = destTable.getNumBuckets();
