@@ -4103,7 +4103,8 @@ public class TestVectorStringExpressions {
 
     // has nulls, not repeating
     VectorizedRowBatch batch = makeStringBatchMixedCharSize();
-    StringLength expr = new StringLength(0, 6, 1);
+    StringLength expr = new StringLength(0, 1);
+    expr.setMaxInputLength(6);
     expr.evaluate(batch);
     LongColumnVector outCol = (LongColumnVector) batch.cols[1];
     Assert.assertEquals(5, outCol.vector[1]); // length of green is 5

@@ -1842,17 +1842,21 @@ public class VectorizationContext {
     VectorExpression ve = null;
     // This is a temporal fix for Hive 2. A VectorizedExpression can use its detailed input type info from Hive 3.
     if (cl.equals(UDFLength.class)) {
-      TypeInfo childType = childExpr.get(0).getTypeInfo();
-      if (childType instanceof BaseCharTypeInfo) {
-        List<ExprNodeDesc> childExprWithMaxLength = new ArrayList<>(childExpr);
-        BaseCharTypeInfo baseCharTypeInfo = (BaseCharTypeInfo) childType;
-        childExprWithMaxLength.add(new ExprNodeConstantDesc(TypeInfoFactory.intTypeInfo,
-            baseCharTypeInfo.getLength()));
-        ve = createVectorExpression(StringLength.class, childExprWithMaxLength, mode, returnType);
+      if (childExpr != null && childExpr.size() > 0) {
+        TypeInfo childType = childExpr.get(0).getTypeInfo();
+        if (childType instanceof BaseCharTypeInfo) {
+          BaseCharTypeInfo baseCharTypeInfo = (BaseCharTypeInfo) childType;
+          ve = createVectorExpression(StringLength.class, childExpr, mode, returnType);
+          StringLength stringLength = (StringLength) ve;
+          stringLength.setMaxInputLength(baseCharTypeInfo.getLength());
+        } else {
+          ve = createVectorExpression(StringLength.class, childExpr, mode, returnType);
+        }
       } else {
         ve = createVectorExpression(StringLength.class, childExpr, mode, returnType);
       }
-    } else if (isCastToIntFamily(cl)) {
+    } else
+    if (isCastToIntFamily(cl)) {
       PrimitiveCategory integerPrimitiveCategory =
           getAnyIntegerPrimitiveCategoryFromUdfClass(cl);
       ve = getCastToLongExpression(childExpr, integerPrimitiveCategory);

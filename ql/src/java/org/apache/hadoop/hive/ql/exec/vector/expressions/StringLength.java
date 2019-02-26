@@ -40,13 +40,6 @@ public class StringLength extends VectorExpression {
     this.maxInputLength = Integer.MAX_VALUE;
   }
 
-  public StringLength(int colNum, int maxInputLength, int outputColumn) {
-    this();
-    this.colNum = colNum;
-    this.maxInputLength = maxInputLength;
-    this.outputColumn = outputColumn;
-  }
-
   public StringLength() {
     super();
   }
