@@ -94,6 +94,7 @@ public class RecordReaderImpl implements RecordReader {
   // an array about which row groups aren't skipped
   private boolean[] includedRowGroups = null;
   private final DataReader dataReader;
+  private final int maxDiskRangeChunkLimit;
 
   /**
    * Given a list of column names, find the given column and return the index.
@@ -184,6 +185,7 @@ public class RecordReaderImpl implements RecordReader {
       }
     }
 
+    this.maxDiskRangeChunkLimit = OrcConf.ORC_MAX_DISK_RANGE_CHUNK_LIMIT.getInt(fileReader.conf);
     Boolean zeroCopy = options.getUseZeroCopy();
     if (zeroCopy == null) {
       zeroCopy = OrcConf.USE_ZEROCOPY.getBoolean(fileReader.conf);
@@ -199,6 +201,7 @@ public class RecordReaderImpl implements RecordReader {
               .withPath(fileReader.path)
               .withTypeCount(types.size())
               .withZeroCopy(zeroCopy)
+              .withMaxDiskRangeChunkLimit(maxDiskRangeChunkLimit)
               .build());
     }
     this.dataReader.open();
@@ -1204,6 +1207,10 @@ public class RecordReaderImpl implements RecordReader {
 
     // if we aren't to the right row yet, advance in the stripe.
     advanceToNextRow(reader, rowNumber, true);
+  }
+  
+  public int getMaxDiskRangeChunkLimit() {
+    return maxDiskRangeChunkLimit;
   }
 
   private static final String TRANSLATED_SARG_SEPARATOR = "_";

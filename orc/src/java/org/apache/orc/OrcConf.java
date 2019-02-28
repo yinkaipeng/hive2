@@ -102,7 +102,9 @@ public enum OrcConf {
   BLOOM_FILTER_COLUMNS("orc.bloom.filter.columns", "orc.bloom.filter.columns",
       "", "List of columns to create bloom filters for when writing."),
   DICTIONARY_SKIP_COLUMNS("orc.column.encoding.direct", "orc.column.encoding.direct", "",
-	       "Comma-separated list of columns for which dictionary encoding is to be skipped.")
+	       "Comma-separated list of columns for which dictionary encoding is to be skipped."),
+  ORC_MAX_DISK_RANGE_CHUNK_LIMIT("orc.max.disk.range.chunk.limit", "hive.exec.orc.max.disk.range.chunk.limit", 
+      Integer.MAX_VALUE - 1024, "When reading stripes >2GB, specify max limit for the chunk size.")
   ;
 
   private final String attribute;
@@ -148,6 +150,22 @@ public enum OrcConf {
       }
     }
     return result;
+  }
+
+  public int getInt(Properties tbl, Configuration conf) {
+    String value = lookupValue(tbl, conf);
+    if (value != null) {
+      return Integer.parseInt(value);
+    }
+    return ((Number) defaultValue).intValue();
+  }
+
+  public int getInt(Configuration conf) {
+    return getInt(null, conf);
+  }
+
+  public void getInt(Configuration conf, int value) {
+    conf.setInt(attribute, value);
   }
 
   public long getLong(Properties tbl, Configuration conf) {
