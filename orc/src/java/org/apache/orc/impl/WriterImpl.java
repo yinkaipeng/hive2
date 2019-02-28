@@ -121,6 +121,7 @@ public class WriterImpl implements Writer, MemoryManager.Callback {
   private final OrcFile.EncodingStrategy encodingStrategy;
   private final boolean[] bloomFilterColumns;
   private final double bloomFilterFpp;
+  private final boolean[] dictionarySkipColumns;
   private boolean writeTimeZone;
 
   public WriterImpl(FileSystem fs,
@@ -161,6 +162,7 @@ public class WriterImpl implements Writer, MemoryManager.Callback {
           OrcUtils.includeColumns(opts.getBloomFilterColumns(), schema);
     }
     this.bloomFilterFpp = opts.getBloomFilterFpp();
+    this.dictionarySkipColumns = OrcUtils.includeColumns(opts.getDictionarySkipColumns(), opts.getSchema());
     treeWriter = createTreeWriter(schema, streamFactory, false);
     if (buildIndex && rowIndexStride < MIN_ROW_INDEX_STRIDE) {
       throw new IllegalArgumentException("Row stride must be at least " +
@@ -282,6 +284,14 @@ public class WriterImpl implements Writer, MemoryManager.Callback {
      */
     public double getBloomFilterFPP() {
       return bloomFilterFpp;
+    }
+
+    /**
+     * Get columns for which dictionaries must be skipped.
+     * @return dictionarySkipColumns
+     */
+    public boolean[] getDictionarySkipColumns() {
+      return dictionarySkipColumns;
     }
 
     /**
@@ -970,8 +980,15 @@ public class WriterImpl implements Writer, MemoryManager.Callback {
           OrcConf.DICTIONARY_KEY_SIZE_THRESHOLD.getDouble(conf);
       strideDictionaryCheck =
           OrcConf.ROW_INDEX_STRIDE_DICTIONARY_CHECK.getBoolean(conf);
-      useDictionaryEncoding =  dictionaryKeySizeThreshold >= 0.000001; // Epsilon.
+      useDictionaryEncoding =  mustAttemptDictionaryEncodingForColumn(columnId, writer);
       doneDictionaryCheck = !useDictionaryEncoding;
+    }
+
+    private boolean mustAttemptDictionaryEncodingForColumn(int columnId, StreamFactory writer) {
+      boolean[] dictionarySkipColumns = writer.getDictionarySkipColumns();
+      // Enable if (dictionaries aren't disabled for the column) && (dictionaryKeySizeThreshold >= 0.000001).
+      return (columnId >= dictionarySkipColumns.length || !dictionarySkipColumns[columnId])
+              && dictionaryKeySizeThreshold >= 0.000001; // Epsilon.
     }
 
     private boolean checkDictionaryEncoding() {

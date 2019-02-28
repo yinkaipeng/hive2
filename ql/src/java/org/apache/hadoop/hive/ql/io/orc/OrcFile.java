@@ -221,6 +221,16 @@ public final class OrcFile extends org.apache.orc.OrcFile {
     }
 
     /**
+     * Set the comma-separated list of columns for which dictionary-encoding should be skipped.
+     * @param dictionarySkipColumns Comma-separated list of columns.
+     * @return this current WriterOptions object
+     */
+    public WriterOptions dictionarySkipColumns(String dictionarySkipColumns) {
+      super.dictionarySkipColumns(dictionarySkipColumns);
+      return this;
+    }
+
+    /**
      * Sets the generic compression that is used to compress the data.
      */
     public WriterOptions compress(CompressionKind value) {

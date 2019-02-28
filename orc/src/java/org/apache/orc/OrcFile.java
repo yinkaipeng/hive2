@@ -261,6 +261,7 @@ public class OrcFile {
     private double paddingTolerance;
     private String bloomFilterColumns;
     private double bloomFilterFpp;
+    private String dictionarySkipColumns;
 
     protected WriterOptions(Properties tableProperties, Configuration conf) {
       configuration = conf;
@@ -295,6 +296,8 @@ public class OrcFile {
           conf);
       bloomFilterFpp = OrcConf.BLOOM_FILTER_FPP.getDouble(tableProperties,
           conf);
+      
+      dictionarySkipColumns = OrcConf.DICTIONARY_SKIP_COLUMNS.getString(tableProperties, conf);
     }
 
     /**
@@ -399,6 +402,16 @@ public class OrcFile {
      */
     public WriterOptions bloomFilterFpp(double fpp) {
       bloomFilterFpp = fpp;
+      return this;
+    }
+
+    /**
+     * Set the comma-separated list of columns for which dictionary-encoding should be skipped.
+     * @param dictionarySkipColumns Comma-separated list of columns.
+     * @return this current WriterOptionsObject
+     */
+    public WriterOptions dictionarySkipColumns(String dictionarySkipColumns) {
+      this.dictionarySkipColumns = dictionarySkipColumns;
       return this;
     }
 
@@ -516,6 +529,10 @@ public class OrcFile {
 
     public double getBloomFilterFpp() {
       return bloomFilterFpp;
+    }
+
+    public String getDictionarySkipColumns() {
+      return dictionarySkipColumns;
     }
   }
 

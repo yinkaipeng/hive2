@@ -98,6 +98,10 @@ public class TestStringDictionary {
     }
   }
 
+  /**
+   * Test that dictionaries can be disabled selectively, for a specific column.
+   * @throws Exception on failure. None expected.
+   */
   @Test
   public void testHalfDistinct() throws Exception {
     TypeDescription schema = TypeDescription.createString();
@@ -286,5 +290,82 @@ public class TestStringDictionary {
     }
 
   }
+  
+  /**
+   * Test that dictionaries can be disabled, per column. In this test, we want to disable DICTIONARY_V2 for the
+   * `longString` column (presumably for a low hit-ratio), while preserving DICTIONARY_V2 for `shortString`.
+   * @throws Exception on unexpected failure
+   */
+  @Test
+  public void testDisableDictionaryForSpecificColumn() throws Exception {
+    final String SHORT_STRING_VALUE = "foo";
+    final String  LONG_STRING_VALUE = "BAAAAAAAAR!!";
+
+    TypeDescription schema = TypeDescription.createStruct(); // Mock ORC Struct.
+    TypeDescription shortStringTypeDesc = TypeDescription.createString();
+    schema.addField("shortString", shortStringTypeDesc); // Regular dictionary encoding.
+    TypeDescription longStringTypeDesc = TypeDescription.createString();
+    schema.addField("longString", longStringTypeDesc);  // Longer string, for which dictionaries are to be disabled.
+
+    Writer writer = OrcFile.createWriter(
+        testFilePath,
+        OrcFile.writerOptions(conf).setSchema(schema)
+            .compress(CompressionKind.NONE)
+            .bufferSize(10000)
+            .dictionarySkipColumns("longString"));
+
+    VectorizedRowBatch batch = schema.createRowBatch();
+    BytesColumnVector shortStringColumnVector = (BytesColumnVector) batch.cols[0];
+    BytesColumnVector longStringColumnVector  = (BytesColumnVector) batch.cols[1];
+
+    for (int i = 0; i < 20000; i++) {
+      if (batch.size == batch.getMaxSize()) {
+        writer.addRowBatch(batch);
+        batch.reset();
+      }
+      shortStringColumnVector.setVal(batch.size, SHORT_STRING_VALUE.getBytes());
+      longStringColumnVector.setVal( batch.size, LONG_STRING_VALUE.getBytes());
+      ++batch.size;
+    }
+    writer.addRowBatch(batch);
+    writer.close();
+
+    Reader reader = OrcFile.createReader(testFilePath, OrcFile.readerOptions(conf).filesystem(fs));
+    RecordReader recordReader = reader.rows();
+    batch = reader.getSchema().createRowBatch();
+    shortStringColumnVector = (BytesColumnVector) batch.cols[0];
+    longStringColumnVector  = (BytesColumnVector) batch.cols[1];
+    while (recordReader.nextBatch(batch)) {
+      for(int r=0; r < batch.size; ++r) {
+        assertEquals(SHORT_STRING_VALUE, shortStringColumnVector.toString(r));
+        assertEquals(LONG_STRING_VALUE,   longStringColumnVector.toString(r));
+      }
+    }
+
+    // make sure the encoding type is correct
+    for (StripeInformation stripe : reader.getStripes()) {
+      // hacky but does the job, this casting will work as long this test resides
+      // within the same package as ORC reader
+      OrcProto.StripeFooter footer = ((RecordReaderImpl) recordReader).readStripeFooter(stripe);
+      for (int i = 0; i < footer.getColumnsCount(); ++i) {
+        assertEquals(
+            "Expected 3 columns in the footer: One for the Orc Struct, and two for its members.",
+            3, footer.getColumnsCount());
+        assertEquals(
+            "The ORC schema struct should be DIRECT encoded.",
+            OrcProto.ColumnEncoding.Kind.DIRECT, footer.getColumns(0).getKind()
+        );
+        assertEquals(
+            "The shortString column must be DICTIONARY_V2 encoded",
+            OrcProto.ColumnEncoding.Kind.DICTIONARY_V2, footer.getColumns(1).getKind()
+        );
+        assertEquals(
+            "The longString column must be DIRECT_V2 encoded",
+            OrcProto.ColumnEncoding.Kind.DIRECT_V2, footer.getColumns(2).getKind()
+        );
+      }
+    }
+  }
+
 
 }

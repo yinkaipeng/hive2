@@ -100,7 +100,9 @@ public enum OrcConf {
           "writing first stripe. In both cases, the decision to use\n" +
           "dictionary or not will be retained thereafter."),
   BLOOM_FILTER_COLUMNS("orc.bloom.filter.columns", "orc.bloom.filter.columns",
-      "", "List of columns to create bloom filters for when writing.")
+      "", "List of columns to create bloom filters for when writing."),
+  DICTIONARY_SKIP_COLUMNS("orc.column.encoding.direct", "orc.column.encoding.direct", "",
+	       "Comma-separated list of columns for which dictionary encoding is to be skipped.")
   ;
 
   private final String attribute;
