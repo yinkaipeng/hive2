@@ -136,6 +136,14 @@
           <groupId>com.lmax</groupId>
           <artifactId>disruptor</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>tomcat</groupId>
+          <artifactId>jasper-compiler</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>tomcat</groupId>
+          <artifactId>jasper-runtime</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <!-- test inter-project -->
@@ -175,6 +183,14 @@
         <exclusion>
           <groupId>com.lmax</groupId>
           <artifactId>disruptor</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>tomcat</groupId>
+          <artifactId>jasper-compiler</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>tomcat</groupId>
+          <artifactId>jasper-runtime</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
